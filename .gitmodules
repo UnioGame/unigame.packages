@@ -49,3 +49,6 @@
 [submodule "unigame.rx"]
 	path = unigame.rx
 	url = https://github.com/UniGameTeam/UniGame.Rx.git
+[submodule "unigame.typeconverters"]
+	path = unigame.typeconverters
+	url = https://github.com/UniGameTeam/UniGame.TypeConverters.git
