@@ -31,3 +31,9 @@
 [submodule "unigame.multiscenes"]
 	path = unigame.multiscenes
 	url = https://github.com/UnioGame/MultiScenes.git
+[submodule "unigame.unibuild"]
+	path = unigame.unibuild
+	url = https://github.com/UniGameTeam/UniBuild.git
+[submodule "unigame.buildcommands"]
+	path = unigame.buildcommands
+	url = https://github.com/UnioGame/UnioGame.UniBuildCommands.git
