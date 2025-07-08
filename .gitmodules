@@ -4,3 +4,6 @@
 [submodule "unigame.game.features"]
 	path = unigame.game.features
 	url = https://github.com/UnioGame/unigame.game.features.git
+[submodule "unigame.googlespreadsheets"]
+	path = unigame.googlespreadsheets
+	url = https://github.com/UnioGame/UniGame.GoogleSpreadsheets.git
