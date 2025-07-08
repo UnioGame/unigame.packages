@@ -19,3 +19,6 @@
 [submodule "FluentFTP"]
 	path = FluentFTP
 	url = https://github.com/UnioGame/FluentFTP.git
+[submodule "kd.tree"]
+	path = kd.tree
+	url = https://github.com/UnioGame/kd.tree.git
