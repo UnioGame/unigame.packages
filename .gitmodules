@@ -43,3 +43,9 @@
 [submodule "unigame.addressabletools"]
 	path = unigame.addressabletools
 	url = https://github.com/UniGameTeam/UniGame.AddressableTools.git
+[submodule "unigame.context"]
+	path = unigame.context
+	url = https://github.com/UniGameTeam/UniGame.Context.git
+[submodule "unigame.rx"]
+	path = unigame.rx
+	url = https://github.com/UniGameTeam/UniGame.Rx.git
