@@ -1,0 +1,3 @@
+[submodule "unity.meta.backend"]
+	path = unity.meta.backend
+	url = https://github.com/UnioGame/unity.meta.backend.git
