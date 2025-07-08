@@ -16,3 +16,6 @@
 [submodule "unigame.leoecs.proto.tools"]
 	path = unigame.leoecs.proto.tools
 	url = https://github.com/UnioGame/UniGame.LeoEcs.Proto.Tools.git
+[submodule "FluentFTP"]
+	path = FluentFTP
+	url = https://github.com/UnioGame/FluentFTP.git
