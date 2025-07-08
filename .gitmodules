@@ -28,3 +28,6 @@
 [submodule "unigame.localization"]
 	path = unigame.localization
 	url = https://github.com/UnioGame/UniGame.Localization.git
+[submodule "unigame.multiscenes"]
+	path = unigame.multiscenes
+	url = https://github.com/UnioGame/MultiScenes.git
