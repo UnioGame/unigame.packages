@@ -1,0 +1,420 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:Boolean x:Key="/Default/CodeEditing/Unity/AllowRiderUpdateNotifications/@EntryValue">False</s:Boolean>
+	<s:String x:Key="/Default/CustomTools/CustomToolsData/@EntryValue"></s:String>
+	<s:String x:Key="/Default/Environment/AssemblyExplorer/XmlDocument/@EntryValue">&lt;AssemblyExplorer&gt;&#xD;
+  &lt;Assembly Path="D:\Dev\Dreamfrost\Idle\IdleGame\Library\ScriptAssemblies\Assembly-CSharp-Editor.dll" /&gt;&#xD;
+  &lt;Assembly Path="C:\Unity porojects\idlerpg\IdleGame\Library\ScriptAssemblies\Game.Service.Notion.dll" /&gt;&#xD;
+  &lt;Assembly Path="D:\Dev\Dreamfrost\idlerpg\IdleGame\Library\ScriptAssemblies\unigame.unieditortools.dll" /&gt;&#xD;
+&lt;/AssemblyExplorer&gt;</s:String>
+	
+	
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=8ca0da26_002Ddee6_002D48b5_002D9f86_002D075c1f57f16c/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from Solution" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;Solution /&gt;&#xD;
+&lt;/SessionState&gt;</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/@KeyIndexDefined">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=715FC5433CF3D746B6068754C3F869DD/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=715FC5433CF3D746B6068754C3F869DD/EntryName/@EntryValue">Ecs Proto Asset Feature</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=715FC5433CF3D746B6068754C3F869DD/Position/@EntryValue">30</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=82F59C66041AAC41BE275B44D3E90A58/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=82F59C66041AAC41BE275B44D3E90A58/EntryName/@EntryValue">Ecs Aspect</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=82F59C66041AAC41BE275B44D3E90A58/Position/@EntryValue">26</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=949C8D96C747F24D94A64BE4FEDA77E9/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=949C8D96C747F24D94A64BE4FEDA77E9/EntryName/@EntryValue">GameObject Converter</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=949C8D96C747F24D94A64BE4FEDA77E9/Position/@EntryValue">27</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=B36CE6886679734F8F370D2802C88912/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=B36CE6886679734F8F370D2802C88912/EntryName/@EntryValue">Ecs View</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=B36CE6886679734F8F370D2802C88912/Position/@EntryValue">29</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=C26C6B2902EF5C41868A56143497B6D9/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=C26C6B2902EF5C41868A56143497B6D9/EntryName/@EntryValue">Ecs Proto Feature</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/QuickList/=F0CA621CDF5AB24282D8CDC11C520997/Entry/=C26C6B2902EF5C41868A56143497B6D9/Position/@EntryValue">28</s:Int64>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=1720A95A05393E4AAEB2BDB28FDDE018/Description/@EntryValue">Ecs Proto Asset Feature</s:String>
+	
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=2527FD16D05C2D4DB76CA1615D45C3EB/Text/@EntryValue">namespace $NAMESPACE$
+{
+    using System;
+    using System.Threading;
+    using Leopotam.EcsLite;
+    using UniGame.LeoEcs.Converter.Runtime;
+    using UniGame.LeoEcs.Converter.Runtime.Converters;
+    using UnityEngine;
+
+    public sealed class Mono$CLASS$ : MonoLeoEcsConverter&lt;$CLASS$&gt;
+    {
+        
+    }
+    
+    [Serializable]
+    public class $CLASS$: LeoEcsConverter
+    {
+        public sealed override void Apply(GameObject target, EcsWorld world, int entity, CancellationToken cancellationToken = default)
+        {
+        
+        }
+    }
+}</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=67B5C0637FB47F468EAC09771C2173A1/Field/=NAMESPACE/Expression/@EntryValue">fileDefaultNamespace()</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/@KeyIndexDefined">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/Applicability/=File/@EntryIndexedValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/CustomProperties/=Extension/@EntryIndexedValue">cs</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/CustomProperties/=FileName/@EntryIndexedValue">NewBaseFeature</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/CustomProperties/=ValidateFileName/@EntryIndexedValue">True</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/Description/@EntryValue">Ecs Proto Feature</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/Field/=CLASS/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/Field/=CLASS/Expression/@EntryValue">getAlphaNumericFileNameWithoutExtension()</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/Field/=CLASS/Order/@EntryValue">0</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/Field/=NAMESPACE/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/Field/=NAMESPACE/Expression/@EntryValue">fileDefaultNamespace()</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/Field/=NAMESPACE/Order/@EntryValue">1</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/Reformat/@EntryValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/Scope/=E8F0594528C33E45BBFEC6CFE851095D/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/Scope/=E8F0594528C33E45BBFEC6CFE851095D/Type/@EntryValue">InCSharpProjectFile</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/ShortenQualifiedReferences/@EntryValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/Text/@EntryValue">namespace $NAMESPACE$
+{
+    using System;
+    using Cysharp.Threading.Tasks;
+    using Leopotam.EcsProto;
+    using UniGame.LeoEcs.Bootstrap.Runtime;
+
+    /// &lt;summary&gt;
+    /// ADD DESCRIPTION HERE
+    /// &lt;/summary&gt;
+#if ENABLE_IL2CPP
+    using Unity.IL2CPP.CompilerServices;
+
+    [Il2CppSetOption(Option.NullChecks, false)]
+	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+	[Il2CppSetOption(Option.DivideByZeroChecks, false)]
+#endif
+    [Serializable]
+    public class $CLASS$ : EcsFeature
+    {
+        protected override UniTask OnInitializeAsync(IProtoSystems ecsSystems)
+        {
+            return UniTask.CompletedTask;
+        }
+    }
+}</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=715FC5433CF3D746B6068754C3F869DD/UITag/@EntryValue">Ecs Proto</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/@KeyIndexDefined">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Applicability/=File/@EntryIndexedValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/CustomProperties/=Extension/@EntryIndexedValue">cs</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/CustomProperties/=FileName/@EntryIndexedValue">EcsAspect</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/CustomProperties/=ValidateFileName/@EntryIndexedValue">True</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Description/@EntryValue">Ecs Proto Aspect</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Field/=ASPECT/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Field/=ASPECT/Expression/@EntryValue">asmDefNameMacro()</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Field/=ASPECT/Order/@EntryValue">1</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Field/=NAMESPACE/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Field/=NAMESPACE/Expression/@EntryValue">fileDefaultNamespace()</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Field/=NAMESPACE/Order/@EntryValue">0</s:Int64>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Image/@EntryValue">CSharp</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Reformat/@EntryValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Scope/=E8F0594528C33E45BBFEC6CFE851095D/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Scope/=E8F0594528C33E45BBFEC6CFE851095D/Type/@EntryValue">InCSharpProjectFile</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/ShortenQualifiedReferences/@EntryValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/Text/@EntryValue">namespace $NAMESPACE$
+{
+    using System;
+    using UniGame.LeoEcs.Bootstrap.Runtime.Abstract;
+
+    /// &lt;summary&gt;
+    /// ADD DESCRIPTION HERE
+    /// &lt;/summary&gt;
+#if ENABLE_IL2CPP
+    using Unity.IL2CPP.CompilerServices;
+
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+#endif
+    [Serializable]
+    public class $ASPECT$ : EcsAspect 
+    {
+        $END$
+    }
+}</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=82F59C66041AAC41BE275B44D3E90A58/UITag/@EntryValue">Ecs Proto</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=8B025E226C5EEA4CADC43373FAF7EA31/CustomProperties/=FileName/@EntryIndexedValue">ProtoComponent</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=8B025E226C5EEA4CADC43373FAF7EA31/Description/@EntryValue">Ecs Proto Component</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=8B025E226C5EEA4CADC43373FAF7EA31/UITag/@EntryValue">Ecs Proto</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/@KeyIndexDefined">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/Applicability/=File/@EntryIndexedValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/CustomProperties/=Extension/@EntryIndexedValue">cs</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/CustomProperties/=FileName/@EntryIndexedValue">NewGameObjectConverter</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/CustomProperties/=ValidateFileName/@EntryIndexedValue">True</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/Description/@EntryValue">Ecs Proto GameObject Converter</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/Field/=CLASS/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/Field/=CLASS/Expression/@EntryValue">getAlphaNumericFileNameWithoutExtension()</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/Field/=CLASS/Order/@EntryValue">0</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/Field/=NAMESPACE/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/Field/=NAMESPACE/Expression/@EntryValue">fileDefaultNamespace()</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/Field/=NAMESPACE/Order/@EntryValue">1</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/Reformat/@EntryValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/Scope/=E8F0594528C33E45BBFEC6CFE851095D/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/Scope/=E8F0594528C33E45BBFEC6CFE851095D/Type/@EntryValue">InCSharpProjectFile</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/ShortenQualifiedReferences/@EntryValue">True</s:Boolean>
+	
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=949C8D96C747F24D94A64BE4FEDA77E9/UITag/@EntryValue">Ecs Proto</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/@KeyIndexDefined">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/Applicability/=File/@EntryIndexedValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/CustomProperties/=Extension/@EntryIndexedValue">cs</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/CustomProperties/=FileName/@EntryIndexedValue">NewEcsView</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/CustomProperties/=ValidateFileName/@EntryIndexedValue">True</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/Description/@EntryValue">Ecs Proto View</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/Field/=CLASS/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/Field/=CLASS/Expression/@EntryValue">getAlphaNumericFileNameWithoutExtension()</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/Field/=CLASS/Order/@EntryValue">0</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/Field/=NAMESPACE/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/Field/=NAMESPACE/Expression/@EntryValue">fileDefaultNamespace()</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/Field/=NAMESPACE/Order/@EntryValue">1</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/Reformat/@EntryValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/Scope/=E8F0594528C33E45BBFEC6CFE851095D/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/Scope/=E8F0594528C33E45BBFEC6CFE851095D/Type/@EntryValue">InCSharpProjectFile</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/ShortenQualifiedReferences/@EntryValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/Text/@EntryValue">namespace $NAMESPACE$
+{
+    using System;
+    using UniGame.LeoEcs.ViewSystem.Converters;
+    using UniGame.UiSystem.Runtime;
+    using UniGame.ViewSystem.Runtime;
+
+#if ENABLE_IL2CPP
+    using Unity.IL2CPP.CompilerServices;
+
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+#endif
+    /// &lt;summary&gt;
+    /// ADD DESCRIPTION HERE
+    /// &lt;/summary&gt;
+    [Serializable]
+    public class $CLASS$ : EcsUiView&lt;I$CLASS$Model&gt;
+    {
+        
+    }
+    
+#if ENABLE_IL2CPP
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+#endif
+    /// &lt;summary&gt;
+    /// ADD DESCRIPTION HERE
+    /// &lt;/summary&gt;
+    [Serializable]
+    public class $CLASS$Model : ViewModelBase, I$CLASS$Model
+    {
+    
+    }
+
+    /// &lt;summary&gt;
+    /// ADD DESCRIPTION HERE
+    /// &lt;/summary&gt;
+    public interface I$CLASS$Model : IViewModel
+    {
+        
+    }
+}</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B36CE6886679734F8F370D2802C88912/UITag/@EntryValue">Ecs Proto</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/@KeyIndexDefined">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/Applicability/=File/@EntryIndexedValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/CustomProperties/=Extension/@EntryIndexedValue">cs</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/CustomProperties/=FileName/@EntryIndexedValue">NewBaseFeature</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/CustomProperties/=ValidateFileName/@EntryIndexedValue">True</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/Description/@EntryValue">Ecs Proto Characteristic</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/Field/=CLASS/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/Field/=CLASS/Expression/@EntryValue">getAlphaNumericFileNameWithoutExtension()</s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/Field/=CLASS/Order/@EntryValue">0</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/Field/=NAMESPACE/@KeyIndexDefined">False</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/Field/=NAMESPACE/Expression/@EntryValue"></s:String>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/Field/=NAMESPACE/Order/@EntryValue">-1</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/Reformat/@EntryValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/Scope/=E8F0594528C33E45BBFEC6CFE851095D/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/Scope/=E8F0594528C33E45BBFEC6CFE851095D/Type/@EntryValue">InCSharpProjectFile</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/ShortenQualifiedReferences/@EntryValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/Text/@EntryValue">namespace UniGame.Ecs.Proto.Characteristics.$CLASS$
+{
+    using System;
+    using Base;
+    using Base.Aspects;
+    using Base.Components;
+    using Cysharp.Threading.Tasks;
+    using Feature;
+    using LeoEcs.Bootstrap.Runtime.Attributes;
+    using Leopotam.EcsProto;
+    using Leopotam.EcsProto.QoL;
+    using UniGame.LeoEcs.Shared.Extensions;
+    using UnityEngine;
+    
+#if ENABLE_IL2CPP
+    using Unity.IL2CPP.CompilerServices;
+#endif
+    
+    /// &lt;summary&gt;
+    /// new characteristic feature: $CLASS$ 
+    /// &lt;/summary&gt;
+#if ENABLE_IL2CPP
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+#endif
+    [Serializable]
+    [CreateAssetMenu(menuName = "Proto Features/Characteristics/$CLASS$")]
+    public sealed class $CLASS$Feature : CharacteristicFeature&lt;$CLASS$EcsFeature&gt;
+    {
+        
+    }
+    
+    /// &lt;summary&gt;
+    /// new characteristic feature: $CLASS$ 
+    /// &lt;/summary&gt;
+#if ENABLE_IL2CPP
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+#endif
+    [Serializable]
+    public sealed class $CLASS$EcsFeature : CharacteristicEcsFeature
+    {
+        protected override  UniTask OnInitializeAsync(IProtoSystems ecsSystems)
+        {
+            //register $CLASS$ characteristic
+            ecsSystems.AddCharacteristic&lt;$CLASS$Component&gt;();
+            //update $CLASS$ by request
+            ecsSystems.Add(new Process$CLASS$ChangedSystem());
+            
+            return UniTask.CompletedTask;
+        }
+    }
+    
+    /// &lt;summary&gt;
+    /// characteristic $CLASS$ aspect data
+    /// &lt;/summary&gt;
+#if ENABLE_IL2CPP
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+#endif
+    [Serializable]
+    public class $CLASS$Aspect : GameCharacteristicAspect&lt;$CLASS$Component&gt;
+    {
+        
+    }
+    
+    /// &lt;summary&gt;
+    /// $CLASS$ characteristic component
+    /// &lt;/summary&gt;
+    [Serializable]
+#if ENABLE_IL2CPP
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+#endif
+    public struct $CLASS$Component
+    {
+        /// &lt;summary&gt;
+        /// Current value of characteristic.
+        /// &lt;/summary&gt;
+        public float Value;
+        
+        /// &lt;summary&gt;
+        /// Max value of characteristic.
+        /// &lt;/summary&gt;
+        public float MaxValue;
+
+        /// &lt;summary&gt;
+        /// Min value of characteristic.
+        /// &lt;/summary&gt;
+        public float MinValue;
+        
+        /// &lt;summary&gt;
+        /// Base value of characteristic.
+        /// &lt;/summary&gt;
+        public float BaseValue;
+    }
+    
+#if ENABLE_IL2CPP
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+#endif
+    [Serializable]
+    [ECSDI]
+    public sealed class Process$CLASS$ChangedSystem : IProtoRunSystem
+    {
+        private $CLASS$Aspect _$CLASS$Aspect;
+        
+        private ProtoIt _filter = It
+            .Chain&lt;CharacteristicChangedComponent&lt;$CLASS$Component&gt;&gt;()
+            .Inc&lt;CharacteristicComponent&lt;$CLASS$Component&gt;&gt;()
+            .Inc&lt;$CLASS$Component&gt;()
+            .End();
+        
+        private ProtoWorld _world;
+        
+        public void Run()
+        {
+            foreach (var entity in _filter)
+            {
+                ref var characteristicComponent = ref _$CLASS$Aspect.Value.Get(entity);
+                ref var $CLASS$Component = ref _$CLASS$Aspect.Characteristic.Get(entity);
+                $CLASS$Component.Value = characteristicComponent.Value;
+                $CLASS$Component.MaxValue = characteristicComponent.MaxValue;
+                $CLASS$Component.MinValue = characteristicComponent.MinValue;
+                $CLASS$Component.BaseValue = characteristicComponent.BaseValue;
+            }
+        }
+    }
+    
+#if ENABLE_IL2CPP
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+#endif
+    [Serializable]
+    public class $CLASS$ComponentConverter : GameCharacteristicConverter&lt;$CLASS$Component&gt;
+    {
+
+    }
+}</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C26C6B2902EF5C41868A56143497B6D9/UITag/@EntryValue">Ecs Proto</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=F58F98EBD5D6F34BA3FBB80801750352/Description/@EntryValue">Ecs Proto System</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=F58F98EBD5D6F34BA3FBB80801750352/Text/@EntryValue">namespace $NAMESPACE$
+{
+    using System;
+    using Leopotam.EcsProto;
+    using UniGame.LeoEcs.Bootstrap.Runtime.Attributes;
+    using UniGame.LeoEcs.Shared.Extensions;
+    
+    /// &lt;summary&gt;
+    /// ADD DESCRIPTION HERE
+    /// &lt;/summary&gt;
+#if ENABLE_IL2CPP
+    using Unity.IL2CPP.CompilerServices;
+
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    [Il2CppSetOption(Option.DivideByZeroChecks, false)]
+#endif
+    [Serializable]
+    [ECSDI]
+    public class $STRUCT$ : IProtoInitSystem, IProtoRunSystem
+    {
+        private ProtoWorld _world;
+
+        public void Init(IProtoSystems systems)
+        {
+            _world = systems.GetWorld();
+        }
+
+        public void Run()
+        {
+
+        }
+    }
+}</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=F58F98EBD5D6F34BA3FBB80801750352/UITag/@EntryValue">Ecs Proto</s:String>
+	
+	</wpf:ResourceDictionary>

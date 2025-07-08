@@ -1,0 +1,16 @@
+{
+  "name": "com.unigame.rider.templates",
+  "author": "UniGame",
+  "displayName": "Rider Code Tamplates",
+  "description": "Templates collections for Rider IDE.",
+  "unity": "2022.2",
+  "version": "2024.0.0",
+  "keywords": [
+    "Templates",
+    "Rider",
+    "IDE"
+  ],
+  "dependencies": 
+  {
+  }
+}
