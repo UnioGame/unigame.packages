@@ -7,3 +7,6 @@
 [submodule "unigame.googlespreadsheets"]
 	path = unigame.googlespreadsheets
 	url = https://github.com/UnioGame/UniGame.GoogleSpreadsheets.git
+[submodule "leoecs.proto"]
+	path = leoecs.proto
+	url = https://git.kontora.games/modules/leoecs.proto.git
