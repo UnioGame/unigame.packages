@@ -37,3 +37,6 @@
 [submodule "unigame.buildcommands"]
 	path = unigame.buildcommands
 	url = https://github.com/UnioGame/UnioGame.UniBuildCommands.git
+[submodule "unigame.viewsystem"]
+	path = unigame.viewsystem
+	url = https://github.com/UniGameTeam/UniGame.ViewSystem.git
