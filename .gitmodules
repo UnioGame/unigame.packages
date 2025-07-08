@@ -25,3 +25,6 @@
 [submodule "unigame.gamedb"]
 	path = unigame.gamedb
 	url = https://github.com/UnioGame/UniGame.GameDB.git
+[submodule "unigame.localization"]
+	path = unigame.localization
+	url = https://github.com/UnioGame/UniGame.Localization.git
