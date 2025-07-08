@@ -52,3 +52,9 @@
 [submodule "unigame.typeconverters"]
 	path = unigame.typeconverters
 	url = https://github.com/UniGameTeam/UniGame.TypeConverters.git
+[submodule "unigame.core"]
+	path = unigame.core
+	url = https://github.com/UniGameTeam/UniGame.Core.git
+[submodule "unigame.editortools"]
+	path = unigame.editortools
+	url = https://github.com/UniGameTeam/UniGame.EditorTools.git
