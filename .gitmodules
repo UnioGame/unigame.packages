@@ -40,3 +40,6 @@
 [submodule "unigame.viewsystem"]
 	path = unigame.viewsystem
 	url = https://github.com/UniGameTeam/UniGame.ViewSystem.git
+[submodule "unigame.addressabletools"]
+	path = unigame.addressabletools
+	url = https://github.com/UniGameTeam/UniGame.AddressableTools.git
