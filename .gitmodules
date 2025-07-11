@@ -64,3 +64,6 @@
 [submodule "unigame.analytics"]
 	path = unigame.analytics
 	url = https://github.com/UnioGame/game.analytics.git
+[submodule "naninovel"]
+	path = naninovel
+	url = https://git.kontora.games/modules/naninovel.git
