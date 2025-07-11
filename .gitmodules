@@ -70,3 +70,6 @@
 [submodule "google.api.v4"]
 	path = google.api.v4
 	url = https://github.com/UnioGame/google.api.v4.git
+[submodule "unigame.symlinker"]
+	path = unigame.symlinker
+	url = https://github.com/UnioGame/UniGame.SymLinker.git
