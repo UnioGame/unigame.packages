@@ -61,3 +61,6 @@
 [submodule "unigame.ads"]
 	path = unigame.ads
 	url = https://github.com/UnioGame/unigame.ads.git
+[submodule "unigame.analytics"]
+	path = unigame.analytics
+	url = https://github.com/UnioGame/game.analytics.git
