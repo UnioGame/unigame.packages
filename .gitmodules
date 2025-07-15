@@ -70,3 +70,9 @@
 [submodule "unigame.symlinker"]
 	path = unigame.symlinker
 	url = https://github.com/UnioGame/UniGame.SymLinker.git
+[submodule "EasyPrimeTween"]
+	path = EasyPrimeTween
+	url = https://github.com/UnioGame/EasyPrimeTween.git
+[submodule "unigame.ads"]
+	path = unigame.ads
+	url = https://github.com/UnioGame/unigame.ads.git
