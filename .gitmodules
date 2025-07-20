@@ -58,9 +58,21 @@
 [submodule "unigame.editortools"]
 	path = unigame.editortools
 	url = https://github.com/UniGameTeam/UniGame.EditorTools.git
-[submodule "unigame.ads"]
-	path = unigame.ads
-	url = https://github.com/UnioGame/unigame.ads.git
 [submodule "unigame.analytics"]
 	path = unigame.analytics
 	url = https://github.com/UnioGame/game.analytics.git
+[submodule "naninovel"]
+	path = naninovel
+	url = https://git.kontora.games/modules/naninovel.git
+[submodule "google.api.v4"]
+	path = google.api.v4
+	url = https://github.com/UnioGame/google.api.v4.git
+[submodule "unigame.symlinker"]
+	path = unigame.symlinker
+	url = https://github.com/UnioGame/UniGame.SymLinker.git
+[submodule "EasyPrimeTween"]
+	path = EasyPrimeTween
+	url = https://github.com/UnioGame/EasyPrimeTween.git
+[submodule "unigame.ads"]
+	path = unigame.ads
+	url = https://github.com/UnioGame/unigame.ads.git
