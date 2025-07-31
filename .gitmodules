@@ -76,3 +76,6 @@
 [submodule "unigame.ads"]
 	path = unigame.ads
 	url = https://github.com/UnioGame/unigame.ads.git
+[submodule "custom.toolbar"]
+	path = custom.toolbar
+	url = https://github.com/UnioGame/custom.toolbar.git
