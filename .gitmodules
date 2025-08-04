@@ -79,3 +79,6 @@
 [submodule "custom.toolbar"]
 	path = custom.toolbar
 	url = https://github.com/UnioGame/custom.toolbar.git
+[submodule "unity-addressable-importer"]
+	path = unity-addressable-importer
+	url = https://github.com/UnioGame/unity-addressable-importer.git
