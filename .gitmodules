@@ -70,3 +70,15 @@
 [submodule "unigame.symlinker"]
 	path = unigame.symlinker
 	url = https://github.com/UnioGame/UniGame.SymLinker.git
+[submodule "EasyPrimeTween"]
+	path = EasyPrimeTween
+	url = https://github.com/UnioGame/EasyPrimeTween.git
+[submodule "unigame.ads"]
+	path = unigame.ads
+	url = https://github.com/UnioGame/unigame.ads.git
+[submodule "custom.toolbar"]
+	path = custom.toolbar
+	url = https://github.com/UnioGame/custom.toolbar.git
+[submodule "unity-addressable-importer"]
+	path = unity-addressable-importer
+	url = https://github.com/UnioGame/unity-addressable-importer.git
