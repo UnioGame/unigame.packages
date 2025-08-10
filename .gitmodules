@@ -88,3 +88,6 @@
 [submodule "gizmos"]
 	path = gizmos
 	url = https://github.com/UnioGame/gizmos.git
+[submodule "unigame.upm.localpackages"]
+	path = unigame.upm.localpackages
+	url = https://github.com/UnioGame/unigame.upm.localpackages.git
