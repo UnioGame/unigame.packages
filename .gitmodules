@@ -82,3 +82,9 @@
 [submodule "unity-addressable-importer"]
 	path = unity-addressable-importer
 	url = https://github.com/UnioGame/unity-addressable-importer.git
+[submodule "UberEnums"]
+	path = UberEnums
+	url = https://github.com/UnioGame/UberEnums.git
+[submodule "gizmos"]
+	path = gizmos
+	url = https://github.com/UnioGame/gizmos.git
