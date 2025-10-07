@@ -91,3 +91,6 @@
 [submodule "unigame.upm.localpackages"]
 	path = unigame.upm.localpackages
 	url = https://github.com/UnioGame/unigame.upm.localpackages.git
+[submodule "game.meta.api"]
+	path = game.meta.api
+	url = https://git.kontora.games/modules/game.meta.api.git
