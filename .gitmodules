@@ -94,3 +94,6 @@
 [submodule "game.meta.api"]
 	path = game.meta.api
 	url = https://git.kontora.games/modules/game.meta.api.git
+[submodule "unigame.linkxml.generator"]
+	path = unigame.linkxml.generator
+	url = https://github.com/UnioGame/linkxml.generator.git
