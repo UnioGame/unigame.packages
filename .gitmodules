@@ -97,3 +97,6 @@
 [submodule "unigame.linkxml.generator"]
 	path = unigame.linkxml.generator
 	url = https://github.com/UnioGame/linkxml.generator.git
+[submodule "unigame.auth"]
+	path = unigame.auth
+	url = https://github.com/UnioGame/unigame.auth.git
