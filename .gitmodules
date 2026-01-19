@@ -100,3 +100,6 @@
 [submodule "unigame.prefabicons"]
 	path = unigame.prefabicons
 	url = https://github.com/UnioGame/unigame.prefabicons.git
+[submodule "unigame.scriptableobjectcreator"]
+	path = unigame.scriptableobjectcreator
+	url = https://github.com/UnioGame/unigame.scriptableobjectcreator.git
