@@ -1,0 +1,18 @@
+{
+  "name": "com.unigame.staticecs",
+  "author": "UniGame",
+  "displayName": "UniGame Static ECS",
+  "description": "Static ECS runtime tooling and bootstrap for UniGame projects",
+  "unity": "2023.2",
+  "version": "2026.0.0",
+  "license": "MIT",
+  "keywords": [
+    "unigame",
+    "ecs",
+    "static-ecs",
+    "bootstrap"
+  ],
+  "dependencies": {
+    "com.felid-force-studios.static-ecs": "2.2.2"
+  }
+}

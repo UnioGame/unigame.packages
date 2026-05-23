@@ -1,0 +1,23 @@
+{
+    "name": "unigame.staticecs.editor",
+    "rootNamespace": "UniGame.StaticEcs.Editor",
+    "references": [
+        "unigame.staticecs",
+        "unigame.staticecs.unity",
+        "unigame.contextdata.runtime",
+        "FFS.StaticEcs",
+        "FFS.StaticEcs.Unity",
+        "FFS.StaticEcs.Unity.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

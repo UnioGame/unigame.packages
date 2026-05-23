@@ -1,0 +1,17 @@
+{
+    "name": "unigame.staticecs.features",
+    "rootNamespace": "unigame.staticecs.features",
+    "references": [
+        "unigame.staticecs",
+        "FFS.StaticEcs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
