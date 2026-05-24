@@ -103,3 +103,12 @@
 [submodule "unigame.scriptableobjectcreator"]
 	path = unigame.scriptableobjectcreator
 	url = https://github.com/UnioGame/unigame.scriptableobjectcreator.git
+[submodule "unigame.staticecs"]
+	path = unigame.staticecs
+	url = https://github.com/UnioGame/unigame.staticecs.git
+[submodule "unigame.staticecs.features"]
+	path = unigame.staticecs.features
+	url = https://github.com/UnioGame/unigame.staticecs.features.git
+[submodule "unigame.staticecs.unity"]
+	path = unigame.staticecs.unity
+	url = https://github.com/UnioGame/unigame.staticecs.unity.git
