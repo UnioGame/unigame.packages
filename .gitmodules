@@ -7,9 +7,6 @@
 [submodule "unigame.googlespreadsheets"]
 	path = unigame.googlespreadsheets
 	url = https://github.com/UnioGame/UniGame.GoogleSpreadsheets.git
-[submodule "leoecs.proto"]
-	path = leoecs.proto
-	url = https://git.kontora.games/modules/leoecs.proto.git
 [submodule "unigame.leoecs.proto.features"]
 	path = unigame.leoecs.proto.features
 	url = https://github.com/UnioGame/UniGame.LeoEcs.Proto.Features.git
@@ -58,9 +55,6 @@
 [submodule "unigame.analytics"]
 	path = unigame.analytics
 	url = https://github.com/UnioGame/game.analytics.git
-[submodule "naninovel"]
-	path = naninovel
-	url = https://git.kontora.games/modules/naninovel.git
 [submodule "google.api.v4"]
 	path = google.api.v4
 	url = https://github.com/UnioGame/google.api.v4.git
@@ -88,9 +82,6 @@
 [submodule "unigame.upm.localpackages"]
 	path = unigame.upm.localpackages
 	url = https://github.com/UnioGame/unigame.upm.localpackages.git
-[submodule "game.meta.api"]
-	path = game.meta.api
-	url = https://git.kontora.games/modules/game.meta.api.git
 [submodule "unigame.linkxml.generator"]
 	path = unigame.linkxml.generator
 	url = https://github.com/UnioGame/linkxml.generator.git
