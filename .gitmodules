@@ -103,3 +103,6 @@
 [submodule "unigame.staticecs.unity"]
 	path = unigame.staticecs.unity
 	url = https://github.com/UnioGame/unigame.staticecs.unity.git
+[submodule "unigame.unitycli"]
+	path = unigame.unitycli
+	url = https://github.com/UnioGame/unigame.unitycli.mcp.git
