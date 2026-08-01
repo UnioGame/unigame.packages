@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-FOUNDATION-REPLAN",
+  "mode": "strict",
+  "state": "Ready",
+  "previousState": "Planned",
+  "role": "complex-worker",
+  "branch": "codex/sve11-network-foundation-replan",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-foundation-replan",
+  "plan": {
+    "goal": "Complete the frozen foundation after mandatory replan by closing exact command codec validation during staged framing.",
+    "acceptance": [
+      "Preserve the five cycle-one repairs confirmed by cycle-two review.",
+      "CommandBatch staging invokes the registered CommandInvoker codec validation for every command before PacketFraming returns StagedPayload.",
+      "A payload inside maxBytes but not exactly decodable by its registered codec is rejected by both TryEncode validation and TryDecode staging.",
+      "Add focused malformed-codec tests for encode, decode and direct staging paths while retaining the full 15-test matrix.",
+      "Run the real-source netstandard2.1/NUnit harness, meta/ownership and diff checks, then create one candidate commit."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-foundation.md",
+      ".codex/lemmings/reviews/SVE11-NETWORK-FOUNDATION.c8c878d2a66c515ea07e4e129c58274862b01d95.json",
+      "c8c878d2a66c515ea07e4e129c58274862b01d95"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/**"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.ai.lemmings/**",
+      "unigame.staticecs.unity/**",
+      "unigame.staticecs.features/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": null
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": []
+  },
+  "baseSha": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "Malformed command bytes escape staging and fail only during authorization",
+        "test": "Registered 4-byte codec rejects a framed 3-byte command in encode, decode and staging tests"
+      },
+      {
+        "risk": "Narrow repair regresses previous security, ownership or allocation repairs",
+        "test": "Full foundation harness remains green and immutable review rechecks all six findings"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Real-source foundation NUnit harness",
+      "Unity EditMode: unigame.staticecs.network.tests after manifest integration"
+    ],
+    "allowedOutputs": [],
+    "debt": [
+      {
+        "reason": "The package is not referenced by the root Unity manifest until integration.",
+        "owner": "orchestrator",
+        "futureGate": "Root manifest import and Unity EditMode unigame.staticecs.network.tests",
+        "blocking": false
+      }
+    ]
+  },
+  "review": {
+    "taskId": "SVE11-NETWORK-FOUNDATION-REPLAN",
+    "base": null,
+    "status": "Pending",
+    "cycle": 0,
+    "head": null,
+    "evidence": null
+  },
+  "close": {
+    "mergeCommit": null,
+    "integrationValidationPassed": false
+  }
+}
