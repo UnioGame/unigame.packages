@@ -2,7 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-TRANSPORT-CLOSE",
   "mode": "strict",
-  "state": "Assigned",
+  "state": "Candidate",
+  "previousState": "Assigned",
   "role": "focused-worker",
   "branch": "codex/sve11-network-transport-close",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-transport-close",
@@ -42,12 +43,18 @@
     "actual": "gpt-5.6-sol:medium"
   },
   "execution": {
-    "handoff": null,
-    "validationEvidence": []
+    "handoff": "MemoryTransport now exposes deterministic peer close/error state and drains/detaches both endpoints with transfer-safe ownership.",
+    "validationEvidence": [
+      "Candidate overlay compilation passed",
+      "Focused transport lifecycle and lease matrix: 10 passed, 0 failed",
+      "Exact two-file ownership, git diff --check and lemmings check --all passed",
+      "Temporary outputs removed; worktree clean",
+      "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests"
+    ]
   },
   "baseSha": "4293593b25e6c00b1a61642230d0e621bd746733",
   "commits": {
-    "candidate": null,
+    "candidate": "e07464d3e18daa66a17a5fb38fe97676cd25c62c",
     "fix": []
   },
   "validation": {
@@ -78,7 +85,7 @@
     "base": "4293593b25e6c00b1a61642230d0e621bd746733",
     "status": "Pending",
     "cycle": 0,
-    "head": null,
+    "head": "e07464d3e18daa66a17a5fb38fe97676cd25c62c",
     "evidence": null
   },
   "close": {
