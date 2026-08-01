@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-SESSION-CORE-V1",
+  "baselineSha": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
+  "integrationBranch": "codex/sve11-network-package",
+  "contractsFrozen": false,
+  "contracts": [
+    ".codex/lemmings/contracts/SVE11-network-session-core.md",
+    ".codex/lemmings/contracts/SVE11-network-session-foundation-closure.md",
+    ".codex/lemmings/contracts/SVE11-network-packet-lease.md",
+    ".codex/lemmings/contracts/SVE11-network-replication.md"
+  ],
+  "baselineReview": {
+    "status": "Pending",
+    "reviewerModel": "gpt-5.6-sol:high",
+    "evidence": null
+  },
+  "leases": [
+    {
+      "resource": "Game.Packages integration branch",
+      "owner": "orchestrator",
+      "scope": "Only the orchestrator integrates an Accepted Session Core candidate",
+      "status": "Active"
+    }
+  ],
+  "close": {
+    "mergeCommits": [],
+    "phaseValidation": []
+  }
+}
