@@ -802,7 +802,7 @@ namespace UniGame.StaticEcs.Network.Tests
         public void RawHeaderFieldsAndLengthsFaultIndependently()
         {
             var hello = ServerHelloBytes();
-            var hash = Hashing.XxHash64(hello);
+            var hash = TestWire.XxHash64(hello);
             AssertRawClientFault(PacketKind.Hello, (PacketFlags)0, 0, PacketHeader.NoneTick,
                 24, 24, hash, hello, Channel.ReliableOrdered);
             AssertRawClientFault(PacketKind.Hello, PacketFlags.ReliableOrdered, 1, PacketHeader.NoneTick,
@@ -812,7 +812,7 @@ namespace UniGame.StaticEcs.Network.Tests
             AssertRawClientFault((PacketKind)0, PacketFlags.ReliableOrdered, 0, PacketHeader.NoneTick,
                 24, 24, hash, hello, Channel.ReliableOrdered);
             AssertRawClientFault(PacketKind.Ack, PacketFlags.ReliableOrdered, 0, PacketHeader.NoneTick,
-                0, 0, Hashing.XxHash64(ReadOnlySpan<byte>.Empty), Array.Empty<byte>(), Channel.ReliableOrdered);
+                0, 0, TestWire.XxHash64(ReadOnlySpan<byte>.Empty), Array.Empty<byte>(), Channel.ReliableOrdered);
             AssertRawClientFault(PacketKind.Hello, PacketFlags.ReliableOrdered, 0, PacketHeader.NoneTick,
                 23, 24, hash, hello, Channel.ReliableOrdered);
             AssertRawClientFault(PacketKind.Hello, PacketFlags.ReliableOrdered, 0, PacketHeader.NoneTick,
@@ -1060,7 +1060,7 @@ namespace UniGame.StaticEcs.Network.Tests
                     PacketKind.Hello, PacketFlags.ReliableOrdered, 0, 0, 1,
                     PacketHeader.NoneTick, PacketHeader.NoneTick, PacketHeader.NoneTick,
                     wireLength, decodedLength, Schema<MinimumClientWorld>().Hash,
-                    Hashing.XxHash64(payload), 0, payload);
+                    TestWire.XxHash64(payload), 0, payload);
                 Assert.That(HeaderCrcMatches(packet.Span), Is.True);
                 Assert.That(PacketHeader.TryRead(packet.Span, out _), Is.True);
                 transport.Inject(Channel.ReliableOrdered, ref packet);
@@ -1094,7 +1094,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 var packet = RawHeaderPacket(
                     PacketKind.Hello, PacketFlags.ReliableOrdered, 0, 0, 1,
                     PacketHeader.NoneTick, PacketHeader.NoneTick, PacketHeader.NoneTick,
-                    24, 24, Schema<ServerWorld>().Hash, Hashing.XxHash64(payload), 0, payload);
+                    24, 24, Schema<ServerWorld>().Hash, TestWire.XxHash64(payload), 0, payload);
                 Assert.That(HeaderCrcMatches(packet.Span), Is.True);
                 transport.Inject(Channel.ReliableOrdered, ref packet);
 
@@ -1124,7 +1124,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 var packet = RawHeaderPacket(
                     PacketKind.Hello, PacketFlags.ReliableOrdered, 0, 0, 1,
                     PacketHeader.NoneTick, PacketHeader.NoneTick, PacketHeader.NoneTick,
-                    24, 24, clientSchema, Hashing.XxHash64(payload), 0, payload);
+                    24, 24, clientSchema, TestWire.XxHash64(payload), 0, payload);
                 Assert.That(HeaderCrcMatches(packet.Span), Is.True);
                 Assert.That(PacketHeader.TryRead(packet.Span, out _), Is.True);
                 transport.Inject(Channel.ReliableOrdered, ref packet);
@@ -1536,12 +1536,12 @@ namespace UniGame.StaticEcs.Network.Tests
         private static byte[] HelloBytes(HelloPayload hello)
         {
             var payload = new byte[24];
-            Hashing.Write64(payload, 0, hello.Nonce);
-            Hashing.Write16(payload, 8, hello.MinTickRate);
-            Hashing.Write16(payload, 10, hello.MaxTickRate);
-            Hashing.Write32(payload, 12, hello.MaxWireBytes);
-            Hashing.Write32(payload, 16, hello.MaxDecodedBytes);
-            Hashing.Write32(payload, 20, hello.Capabilities);
+            TestWire.Write64(payload, 0, hello.Nonce);
+            TestWire.Write16(payload, 8, hello.MinTickRate);
+            TestWire.Write16(payload, 10, hello.MaxTickRate);
+            TestWire.Write32(payload, 12, hello.MaxWireBytes);
+            TestWire.Write32(payload, 16, hello.MaxDecodedBytes);
+            TestWire.Write32(payload, 20, hello.Capabilities);
             return payload;
         }
 
@@ -1566,23 +1566,23 @@ namespace UniGame.StaticEcs.Network.Tests
             var bytes = packet.Span;
             bytes.Clear();
             payload.CopyTo(bytes.Slice(PacketHeader.Size));
-            Hashing.Write32(bytes, 0, 0x53434553);
-            Hashing.Write16(bytes, 4, PacketHeader.Version);
-            Hashing.Write16(bytes, 6, PacketHeader.Size);
+            TestWire.Write32(bytes, 0, 0x53434553);
+            TestWire.Write16(bytes, 4, PacketHeader.Version);
+            TestWire.Write16(bytes, 6, PacketHeader.Size);
             bytes[8] = (byte)kind;
             bytes[9] = (byte)flags;
             bytes[10] = transformId;
-            Hashing.Write32(bytes, 12, epoch);
-            Hashing.Write32(bytes, 16, sequence);
-            Hashing.Write32(bytes, 20, serverTick);
-            Hashing.Write32(bytes, 24, baselineTick);
-            Hashing.Write32(bytes, 28, acknowledgedSnapshotTick);
-            Hashing.Write32(bytes, 32, wireLength);
-            Hashing.Write32(bytes, 36, decodedLength);
+            TestWire.Write32(bytes, 12, epoch);
+            TestWire.Write32(bytes, 16, sequence);
+            TestWire.Write32(bytes, 20, serverTick);
+            TestWire.Write32(bytes, 24, baselineTick);
+            TestWire.Write32(bytes, 28, acknowledgedSnapshotTick);
+            TestWire.Write32(bytes, 32, wireLength);
+            TestWire.Write32(bytes, 36, decodedLength);
             schema.WriteBytes(bytes.Slice(40, 16));
-            Hashing.Write64(bytes, 56, payloadHash);
-            Hashing.Write32(bytes, 68, acknowledgedCommandSequence);
-            Hashing.Write32(bytes, 64, Hashing.Crc32(bytes.Slice(0, PacketHeader.Size)));
+            TestWire.Write64(bytes, 56, payloadHash);
+            TestWire.Write32(bytes, 68, acknowledgedCommandSequence);
+            TestWire.Write32(bytes, 64, TestWire.Crc32(bytes.Slice(0, PacketHeader.Size)));
             return packet;
         }
 
@@ -1591,9 +1591,9 @@ namespace UniGame.StaticEcs.Network.Tests
             if (packet.Length < PacketHeader.Size) return false;
             Span<byte> header = stackalloc byte[PacketHeader.Size];
             packet.Slice(0, PacketHeader.Size).CopyTo(header);
-            var expected = Hashing.Read32(header, 64);
+            var expected = TestWire.Read32(header, 64);
             header.Slice(64, 4).Clear();
-            return Hashing.Crc32(header) == expected;
+            return TestWire.Crc32(header) == expected;
         }
 
         private static PacketLease ReservedPacket(PacketKind kind, Schema schema, out Channel channel)
@@ -1700,7 +1700,7 @@ namespace UniGame.StaticEcs.Network.Tests
             var header = ControlHeader(kind, sequence, epoch, schema);
             header.WirePayloadLength = (uint)payload.Length;
             header.DecodedPayloadLength = (uint)payload.Length;
-            header.PayloadHash = Hashing.XxHash64(payload);
+            header.PayloadHash = TestWire.XxHash64(payload);
             if (!header.TryWrite(packet.Span)) throw new InvalidOperationException();
             return packet;
         }
@@ -1767,6 +1767,133 @@ namespace UniGame.StaticEcs.Network.Tests
         private static Schema Schema<TWorld>() where TWorld : struct, IWorldType => new SchemaBuilder<TWorld>().Freeze();
         private static Schema DifferentSchema<TWorld>() where TWorld : struct, IWorldType =>
             new SchemaBuilder<TWorld>().Tag<DifferentTag>(DifferentId, 1).Freeze();
+
+        private static class TestWire
+        {
+            private const ulong Prime1 = 11400714785074694791UL;
+            private const ulong Prime2 = 14029467366897019727UL;
+            private const ulong Prime3 = 1609587929392839161UL;
+            private const ulong Prime4 = 9650029242287828579UL;
+            private const ulong Prime5 = 2870177450012600261UL;
+
+            internal static uint Crc32(ReadOnlySpan<byte> data)
+            {
+                var crc = uint.MaxValue;
+                for (var i = 0; i < data.Length; i++)
+                {
+                    crc ^= data[i];
+                    for (var bit = 0; bit < 8; bit++)
+                        crc = (crc & 1) != 0 ? 0xedb88320U ^ crc >> 1 : crc >> 1;
+                }
+                return ~crc;
+            }
+
+            internal static ulong XxHash64(ReadOnlySpan<byte> data)
+            {
+                unchecked
+                {
+                    var index = 0;
+                    ulong hash;
+                    if (data.Length >= 32)
+                    {
+                        var v1 = Prime1 + Prime2;
+                        var v2 = Prime2;
+                        var v3 = 0UL;
+                        var v4 = 0UL - Prime1;
+                        var limit = data.Length - 32;
+                        do
+                        {
+                            v1 = Round(v1, Read64(data, index)); index += 8;
+                            v2 = Round(v2, Read64(data, index)); index += 8;
+                            v3 = Round(v3, Read64(data, index)); index += 8;
+                            v4 = Round(v4, Read64(data, index)); index += 8;
+                        } while (index <= limit);
+                        hash = Rotate(v1, 1) + Rotate(v2, 7) + Rotate(v3, 12) + Rotate(v4, 18);
+                        hash = Merge(hash, v1);
+                        hash = Merge(hash, v2);
+                        hash = Merge(hash, v3);
+                        hash = Merge(hash, v4);
+                    }
+                    else
+                    {
+                        hash = Prime5;
+                    }
+
+                    hash += (ulong)data.Length;
+                    while (index <= data.Length - 8)
+                    {
+                        hash ^= Round(0, Read64(data, index));
+                        hash = Rotate(hash, 27) * Prime1 + Prime4;
+                        index += 8;
+                    }
+                    if (index <= data.Length - 4)
+                    {
+                        hash ^= Read32(data, index) * Prime1;
+                        hash = Rotate(hash, 23) * Prime2 + Prime3;
+                        index += 4;
+                    }
+                    while (index < data.Length)
+                    {
+                        hash ^= data[index] * Prime5;
+                        hash = Rotate(hash, 11) * Prime1;
+                        index++;
+                    }
+                    hash ^= hash >> 33;
+                    hash *= Prime2;
+                    hash ^= hash >> 29;
+                    hash *= Prime3;
+                    hash ^= hash >> 32;
+                    return hash;
+                }
+            }
+
+            internal static uint Read32(ReadOnlySpan<byte> data, int offset) =>
+                data[offset] | (uint)data[offset + 1] << 8 |
+                (uint)data[offset + 2] << 16 | (uint)data[offset + 3] << 24;
+
+            internal static void Write16(Span<byte> data, int offset, ushort value)
+            {
+                data[offset] = (byte)value;
+                data[offset + 1] = (byte)(value >> 8);
+            }
+
+            internal static void Write32(Span<byte> data, int offset, uint value)
+            {
+                data[offset] = (byte)value;
+                data[offset + 1] = (byte)(value >> 8);
+                data[offset + 2] = (byte)(value >> 16);
+                data[offset + 3] = (byte)(value >> 24);
+            }
+
+            internal static void Write64(Span<byte> data, int offset, ulong value)
+            {
+                Write32(data, offset, (uint)value);
+                Write32(data, offset + 4, (uint)(value >> 32));
+            }
+
+            private static ulong Read64(ReadOnlySpan<byte> data, int offset) =>
+                Read32(data, offset) | (ulong)Read32(data, offset + 4) << 32;
+
+            private static ulong Round(ulong value, ulong input)
+            {
+                unchecked
+                {
+                    value += input * Prime2;
+                    return Rotate(value, 31) * Prime1;
+                }
+            }
+
+            private static ulong Merge(ulong hash, ulong value)
+            {
+                unchecked
+                {
+                    return (hash ^ Round(0, value)) * Prime1 + Prime4;
+                }
+            }
+
+            private static ulong Rotate(ulong value, int count) =>
+                value << count | value >> (64 - count);
+        }
 
         private struct ServerWorld : IWorldType { }
         private struct ClientWorld : IWorldType { }
