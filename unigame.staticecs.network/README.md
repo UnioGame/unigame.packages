@@ -25,6 +25,8 @@ var schema = new SchemaBuilder<ServerWorld>()
     .Freeze();
 ```
 
+Before `World<ServerWorld>.Initialize()`, register `ReplicatedTag` and every entity, component, tag, link, link-set, and multi-value type used by the schema through `World<ServerWorld>.Types()`. Freezing a schema retains codecs and invokers but does not register Static ECS storage.
+
 Packet payloads are written with `PayloadCodec`, framed with `PacketFraming`, and passed as owned `PacketLease` instances through an `ITransport`. Successful decode returns a disposable `StagedPayload`; consume its pooled typed indexes and canonical payload slices before disposing it. Schema-bound stages expose the validating `SchemaHash`.
 
 `PacketLease` is a value handle with one logical owner. Pass ownership only to APIs that consume it by `ref`; ordinary copies are borrowed aliases and become invalid when ownership transfers or returns. `Span` and aggregate `ReadOnlyMemory<byte>` views are borrowed and must not cross a transfer, disposal, or thread handoff. Call `Copy()` when bytes need independent retention.
@@ -58,7 +60,15 @@ using var replicator = new Replicator<ServerWorld>(schema, scope);
 
 if (replicator.Capture(out var snapshot) == CaptureResult.Success)
 {
-    // The caller owns snapshot and must transfer it or dispose it.
+    try
+    {
+        // Read snapshot.Span here, or transfer ownership to a consuming API by ref.
+    }
+    finally
+    {
+        if (snapshot.IsValid)
+            snapshot.Dispose();
+    }
 }
 ```
 

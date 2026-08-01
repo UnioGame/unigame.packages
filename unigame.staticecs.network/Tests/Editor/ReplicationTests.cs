@@ -1,5 +1,7 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using FFS.Libraries.StaticEcs;
 using NUnit.Framework;
@@ -270,6 +272,49 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
+        public void CaptureCodecFailureAndExceptionReturnDefaultAndReusePooledLeaseState()
+        {
+            CreateWorld<CaptureFailureWorld>(ChunkOwnerType.Self);
+            try
+            {
+                var entity = World<CaptureFailureWorld>.NewEntityInChunk<NetEntity>(Chunk);
+                entity.Set<ReplicatedTag>();
+                entity.Set(new Value { Number = 42 });
+                using var scope = new ReplicaScope<CaptureFailureWorld>(ScopeRole.Authority, Mapping());
+                using var replicator = new Replicator<CaptureFailureWorld>(Schema<CaptureFailureWorld>(), scope);
+
+                Assert.That(replicator.Capture(out var warm), Is.EqualTo(CaptureResult.Success));
+                warm.Dispose();
+                var stateAllocations = PacketLease.StateAllocationCountForTests;
+
+                ValueCodec.FailWrites = true;
+                Assert.That(replicator.Capture(out var failed), Is.EqualTo(CaptureResult.CodecFailed));
+                Assert.That(failed.IsValid, Is.False);
+                ValueCodec.FailWrites = false;
+                Assert.That(replicator.Capture(out var afterFailure), Is.EqualTo(CaptureResult.Success));
+                Assert.That(afterFailure.IsValid, Is.True);
+                afterFailure.Dispose();
+                Assert.That(PacketLease.StateAllocationCountForTests, Is.EqualTo(stateAllocations));
+
+                var thrown = default(PacketLease);
+                ValueCodec.ThrowOnWrite = true;
+                Assert.Throws<InvalidOperationException>(() => replicator.Capture(out thrown));
+                Assert.That(thrown.IsValid, Is.False);
+                ValueCodec.ThrowOnWrite = false;
+                Assert.That(replicator.Capture(out var afterException), Is.EqualTo(CaptureResult.Success));
+                Assert.That(afterException.IsValid, Is.True);
+                afterException.Dispose();
+                Assert.That(PacketLease.StateAllocationCountForTests, Is.EqualTo(stateAllocations));
+            }
+            finally
+            {
+                ValueCodec.FailWrites = false;
+                ValueCodec.ThrowOnWrite = false;
+                World<CaptureFailureWorld>.Destroy();
+            }
+        }
+
+        [Test]
         public void FfsTagStorageCannotRepresentDisabledTagState()
         {
             CreateWorld<AuthorityWorld>(ChunkOwnerType.Self);
@@ -296,14 +341,18 @@ namespace UniGame.StaticEcs.Network.Tests
                 var map = Mapping();
                 using var authorityScope = new ReplicaScope<AuthorityWorld>(ScopeRole.Authority, map);
                 using var replicaScope = new ReplicaScope<ReplicaWorld>(ScopeRole.Replica, map);
-                using var authority = new Replicator<AuthorityWorld>(Schema<AuthorityWorld>(), authorityScope);
-                using var replica = new Replicator<ReplicaWorld>(Schema<ReplicaWorld>(), replicaScope);
-                Assert.That(replica.Capture(out _), Is.EqualTo(CaptureResult.WrongRole));
+                var authoritySchema = Schema<AuthorityWorld>();
+                var replicaSchema = Schema<ReplicaWorld>();
+                using var authority = new Replicator<AuthorityWorld>(authoritySchema, authorityScope);
+                using var replica = new Replicator<ReplicaWorld>(replicaSchema, replicaScope);
+                Assert.That(replica.Capture(out var wrongRolePayload), Is.EqualTo(CaptureResult.WrongRole));
+                Assert.That(wrongRolePayload.IsValid, Is.False);
+                SeedRichReplica(replica, replicaSchema);
 
                 var source = World<AuthorityWorld>.NewEntityInChunk<NetEntity>(Chunk);
                 source.Set<ReplicatedTag>();
                 Assert.That(authority.Capture(out var payload), Is.EqualTo(CaptureResult.Success));
-                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, ref payload, Schema<ReplicaWorld>(), out var staged), Is.True);
+                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, ref payload, replicaSchema, out var staged), Is.True);
                 var foreignGid = new EntityGID((Chunk << Const.ENTITIES_IN_CHUNK_SHIFT) + 100, 1, Cluster);
                 var foreign = World<ReplicaWorld>.NewEntityByGID<NetEntity>(foreignGid);
                 foreign.Set(new Value { Number = 99 });
@@ -339,17 +388,22 @@ namespace UniGame.StaticEcs.Network.Tests
                 using var c = new Replicator<AuthorityWorld>(Schema<AuthorityWorld>(), wrongOwner);
                 using var d = new Replicator<AuthorityWorld>(Schema<AuthorityWorld>(), duplicate);
 
-                Assert.That(a.Capture(out _), Is.EqualTo(CaptureResult.ScopeInvalid));
-                Assert.That(b.Capture(out _), Is.EqualTo(CaptureResult.ScopeInvalid));
-                Assert.That(c.Capture(out _), Is.EqualTo(CaptureResult.ScopeInvalid));
-                Assert.That(d.Capture(out _), Is.EqualTo(CaptureResult.ScopeInvalid));
+                Assert.That(a.Capture(out var missingPayload), Is.EqualTo(CaptureResult.ScopeInvalid));
+                Assert.That(missingPayload.IsValid, Is.False);
+                Assert.That(b.Capture(out var clusterPayload), Is.EqualTo(CaptureResult.ScopeInvalid));
+                Assert.That(clusterPayload.IsValid, Is.False);
+                Assert.That(c.Capture(out var ownerPayload), Is.EqualTo(CaptureResult.ScopeInvalid));
+                Assert.That(ownerPayload.IsValid, Is.False);
+                Assert.That(d.Capture(out var duplicatePayload), Is.EqualTo(CaptureResult.ScopeInvalid));
+                Assert.That(duplicatePayload.IsValid, Is.False);
                 Assert.That(World<AuthorityWorld>.GetChunkOwner(Chunk), Is.EqualTo(ChunkOwnerType.Self));
                 Assert.That(World<AuthorityWorld>.GetChunkClusterId(Chunk), Is.EqualTo(Cluster));
 
                 using var driftScope = new ReplicaScope<AuthorityWorld>(ScopeRole.Authority, Mapping());
                 using var drift = new Replicator<AuthorityWorld>(Schema<AuthorityWorld>(), driftScope);
                 World<AuthorityWorld>.ChangeChunkOwner(Chunk, ChunkOwnerType.Other);
-                Assert.That(drift.Capture(out _), Is.EqualTo(CaptureResult.ScopeInvalid));
+                Assert.That(drift.Capture(out var driftPayload), Is.EqualTo(CaptureResult.ScopeInvalid));
+                Assert.That(driftPayload.IsValid, Is.False);
                 Assert.That(World<AuthorityWorld>.GetChunkOwner(Chunk), Is.EqualTo(ChunkOwnerType.Other));
             }
             finally
@@ -369,6 +423,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 using var scope = new ReplicaScope<ReplicaWorld>(ScopeRole.Replica, map);
                 using var replica = new Replicator<ReplicaWorld>(schema, scope);
                 var id = Chunk << Const.ENTITIES_IN_CHUNK_SHIFT;
+                SeedRichReplica(replica, schema);
 
                 using (var zero = Stage(schema, Snapshot(new WireEntityId(id, Cluster, 0), Id(1))))
                     AssertApplyFailure(replica, zero, ApplyResult.InvalidEntity);
@@ -405,6 +460,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 var schema = Schema<ReplicaWorld>();
                 using var scope = new ReplicaScope<ReplicaWorld>(ScopeRole.Replica, Mapping());
                 using var replica = new Replicator<ReplicaWorld>(schema, scope);
+                SeedRichReplica(replica, schema);
                 var id = Chunk << Const.ENTITIES_IN_CHUNK_SHIFT;
                 using (var initial = Stage(schema, Snapshot(
                            new SnapshotEntity { Entity = new WireEntityId(id, Cluster, 1), KindId = Id(1) },
@@ -444,6 +500,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 var schema = Schema<ReplicaWorld>();
                 using var scope = new ReplicaScope<ReplicaWorld>(ScopeRole.Replica, Mapping());
                 using var replica = new Replicator<ReplicaWorld>(schema, scope);
+                SeedRichReplica(replica, schema);
                 var id = Chunk << Const.ENTITIES_IN_CHUNK_SHIFT;
                 var missing = new EntityGID(id + 10, 1, Cluster);
                 var record = new SnapshotRecord { TypeId = Id(4), Kind = RecordKind.Link, Version = 1, ElementCount = 1, Payload = EntityBytes(missing) };
@@ -470,6 +527,8 @@ namespace UniGame.StaticEcs.Network.Tests
                 using var replicaScope = new ReplicaScope<ReplicaWorld>(ScopeRole.Replica, Mapping());
                 using var authority = new Replicator<AuthorityWorld>(authoritySchema, authorityScope);
                 using var replica = new Replicator<ReplicaWorld>(replicaSchema, replicaScope);
+                SeedRichAuthority<AuthorityWorld>();
+                SeedRichReplica(replica, replicaSchema);
                 using var authoritySnapshot = Stage(authoritySchema, Snapshot());
                 AssertApplyFailure(authority, authoritySnapshot, ApplyResult.WrongRole);
 
@@ -477,6 +536,9 @@ namespace UniGame.StaticEcs.Network.Tests
                 ackLease.SetLength(0);
                 Assert.That(PayloadStager.TryStage(PacketKind.Ack, ref ackLease, null, out var ack), Is.True);
                 using (ack) AssertApplyFailure(replica, ack, ApplyResult.WrongPayload);
+
+                using (var oversized = OversizedStage(replicaSchema))
+                    AssertApplyFailure(replica, oversized, ApplyResult.LimitExceeded);
 
                 using var replicaSnapshot = Stage(replicaSchema, Snapshot());
                 World<ReplicaWorld>.ChangeChunkOwner(Chunk, ChunkOwnerType.Self);
@@ -500,6 +562,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 using var scope = new ReplicaScope<ReplicaWorld>(ScopeRole.Replica, map);
                 using var replica = new Replicator<ReplicaWorld>(schema, scope);
                 var id = Chunk << Const.ENTITIES_IN_CHUNK_SHIFT;
+                SeedRichReplica(replica, schema);
                 var entity = new SnapshotEntity
                 {
                     Entity = new WireEntityId(id, Cluster, 1),
@@ -533,11 +596,62 @@ namespace UniGame.StaticEcs.Network.Tests
             }
         }
 
+        [Test]
+        public void ApplyPropagatesComponentOnAddHookAndLeavesDocumentedPartialState()
+        {
+            CreateWorld<HookWorld>(ChunkOwnerType.Other);
+            try
+            {
+                var schema = HookSchema<HookWorld>();
+                using var scope = new ReplicaScope<HookWorld>(ScopeRole.Replica, Mapping());
+                using var replica = new Replicator<HookWorld>(schema, scope);
+                var id = Chunk << Const.ENTITIES_IN_CHUNK_SHIFT;
+                var record = new SnapshotRecord
+                {
+                    TypeId = Id(8),
+                    Kind = RecordKind.Component,
+                    Version = 1,
+                    ElementCount = 1,
+                    Payload = BitConverter.GetBytes(99)
+                };
+                var snapshot = Snapshot(new SnapshotEntity
+                {
+                    Entity = new WireEntityId(id, Cluster, 1),
+                    KindId = Id(1),
+                    Records = new[] { record }
+                });
+                using var staged = Stage(schema, snapshot);
+
+                HookComponent.ThrowOnAdd = true;
+                try
+                {
+                    Assert.Throws<InvalidOperationException>(() => replica.Apply(staged));
+                }
+                finally
+                {
+                    HookComponent.ThrowOnAdd = false;
+                }
+
+                var gid = new EntityGID(id, 1, Cluster);
+                Assert.That(gid.TryUnpack<HookWorld>(out var partial), Is.True,
+                    "Lifecycle hooks propagate after mutation begins; replication does not promise rollback.");
+                Assert.That(partial.Has<ReplicatedTag>(), Is.True);
+                Assert.That(partial.Has<HookComponent>(), Is.True);
+                Assert.That(partial.Read<HookComponent>().Number, Is.EqualTo(99));
+            }
+            finally
+            {
+                HookComponent.ThrowOnAdd = false;
+                World<HookWorld>.Destroy();
+            }
+        }
+
         private static void CreateWorld<TWorld>(ChunkOwnerType owner) where TWorld : struct, IWorldType
         {
             World<TWorld>.Create(WorldConfig.Default());
             World<TWorld>.Types().EntityType<NetEntity>().Tag<ReplicatedTag>().Tag<StateTag>()
-                .EntityType<OtherEntity>().Component<Value>().Link<ParentLink>().Links<TargetLinks>().Multi<Item>();
+                .EntityType<OtherEntity>().Component<Value>().Component<HookComponent>()
+                .Link<ParentLink>().Links<TargetLinks>().Multi<Item>();
             World<TWorld>.Initialize();
             World<TWorld>.RegisterCluster(Cluster);
             World<TWorld>.RegisterChunk(Chunk, owner, Cluster);
@@ -552,6 +666,160 @@ namespace UniGame.StaticEcs.Network.Tests
             .Links<TargetLinks>(Id(5), 1, 8)
             .Multi<Item, ItemCodec>(Id(6), 1, Codec(6), 8, 4)
             .Freeze();
+
+        private static Schema HookSchema<TWorld>() where TWorld : struct, IWorldType => new SchemaBuilder<TWorld>()
+            .EntityKind<NetEntity>(Id(1))
+            .Component<HookComponent, HookCodec>(Id(8), 1, Codec(8), 4)
+            .Freeze();
+
+        private static void SeedRichReplica<TWorld>(Replicator<TWorld> replica, Schema schema)
+            where TWorld : struct, IWorldType
+        {
+            using var staged = Stage(schema, RichSnapshot());
+            Assert.That(replica.Apply(staged), Is.EqualTo(ApplyResult.Success));
+            var gids = RichGids();
+            Assert.That(gids[0].TryUnpack<TWorld>(out var first), Is.True);
+            Assert.That(gids[1].TryUnpack<TWorld>(out var second), Is.True);
+            Assert.That(gids[2].TryUnpack<TWorld>(out var source), Is.True);
+            World<TWorld>.Components<World<TWorld>.Multi<Item>>.Instance.Disable(first);
+            World<TWorld>.Components<World<TWorld>.Link<ParentLink>>.Instance.Disable(source);
+            World<TWorld>.Components<World<TWorld>.Links<TargetLinks>>.Instance.Disable(source);
+
+            Assert.That(first.Has<ReplicatedTag>(), Is.True);
+            Assert.That(first.Has<StateTag>(), Is.True);
+            Assert.That(first.Read<Value>().Number, Is.EqualTo(17));
+            Assert.That(World<TWorld>.Components<Value>.Instance.HasDisabled(first), Is.True);
+            var multi = first.Read<World<TWorld>.Multi<Item>>().AsReadOnlySpan;
+            Assert.That(multi.Length, Is.EqualTo(2));
+            Assert.That(multi[0].Number, Is.EqualTo(2));
+            Assert.That(multi[1].Number, Is.EqualTo(1));
+            Assert.That(World<TWorld>.Components<World<TWorld>.Multi<Item>>.Instance.HasDisabled(first), Is.True);
+            Assert.That(second.Read<Value>().Number, Is.EqualTo(23));
+            Assert.That(source.IsDisabled, Is.True);
+            Assert.That(source.Read<World<TWorld>.Link<ParentLink>>().Value, Is.EqualTo(gids[1]));
+            Assert.That(World<TWorld>.Components<World<TWorld>.Link<ParentLink>>.Instance.HasDisabled(source), Is.True);
+            var links = source.Read<World<TWorld>.Links<TargetLinks>>().AsReadOnlySpan;
+            Assert.That(links.Length, Is.EqualTo(2));
+            Assert.That(links[0].Value, Is.EqualTo(gids[0]));
+            Assert.That(links[1].Value, Is.EqualTo(gids[1]));
+            Assert.That(World<TWorld>.Components<World<TWorld>.Links<TargetLinks>>.Instance.HasDisabled(source), Is.True);
+        }
+
+        private static void SeedRichAuthority<TWorld>() where TWorld : struct, IWorldType
+        {
+            var first = World<TWorld>.NewEntityInChunk<NetEntity>(Chunk);
+            first.Set<ReplicatedTag>();
+            first.Set(new Value { Number = 17 });
+            World<TWorld>.Components<Value>.Instance.Disable(first);
+            first.Set<StateTag>();
+            ref var values = ref first.Add<World<TWorld>.Multi<Item>>();
+            values.Add(new Item { Number = 2 });
+            values.Add(new Item { Number = 1 });
+            World<TWorld>.Components<World<TWorld>.Multi<Item>>.Instance.Disable(first);
+
+            var second = World<TWorld>.NewEntityInChunk<NetEntity>(Chunk);
+            second.Set<ReplicatedTag>();
+            second.Set(new Value { Number = 23 });
+
+            var source = World<TWorld>.NewEntityInChunk<NetEntity>(Chunk);
+            source.Set<ReplicatedTag>();
+            source.Set(new Value { Number = 42 });
+            source.Set(new World<TWorld>.Link<ParentLink>(second));
+            ref var links = ref source.Add<World<TWorld>.Links<TargetLinks>>();
+            links.Add(first);
+            links.Add(second);
+            World<TWorld>.Components<World<TWorld>.Link<ParentLink>>.Instance.Disable(source);
+            World<TWorld>.Components<World<TWorld>.Links<TargetLinks>>.Instance.Disable(source);
+            source.Disable();
+        }
+
+        private static FullSnapshotPayload RichSnapshot()
+        {
+            var gids = RichGids();
+            return Snapshot(
+                new SnapshotEntity
+                {
+                    Entity = Wire(gids[0]),
+                    KindId = Id(1),
+                    Records = new[]
+                    {
+                        ComponentRecord(17, RecordFlags.Disabled),
+                        TagRecord(),
+                        MultiRecord(2, 1)
+                    }
+                },
+                new SnapshotEntity
+                {
+                    Entity = Wire(gids[1]),
+                    KindId = Id(1),
+                    Records = new[] { ComponentRecord(23) }
+                },
+                new SnapshotEntity
+                {
+                    Entity = Wire(gids[2]),
+                    KindId = Id(1),
+                    Flags = EntityFlags.Disabled,
+                    Records = new[]
+                    {
+                        ComponentRecord(42),
+                        LinkRecord(gids[1]),
+                        LinksRecord(gids[0], gids[1])
+                    }
+                });
+        }
+
+        private static EntityGID[] RichGids()
+        {
+            var id = (Chunk << Const.ENTITIES_IN_CHUNK_SHIFT) + 64;
+            return new[]
+            {
+                new EntityGID(id, 1, Cluster),
+                new EntityGID(id + 1, 1, Cluster),
+                new EntityGID(id + 2, 1, Cluster)
+            };
+        }
+
+        private static SnapshotRecord ComponentRecord(int value, RecordFlags flags = 0) => new()
+        {
+            TypeId = Id(2), Kind = RecordKind.Component, Flags = flags, Version = 1, ElementCount = 1,
+            Payload = BitConverter.GetBytes(value)
+        };
+
+        private static SnapshotRecord TagRecord() => new()
+        {
+            TypeId = Id(3), Kind = RecordKind.Tag, Version = 1, ElementCount = 0, Payload = Array.Empty<byte>()
+        };
+
+        private static SnapshotRecord LinkRecord(EntityGID target) => new()
+        {
+            TypeId = Id(4), Kind = RecordKind.Link, Version = 1, ElementCount = 1, Payload = EntityBytes(target)
+        };
+
+        private static SnapshotRecord LinksRecord(params EntityGID[] targets)
+        {
+            var payload = new byte[targets.Length * 8];
+            for (var i = 0; i < targets.Length; i++) EntityBytes(targets[i]).CopyTo(payload, i * 8);
+            return new SnapshotRecord
+            {
+                TypeId = Id(5), Kind = RecordKind.Links, Version = 1, ElementCount = (uint)targets.Length, Payload = payload
+            };
+        }
+
+        private static SnapshotRecord MultiRecord(params int[] values)
+        {
+            var payload = new byte[values.Length * 8];
+            for (var i = 0; i < values.Length; i++)
+            {
+                BitConverter.TryWriteBytes(payload.AsSpan(i * 8, 4), 4);
+                BitConverter.TryWriteBytes(payload.AsSpan(i * 8 + 4, 4), values[i]);
+            }
+            return new SnapshotRecord
+            {
+                TypeId = Id(6), Kind = RecordKind.Multi, Version = 1, ElementCount = (uint)values.Length, Payload = payload
+            };
+        }
+
+        private static WireEntityId Wire(EntityGID entity) => new(entity.Id, entity.ClusterId, entity.Version);
 
         private static ChunkMapping[] Mapping() => new[] { new ChunkMapping { Chunk = Chunk, Cluster = Cluster, Role = 1 } };
         private static SnapshotEntity ValueSnapshot(EntityGID gid, int value) => new()
@@ -588,6 +856,26 @@ namespace UniGame.StaticEcs.Network.Tests
                 }
             }
         }
+
+        private static StagedPayload OversizedStage(Schema schema)
+        {
+            var lease = PacketLease.Rent(1);
+            lease.SetLength(0);
+            var staged = new StagedPayload(PacketKind.FullSnapshot, ref lease);
+            try
+            {
+                var entities = ArrayPool<StagedEntity>.Shared.Rent(ProtocolLimits.MaxEntities + 1);
+                staged.SetSnapshot(entities, ProtocolLimits.MaxEntities + 1, null, 0);
+                staged.BindSchema(schema.Hash);
+                return staged;
+            }
+            catch
+            {
+                staged.Dispose();
+                throw;
+            }
+        }
+
         private static byte[] EntityBytes(EntityGID entity)
         {
             var bytes = new byte[8];
@@ -608,14 +896,54 @@ namespace UniGame.StaticEcs.Network.Tests
             var values = new List<string>();
             foreach (var entity in World<TWorld>.Query().Entities(EntityStatusType.Any))
             {
-                var value = entity.Has<Value>() ? entity.Read<Value>().Number : int.MinValue;
-                var link = entity.Has<World<TWorld>.Link<ParentLink>>() ? entity.Read<World<TWorld>.Link<ParentLink>>().Value.Raw : 0UL;
-                var links = entity.Has<World<TWorld>.Links<TargetLinks>>() ? entity.Read<World<TWorld>.Links<TargetLinks>>().Length : -1;
-                var multi = entity.Has<World<TWorld>.Multi<Item>>() ? entity.Read<World<TWorld>.Multi<Item>>().Length : -1;
-                values.Add($"{entity.GID.Raw}:{entity.EntityType}:{entity.IsDisabled}:{entity.Has<ReplicatedTag>()}:{entity.Has<StateTag>()}:{value}:{link}:{links}:{multi}");
+                var fingerprint = new StringBuilder();
+                fingerprint.Append(entity.GID.Raw).Append(':').Append(entity.EntityType)
+                    .Append(":entityDisabled=").Append(entity.IsDisabled)
+                    .Append(":replicated=").Append(entity.Has<ReplicatedTag>())
+                    .Append(":tag=").Append(entity.Has<StateTag>());
+
+                if (entity.Has<Value>())
+                    fingerprint.Append(":value=").Append(entity.Read<Value>().Number)
+                        .Append(":valueDisabled=").Append(World<TWorld>.Components<Value>.Instance.HasDisabled(entity));
+                else fingerprint.Append(":value=absent");
+
+                if (entity.Has<World<TWorld>.Link<ParentLink>>())
+                    fingerprint.Append(":link=").Append(entity.Read<World<TWorld>.Link<ParentLink>>().Value.Raw)
+                        .Append(":linkDisabled=").Append(World<TWorld>.Components<World<TWorld>.Link<ParentLink>>.Instance.HasDisabled(entity));
+                else fingerprint.Append(":link=absent");
+
+                if (entity.Has<World<TWorld>.Links<TargetLinks>>())
+                {
+                    var links = entity.Read<World<TWorld>.Links<TargetLinks>>().AsReadOnlySpan;
+                    fingerprint.Append(":linksDisabled=").Append(World<TWorld>.Components<World<TWorld>.Links<TargetLinks>>.Instance.HasDisabled(entity))
+                        .Append(":links=[");
+                    for (var i = 0; i < links.Length; i++)
+                    {
+                        if (i > 0) fingerprint.Append(',');
+                        fingerprint.Append(links[i].Value.Raw);
+                    }
+                    fingerprint.Append(']');
+                }
+                else fingerprint.Append(":links=absent");
+
+                if (entity.Has<World<TWorld>.Multi<Item>>())
+                {
+                    var multi = entity.Read<World<TWorld>.Multi<Item>>().AsReadOnlySpan;
+                    fingerprint.Append(":multiDisabled=").Append(World<TWorld>.Components<World<TWorld>.Multi<Item>>.Instance.HasDisabled(entity))
+                        .Append(":multi=[");
+                    for (var i = 0; i < multi.Length; i++)
+                    {
+                        if (i > 0) fingerprint.Append(',');
+                        fingerprint.Append(multi[i].Number);
+                    }
+                    fingerprint.Append(']');
+                }
+                else fingerprint.Append(":multi=absent");
+
+                values.Add(fingerprint.ToString());
             }
             values.Sort(StringComparer.Ordinal);
-            return string.Join("|", values);
+            return $"chunk={Chunk}:owner={World<TWorld>.GetChunkOwner(Chunk)}:cluster={World<TWorld>.GetChunkClusterId(Chunk)}|{string.Join("|", values)}";
         }
         private static TypeId Id(int value) => new(new Guid(value, 0, 0, new byte[8]));
         private static CodecId Codec(int value) => new(new Guid(value, 1, 0, new byte[8]));
@@ -623,6 +951,8 @@ namespace UniGame.StaticEcs.Network.Tests
         private struct AuthorityWorld : IWorldType { }
         private struct AlternateAuthorityWorld : IWorldType { }
         private struct AllocationWorld : IWorldType { }
+        private struct CaptureFailureWorld : IWorldType { }
+        private struct HookWorld : IWorldType { }
         private struct ReplicaWorld : IWorldType { }
         private struct NetEntity : IEntityType { public byte Id() => 11; }
         private struct OtherEntity : IEntityType { public byte Id() => 12; }
@@ -630,13 +960,34 @@ namespace UniGame.StaticEcs.Network.Tests
         private struct ParentLink : ILinkType { }
         private struct TargetLinks : ILinksType { }
         private struct Value : IComponent, IDisableable { public int Number; }
+        private struct HookComponent : IComponent
+        {
+            internal static bool ThrowOnAdd;
+            public int Number;
+            public void OnAdd<TWorld>(World<TWorld>.Entity self) where TWorld : struct, IWorldType
+            {
+                if (ThrowOnAdd) throw new InvalidOperationException("component OnAdd hook");
+            }
+        }
         private struct Item : IMultiComponent { public int Number; }
         private struct ValueCodec : ICodec<Value>
         {
             internal static int Reads;
             internal static int ThrowOnReadCall;
-            public bool TryWrite(in Value value, Span<byte> destination, out int written) { if (destination.Length < 4) { written = 0; return false; } BitConverter.TryWriteBytes(destination, value.Number); written = 4; return true; }
+            internal static bool FailWrites;
+            internal static bool ThrowOnWrite;
+            public bool TryWrite(in Value value, Span<byte> destination, out int written)
+            {
+                if (ThrowOnWrite) throw new InvalidOperationException("codec write hook");
+                if (FailWrites || destination.Length < 4) { written = 0; return false; }
+                BitConverter.TryWriteBytes(destination, value.Number); written = 4; return true;
+            }
             public bool TryRead(ReadOnlySpan<byte> source, out Value value, out int read) { if (++Reads == ThrowOnReadCall) throw new InvalidOperationException("codec hook"); if (source.Length != 4) { value = default; read = 0; return false; } value = new Value { Number = BitConverter.ToInt32(source) }; read = 4; return true; }
+        }
+        private struct HookCodec : ICodec<HookComponent>
+        {
+            public bool TryWrite(in HookComponent value, Span<byte> destination, out int written) { if (destination.Length < 4) { written = 0; return false; } BitConverter.TryWriteBytes(destination, value.Number); written = 4; return true; }
+            public bool TryRead(ReadOnlySpan<byte> source, out HookComponent value, out int read) { if (source.Length != 4) { value = default; read = 0; return false; } value = new HookComponent { Number = BitConverter.ToInt32(source) }; read = 4; return true; }
         }
         private struct ItemCodec : ICodec<Item>
         {
