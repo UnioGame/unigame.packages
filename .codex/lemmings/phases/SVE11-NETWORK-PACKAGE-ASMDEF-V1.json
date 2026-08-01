@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-PACKAGE-ASMDEF-V1",
+  "baselineSha": "99855b20be3ebd0e776aad4a03b3054819f596d0",
+  "integrationBranch": "codex/sve11-network-package",
+  "contractsFrozen": true,
+  "contracts": [
+    ".codex/lemmings/contracts/SVE11-network-package-asmdef.md"
+  ],
+  "baselineReview": {
+    "status": "Accepted",
+    "reviewerModel": "gpt-5.6-sol:high",
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-PACKAGE-ASMDEF-V1.baseline.json"
+  },
+  "close": {
+    "mergeCommits": [],
+    "phaseValidation": []
+  }
+}

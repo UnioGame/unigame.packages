@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-PACKAGE-ASMDEF-V1",
+  "baselineSha": "99855b20be3ebd0e776aad4a03b3054819f596d0",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [],
+  "evidence": [
+    "Protocol and Runtime compile as separate unsigned asmdef assemblies.",
+    "Runtime directly consumes internal Protocol hashing and payload preflight helpers.",
+    "A Protocol-side InternalsVisibleTo declaration for unigame.staticecs.network is the minimal fix without public API expansion.",
+    "Real Unity recompilation followed by focused EditMode tests is the required integration gate."
+  ]
+}
