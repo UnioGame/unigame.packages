@@ -106,3 +106,6 @@
 [submodule "unigame.unitycli"]
 	path = unigame.unitycli
 	url = https://github.com/UnioGame/unigame.unitycli.mcp.git
+[submodule "unigame.ai.lemmings"]
+	path = unigame.ai.lemmings
+	url = https://github.com/UnioGame/unigame.ai.lemmings.git
