@@ -66,16 +66,18 @@ namespace UniGame.StaticEcs.Network
     /// <summary>Contains an immutable deterministic network schema.</summary>
     public sealed class Schema
     {
-        internal Schema(TypeId hash, SchemaEntry[] entries, Type worldType) { Hash = hash; Entries = entries; WorldType = worldType; }
+        private readonly SchemaEntry[] _entries;
+        internal Schema(TypeId hash, SchemaEntry[] entries, Type worldType) { Hash = hash; _entries = entries; WorldType = worldType; }
         /// <summary>Gets the first 16 bytes of the canonical manifest SHA-256.</summary>
         public TypeId Hash { get; }
         /// <summary>Gets manifest records ordered by kind then RFC UUID bytes.</summary>
-        public IReadOnlyList<SchemaEntry> Entries { get; }
+        public IReadOnlyList<SchemaEntry> Entries => _entries;
         internal Type WorldType { get; }
+        internal ReadOnlySpan<SchemaEntry> RetainedEntries => _entries;
         /// <summary>Finds a schema record by stable identifier.</summary>
         public bool TryGet(TypeId typeId, out SchemaEntry entry)
         {
-            for (var i = 0; i < Entries.Count; i++) if (Entries[i].TypeId == typeId) { entry = Entries[i]; return true; }
+            for (var i = 0; i < _entries.Length; i++) if (_entries[i].TypeId == typeId) { entry = _entries[i]; return true; }
             entry = null; return false;
         }
 

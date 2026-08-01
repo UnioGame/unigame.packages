@@ -9,6 +9,8 @@ Transport-neutral protocol and replication foundations for deterministic Static 
 - Rejects unknown flags and enum values, unsupported transforms, malformed lengths, invalid hashes, reserved fields, and non-canonical ordering before ECS mutation.
 - Binds schema-validated command and snapshot stages to the exact schema identity that accepted them.
 - Dispatches commands through retained codecs and authorizers, then emits typed accepted or rejected Static ECS events.
+- Captures deterministic full snapshots from tagged authority entities and applies them through retained AOT-safe invokers to an exact replica ledger.
+- Preflights the complete snapshot, mapped topology, physical occupants, segment kinds, schema records, flags, codecs, and relation targets before any ECS mutation.
 
 ## Usage
 
@@ -43,6 +45,25 @@ finally
 
 Create a `CommandDispatcher<TWorld>` from the same frozen schema and pass it only staged command batches. The dispatcher derives sequence and client tick from the stage, accepts the trusted peer id from the endpoint, and returns an exhaustive `DispatchResult` without transferring stage ownership.
 
+Register the negotiated chunks before creating a scope. The wire map always uses role `1` (`AuthoritySelf`); the local scope selects whether those chunks must be `Self` or `Other` owned.
+
+```csharp
+var map = new[]
+{
+    new ChunkMapping { Chunk = 7, Cluster = 2, Role = 1 }
+};
+
+using var scope = new ReplicaScope<ServerWorld>(ScopeRole.Authority, map);
+using var replicator = new Replicator<ServerWorld>(schema, scope);
+
+if (replicator.Capture(out var snapshot) == CaptureResult.Success)
+{
+    // The caller owns snapshot and must transfer it or dispose it.
+}
+```
+
+On a replica world, stage the decoded `FullSnapshot` with the equivalent replica-world schema and pass it to `Replicator<TWorld>.Apply`. The scope ledger owns only exact entity GIDs created by successful applies. Missing ledger entities are despawned by later complete snapshots; unrelated entities never enter the ledger.
+
 ## Configuration
 
 - Runtime limits may lower, but never raise, the constants in `ProtocolLimits`.
@@ -50,5 +71,9 @@ Create a `CommandDispatcher<TWorld>` from the same frozen schema and pass it onl
 - Version one accepts only `NoOpTransform` with transform id zero.
 - Schema values, markers, and commands must be unmanaged. Links and multi-value registrations are capped at 32,768 elements.
 - `ReplicatedTag` is control state and cannot be registered as an ordinary schema record.
+- Authority capture includes only `ReplicatedTag` entities in the exact mapped chunks. Every relation target must appear in the same snapshot.
+- Replica chunks must be empty when `ReplicaScope<TWorld>` is created. Scope construction and replication never register, free, load, unload, or remap chunks.
+- Version one preserves disabled entities and ordinary disableable components. Disabled tags, links, link sets, and multi-components are rejected as `DisabledUnsupported`.
+- Apply validates the full snapshot before mutation. Typed lifecycle hooks and user codecs run directly; exceptions propagate, and no rollback guarantee is made after mutation starts.
 - Explicitly register both `CommandAcceptedEvent<T>` and `CommandRejectedEvent<T>` closed generic event types before initializing the world. A missing type returns `ConfigurationError`; a registered result event without a receiver returns `NoReceiver`.
 - See the repository [Static ECS knowledge base](../../../docs/knowledge/static-ecs/) for world and marker lifecycle.
