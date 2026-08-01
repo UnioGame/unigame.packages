@@ -50,11 +50,28 @@ namespace UniGame.StaticEcs.Network
     public enum TransportState
     {
         /// <summary>The transport accepts packets.</summary>
-        Connected,
+        Connected = 0,
         /// <summary>The transport faulted and drained ownership.</summary>
-        Faulted,
+        Faulted = 1,
         /// <summary>The transport is disposed.</summary>
-        Disposed
+        Disposed = 2,
+        /// <summary>The connected peer disposed its endpoint.</summary>
+        Closed = 3
+    }
+
+    /// <summary>Identifies the immutable cause of the current transport state.</summary>
+    public enum TransportError : byte
+    {
+        /// <summary>The connected transport has no error.</summary>
+        None = 0,
+        /// <summary>A reliable packet exceeded the bounded receive queue.</summary>
+        QueueOverflow = 1,
+        /// <summary>The connected peer disposed its endpoint.</summary>
+        RemoteClosed = 2,
+        /// <summary>An unreliable packet or channel violated the transport contract.</summary>
+        InvalidPacket = 3,
+        /// <summary>The local endpoint was disposed.</summary>
+        Disposed = 4
     }
 
     /// <summary>Transfers owned packets across a delivery boundary.</summary>
@@ -62,33 +79,56 @@ namespace UniGame.StaticEcs.Network
     {
         /// <summary>Gets transport lifecycle state.</summary>
         TransportState State { get; }
-        /// <summary>Gets the queue-overflow fault reason when present.</summary>
-        ResyncReason? FaultReason { get; }
+        /// <summary>Gets the immutable cause of the current transport state.</summary>
+        TransportError Error { get; }
         /// <summary>Consumes a valid lease and reports whether it entered the delivery queue.</summary>
         bool TrySend(Channel channel, ref PacketLease packet);
         /// <summary>Transfers the next received lease to the caller.</summary>
         bool TryReceive(out Channel channel, out PacketLease packet);
     }
 
-    /// <summary>Creates bounded in-memory transports with deterministic delivery semantics.</summary>
+    /// <summary>Creates bounded, single-thread-affine in-memory transports with deterministic delivery semantics.</summary>
     public sealed class MemoryTransport : ITransport
     {
         private readonly LinkedList<Item> _incoming = new();
         private readonly int _capacity;
         private MemoryTransport _peer;
         private uint _latestUnreliable;
-        private MemoryTransport(int capacity) { _capacity = capacity; State = TransportState.Connected; }
+        private MemoryTransport(int capacity) { _capacity = capacity; State = TransportState.Connected; Error = TransportError.None; }
         /// <summary>Gets transport lifecycle state.</summary>
         public TransportState State { get; private set; }
-        /// <summary>Gets a queue-overflow fault reason when present.</summary>
-        public ResyncReason? FaultReason { get; private set; }
+        /// <summary>Gets the immutable cause of the current transport state.</summary>
+        public TransportError Error { get; private set; }
         /// <summary>Creates a connected pair with a bounded receive queue.</summary>
         public static void CreatePair(int queueCapacity, out MemoryTransport left, out MemoryTransport right) { if (queueCapacity <= 0) throw new ArgumentOutOfRangeException(nameof(queueCapacity)); left = new MemoryTransport(queueCapacity); right = new MemoryTransport(queueCapacity); left._peer = right; right._peer = left; }
         /// <inheritdoc />
         public bool TrySend(Channel channel, ref PacketLease packet)
         {
             var owned = PacketLease.Transfer(ref packet);
-            if (State != TransportState.Connected || _peer == null || _peer.State != TransportState.Connected) { owned.Dispose(); return false; }
+            if (State != TransportState.Connected)
+            {
+                owned.Dispose();
+                return false;
+            }
+
+            var peer = _peer;
+            if (peer == null || peer.State != TransportState.Connected)
+            {
+                owned.Dispose();
+                return false;
+            }
+
+            if (channel != Channel.ReliableOrdered && channel != Channel.UnreliableSequenced)
+            {
+                owned.Dispose();
+                TerminatePair(
+                    TransportState.Faulted,
+                    TransportError.InvalidPacket,
+                    TransportState.Closed,
+                    TransportError.RemoteClosed);
+                return false;
+            }
+
             uint sequence = 0;
             if (channel == Channel.UnreliableSequenced)
             {
@@ -97,43 +137,90 @@ namespace UniGame.StaticEcs.Network
                     owned.Length != PacketHeader.Size + header.WirePayloadLength)
                 {
                     owned.Dispose();
+                    TerminatePair(
+                        TransportState.Faulted,
+                        TransportError.InvalidPacket,
+                        TransportState.Closed,
+                        TransportError.RemoteClosed);
                     return false;
                 }
 
                 sequence = header.PacketSequence;
-                if (sequence <= _peer._latestUnreliable)
+                if (sequence <= peer._latestUnreliable)
                 {
                     owned.Dispose();
                     return false;
                 }
 
-                var node = _peer._incoming.First;
+                var node = peer._incoming.First;
                 while (node != null)
                 {
                     var next = node.Next;
                     if (node.Value.Channel == Channel.UnreliableSequenced)
                     {
-                        _peer._incoming.Remove(node);
+                        peer._incoming.Remove(node);
                         node.Value.Packet.Dispose();
                     }
                     node = next;
                 }
             }
 
-            if (_peer._incoming.Count >= _peer._capacity)
+            if (peer._incoming.Count >= peer._capacity)
             {
                 owned.Dispose();
-                if (channel == Channel.ReliableOrdered) { Fault(ResyncReason.QueueOverflow); _peer.Fault(ResyncReason.QueueOverflow); }
+                if (channel == Channel.ReliableOrdered)
+                    TerminatePair(
+                        TransportState.Faulted,
+                        TransportError.QueueOverflow,
+                        TransportState.Faulted,
+                        TransportError.QueueOverflow);
                 return false;
             }
-            if (channel == Channel.UnreliableSequenced) _peer._latestUnreliable = sequence;
-            _peer._incoming.AddLast(new Item(channel, owned)); return true;
+            if (channel == Channel.UnreliableSequenced) peer._latestUnreliable = sequence;
+            peer._incoming.AddLast(new Item(channel, owned)); return true;
         }
         /// <inheritdoc />
-        public bool TryReceive(out Channel channel, out PacketLease packet) { if (_incoming.Count == 0) { channel = default; packet = null; return false; } var item = _incoming.First.Value; _incoming.RemoveFirst(); channel = item.Channel; packet = item.Packet; return true; }
+        public bool TryReceive(out Channel channel, out PacketLease packet) { if (State != TransportState.Connected || _incoming.Count == 0) { channel = default; packet = null; return false; } var item = _incoming.First.Value; _incoming.RemoveFirst(); channel = item.Channel; packet = item.Packet; return true; }
         /// <summary>Disposes the transport and drains every queued lease.</summary>
-        public void Dispose() { if (State == TransportState.Disposed) return; Drain(); State = TransportState.Disposed; _peer = null; }
-        private void Fault(ResyncReason reason) { if (State != TransportState.Connected) return; FaultReason = reason; State = TransportState.Faulted; Drain(); }
+        public void Dispose()
+        {
+            if (State == TransportState.Disposed) return;
+            if (State == TransportState.Connected)
+            {
+                TerminatePair(
+                    TransportState.Disposed,
+                    TransportError.Disposed,
+                    TransportState.Closed,
+                    TransportError.RemoteClosed);
+                return;
+            }
+
+            _peer = null;
+            State = TransportState.Disposed;
+            Error = TransportError.Disposed;
+        }
+
+        private void TerminatePair(
+            TransportState localState,
+            TransportError localError,
+            TransportState peerState,
+            TransportError peerError)
+        {
+            var peer = _peer;
+            _peer = null;
+            if (peer != null) peer._peer = null;
+            TransitionFromConnected(localState, localError);
+            peer?.TransitionFromConnected(peerState, peerError);
+        }
+
+        private void TransitionFromConnected(TransportState state, TransportError error)
+        {
+            if (State != TransportState.Connected) return;
+            State = state;
+            Error = error;
+            Drain();
+        }
+
         private void Drain() { while (_incoming.Count > 0) { var packet = _incoming.First.Value.Packet; _incoming.RemoveFirst(); packet.Dispose(); } }
         private readonly struct Item { internal Item(Channel channel, PacketLease packet) { Channel = channel; Packet = packet; } internal Channel Channel { get; } internal PacketLease Packet { get; } }
     }

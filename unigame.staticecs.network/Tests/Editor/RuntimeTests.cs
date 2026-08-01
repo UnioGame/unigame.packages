@@ -49,16 +49,154 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
-        public void TransportTransfersOwnershipOrdersReliablePacketsAndFaultsOnOverflow()
+        public void TransportStateAndErrorValuesAreStable()
         {
-            MemoryTransport.CreatePair(2, out var sender, out var receiver); var first = Lease(1); var second = Lease(2);
-            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref first), Is.True); Assert.That(first, Is.Null);
-            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref second), Is.True);
-            Assert.That(receiver.TryReceive(out _, out var received), Is.True); Assert.That(received.Span[0], Is.EqualTo(1)); received.Dispose();
-            Assert.That(receiver.TryReceive(out _, out received), Is.True); Assert.That(received.Span[0], Is.EqualTo(2)); received.Dispose(); sender.Dispose(); receiver.Dispose();
+            Assert.That((int)TransportState.Connected, Is.Zero);
+            Assert.That((int)TransportState.Faulted, Is.EqualTo(1));
+            Assert.That((int)TransportState.Disposed, Is.EqualTo(2));
+            Assert.That((int)TransportState.Closed, Is.EqualTo(3));
+            Assert.That((byte)TransportError.None, Is.Zero);
+            Assert.That((byte)TransportError.QueueOverflow, Is.EqualTo(1));
+            Assert.That((byte)TransportError.RemoteClosed, Is.EqualTo(2));
+            Assert.That((byte)TransportError.InvalidPacket, Is.EqualTo(3));
+            Assert.That((byte)TransportError.Disposed, Is.EqualTo(4));
 
-            MemoryTransport.CreatePair(1, out sender, out receiver); first = Lease(1); second = Lease(2); sender.TrySend(Channel.ReliableOrdered, ref first);
-            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref second), Is.False); Assert.That(sender.State, Is.EqualTo(TransportState.Faulted)); Assert.That(receiver.State, Is.EqualTo(TransportState.Faulted)); sender.Dispose(); receiver.Dispose();
+            MemoryTransport.CreatePair(1, out var left, out var right);
+            AssertTransport(left, TransportState.Connected, TransportError.None);
+            AssertTransport(right, TransportState.Connected, TransportError.None);
+            left.Dispose();
+            right.Dispose();
+        }
+
+        [Test]
+        public void ReliableTransportTransfersOwnershipAndPreservesOrdering()
+        {
+            MemoryTransport.CreatePair(2, out var sender, out var receiver);
+            var first = Lease(1);
+            var second = Lease(2);
+            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref first), Is.True);
+            Assert.That(first, Is.Null);
+            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref second), Is.True);
+            Assert.That(receiver.TryReceive(out var channel, out var received), Is.True);
+            Assert.That(channel, Is.EqualTo(Channel.ReliableOrdered));
+            Assert.That(received.Span[0], Is.EqualTo(1));
+            received.Dispose();
+            Assert.That(receiver.TryReceive(out channel, out received), Is.True);
+            Assert.That(channel, Is.EqualTo(Channel.ReliableOrdered));
+            Assert.That(received.Span[0], Is.EqualTo(2));
+            received.Dispose();
+            sender.Dispose();
+            receiver.Dispose();
+        }
+
+        [Test]
+        public void DisposeClosesPeerDrainsBothQueuesAndIsIdempotent()
+        {
+            MemoryTransport.CreatePair(2, out var left, out var right);
+            var toRight = Lease(1);
+            var toRightAlias = toRight;
+            var toLeft = HeaderPacket(PacketKind.FullSnapshot, 0, 1);
+            var toLeftAlias = toLeft;
+            Assert.That(left.TrySend(Channel.ReliableOrdered, ref toRight), Is.True);
+            Assert.That(right.TrySend(Channel.UnreliableSequenced, ref toLeft), Is.True);
+
+            left.Dispose();
+
+            AssertTransport(left, TransportState.Disposed, TransportError.Disposed);
+            AssertTransport(right, TransportState.Closed, TransportError.RemoteClosed);
+            Assert.That(toRightAlias.IsValid, Is.False);
+            Assert.That(toLeftAlias.IsValid, Is.False);
+            AssertTerminalReceive(left);
+            AssertTerminalReceive(right);
+
+            var afterClose = Lease(3);
+            var afterCloseAlias = afterClose;
+            Assert.That(right.TrySend(Channel.ReliableOrdered, ref afterClose), Is.False);
+            Assert.That(afterClose, Is.Null);
+            Assert.That(afterCloseAlias.IsValid, Is.False);
+            AssertTransport(right, TransportState.Closed, TransportError.RemoteClosed);
+
+            left.Dispose();
+            AssertTransport(left, TransportState.Disposed, TransportError.Disposed);
+            right.Dispose();
+            right.Dispose();
+            AssertTransport(right, TransportState.Disposed, TransportError.Disposed);
+            AssertTransport(left, TransportState.Disposed, TransportError.Disposed);
+        }
+
+        [Test]
+        public void ReliableOverflowFaultsBothEndpointsAndDrainsBothQueues()
+        {
+            MemoryTransport.CreatePair(1, out var sender, out var receiver);
+            var queuedAtReceiver = Lease(1);
+            var receiverAlias = queuedAtReceiver;
+            var queuedAtSender = HeaderPacket(PacketKind.FullSnapshot, 0, 1);
+            var senderAlias = queuedAtSender;
+            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref queuedAtReceiver), Is.True);
+            Assert.That(receiver.TrySend(Channel.UnreliableSequenced, ref queuedAtSender), Is.True);
+
+            var trigger = Lease(2);
+            var triggerAlias = trigger;
+            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref trigger), Is.False);
+
+            Assert.That(trigger, Is.Null);
+            Assert.That(triggerAlias.IsValid, Is.False);
+            Assert.That(receiverAlias.IsValid, Is.False);
+            Assert.That(senderAlias.IsValid, Is.False);
+            AssertTransport(sender, TransportState.Faulted, TransportError.QueueOverflow);
+            AssertTransport(receiver, TransportState.Faulted, TransportError.QueueOverflow);
+            AssertTerminalReceive(sender);
+            AssertTerminalReceive(receiver);
+
+            var afterFault = Lease(3);
+            var afterFaultAlias = afterFault;
+            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref afterFault), Is.False);
+            Assert.That(afterFault, Is.Null);
+            Assert.That(afterFaultAlias.IsValid, Is.False);
+            AssertTransport(sender, TransportState.Faulted, TransportError.QueueOverflow);
+
+            sender.Dispose();
+            AssertTransport(sender, TransportState.Disposed, TransportError.Disposed);
+            AssertTransport(receiver, TransportState.Faulted, TransportError.QueueOverflow);
+            receiver.Dispose();
+        }
+
+        [Test]
+        public void DisposedSendConsumesLeaseAndPreservesTerminalState()
+        {
+            MemoryTransport.CreatePair(1, out var sender, out var receiver);
+            sender.Dispose();
+            var packet = Lease(1);
+            var alias = packet;
+
+            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref packet), Is.False);
+
+            Assert.That(packet, Is.Null);
+            Assert.That(alias.IsValid, Is.False);
+            AssertTransport(sender, TransportState.Disposed, TransportError.Disposed);
+            AssertTransport(receiver, TransportState.Closed, TransportError.RemoteClosed);
+            receiver.Dispose();
+        }
+
+        [Test]
+        public void InvalidLeaseThrowsBeforeStateOrChannelMutation()
+        {
+            MemoryTransport.CreatePair(1, out var sender, out var receiver);
+            PacketLease missing = null;
+            Assert.Throws<InvalidOperationException>(
+                () => sender.TrySend((Channel)99, ref missing));
+            AssertTransport(sender, TransportState.Connected, TransportError.None);
+            AssertTransport(receiver, TransportState.Connected, TransportError.None);
+
+            var returned = Lease(1);
+            returned.Dispose();
+            Assert.Throws<InvalidOperationException>(
+                () => sender.TrySend(Channel.ReliableOrdered, ref returned));
+            AssertTransport(sender, TransportState.Connected, TransportError.None);
+            AssertTransport(receiver, TransportState.Connected, TransportError.None);
+
+            sender.Dispose();
+            receiver.Dispose();
         }
 
         [Test]
@@ -295,15 +433,96 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
-        public void UnreliableSequencedRetainsOnlyLatestAndRejectsMalformedOrZeroSequence()
+        public void UnreliableSequencedKeepsLatestAndRejectsStaleWithoutFault()
         {
-            MemoryTransport.CreatePair(4, out var sender, out var receiver); var reliable = HeaderPacket(PacketKind.Ack, PacketFlags.ReliableOrdered, 1); sender.TrySend(Channel.ReliableOrdered, ref reliable);
-            var first = HeaderPacket(PacketKind.FullSnapshot, 0, 1); var firstAlias = first; Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref first), Is.True);
-            var latest = HeaderPacket(PacketKind.FullSnapshot, 0, 2); Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref latest), Is.True); Assert.That(firstAlias.IsValid, Is.False); Assert.Throws<InvalidOperationException>(() => { var _ = firstAlias.Span; });
-            Assert.That(receiver.TryReceive(out var channel, out var received), Is.True); Assert.That(channel, Is.EqualTo(Channel.ReliableOrdered)); received.Dispose();
-            Assert.That(receiver.TryReceive(out channel, out received), Is.True); Assert.That(channel, Is.EqualTo(Channel.UnreliableSequenced)); PacketHeader.TryRead(received.Span, out var header); Assert.That(header.PacketSequence, Is.EqualTo(2)); received.Dispose();
-            var zero = HeaderPacket(PacketKind.FullSnapshot, 0, 0); var zeroAlias = zero; Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref zero), Is.False); Assert.That(zeroAlias.IsValid, Is.False);
-            var malformed = Lease(1); var malformedAlias = malformed; Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref malformed), Is.False); Assert.That(malformedAlias.IsValid, Is.False); sender.Dispose(); receiver.Dispose();
+            MemoryTransport.CreatePair(2, out var sender, out var receiver);
+            var reliable = Lease(9);
+            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref reliable), Is.True);
+            var first = HeaderPacket(PacketKind.FullSnapshot, 0, 1);
+            Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref first), Is.True);
+            var latest = HeaderPacket(PacketKind.FullSnapshot, 0, 2);
+            Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref latest), Is.True);
+
+            var equal = HeaderPacket(PacketKind.FullSnapshot, 0, 2);
+            var equalAlias = equal;
+            Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref equal), Is.False);
+            var stale = HeaderPacket(PacketKind.FullSnapshot, 0, 1);
+            var staleAlias = stale;
+            Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref stale), Is.False);
+
+            Assert.That(equalAlias.IsValid, Is.False);
+            Assert.That(staleAlias.IsValid, Is.False);
+            AssertTransport(sender, TransportState.Connected, TransportError.None);
+            AssertTransport(receiver, TransportState.Connected, TransportError.None);
+            Assert.That(receiver.TryReceive(out var channel, out var received), Is.True);
+            Assert.That(channel, Is.EqualTo(Channel.ReliableOrdered));
+            Assert.That(received.Span[0], Is.EqualTo(9));
+            received.Dispose();
+            Assert.That(receiver.TryReceive(out channel, out received), Is.True);
+            Assert.That(channel, Is.EqualTo(Channel.UnreliableSequenced));
+            Assert.That(PacketHeader.TryRead(received.Span, out var header), Is.True);
+            Assert.That(header.PacketSequence, Is.EqualTo(2));
+            received.Dispose();
+            sender.Dispose();
+            receiver.Dispose();
+        }
+
+        [Test]
+        public void UnreliableCapacityRejectionIsLossyAndPreservesReliableQueue()
+        {
+            MemoryTransport.CreatePair(1, out var sender, out var receiver);
+            var reliable = Lease(7);
+            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref reliable), Is.True);
+            var snapshot = HeaderPacket(PacketKind.FullSnapshot, 0, 1);
+            var snapshotAlias = snapshot;
+
+            Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref snapshot), Is.False);
+
+            Assert.That(snapshotAlias.IsValid, Is.False);
+            AssertTransport(sender, TransportState.Connected, TransportError.None);
+            AssertTransport(receiver, TransportState.Connected, TransportError.None);
+            Assert.That(receiver.TryReceive(out var channel, out var received), Is.True);
+            Assert.That(channel, Is.EqualTo(Channel.ReliableOrdered));
+            Assert.That(received.Span[0], Is.EqualTo(7));
+            received.Dispose();
+            sender.Dispose();
+            receiver.Dispose();
+        }
+
+        [Test]
+        public void InvalidUnreliablePacketsFaultSenderAndClosePeer()
+        {
+            var invalidPackets = new Func<PacketLease>[]
+            {
+                () => Lease(1),
+                CorruptSnapshotPacket,
+                InvalidSnapshotFlagsPacket,
+                () => HeaderPacket(PacketKind.Ack, PacketFlags.ReliableOrdered, 1),
+                () => HeaderPacket(PacketKind.FullSnapshot, 0, 0),
+                InconsistentSnapshotLengthPacket
+            };
+
+            for (var i = 0; i < invalidPackets.Length; i++)
+                AssertInvalidUnreliable(invalidPackets[i]());
+        }
+
+        [Test]
+        public void UndefinedChannelFaultsSenderAndClosesPeer()
+        {
+            MemoryTransport.CreatePair(1, out var sender, out var receiver);
+            var packet = Lease(1);
+            var alias = packet;
+
+            Assert.That(sender.TrySend((Channel)99, ref packet), Is.False);
+
+            Assert.That(packet, Is.Null);
+            Assert.That(alias.IsValid, Is.False);
+            AssertTransport(sender, TransportState.Faulted, TransportError.InvalidPacket);
+            AssertTransport(receiver, TransportState.Closed, TransportError.RemoteClosed);
+            AssertTerminalReceive(sender);
+            AssertTerminalReceive(receiver);
+            sender.Dispose();
+            receiver.Dispose();
         }
 
         [Test]
@@ -332,6 +551,36 @@ namespace UniGame.StaticEcs.Network.Tests
         private static CodecId Codec(int value) => new(new Guid(value, 0, 0, new byte[8]));
         private static PacketHeader Header(PacketKind kind, PacketFlags flags, uint sequence, TypeId schema) => new() { Kind = kind, Flags = flags, PacketSequence = sequence, BaselineTick = PacketHeader.NoneTick, SchemaHash = schema };
         private static PacketLease HeaderPacket(PacketKind kind, PacketFlags flags, uint sequence) { var lease = PacketLease.Rent(PacketHeader.Size); lease.SetLength(PacketHeader.Size); Header(kind, flags, sequence, TypeId.Empty).TryWrite(lease.Span); return lease; }
+        private static PacketLease CorruptSnapshotPacket() { var lease = HeaderPacket(PacketKind.FullSnapshot, 0, 1); lease.Span[0] ^= 1; return lease; }
+        private static PacketLease InvalidSnapshotFlagsPacket() { var lease = HeaderPacket(PacketKind.FullSnapshot, 0, 1); lease.Span[9] = (byte)PacketFlags.ReliableOrdered; return lease; }
+        private static PacketLease InconsistentSnapshotLengthPacket() { var lease = PacketLease.Rent(PacketHeader.Size); lease.SetLength(PacketHeader.Size); var header = Header(PacketKind.FullSnapshot, 0, 1, TypeId.Empty); header.WirePayloadLength = 1; header.DecodedPayloadLength = 1; Assert.That(header.TryWrite(lease.Span), Is.True); return lease; }
+        private static void AssertInvalidUnreliable(PacketLease packet)
+        {
+            MemoryTransport.CreatePair(2, out var sender, out var receiver);
+            var queuedAtReceiver = Lease(4);
+            var queuedAtSender = Lease(5);
+            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref queuedAtReceiver), Is.True);
+            Assert.That(receiver.TrySend(Channel.ReliableOrdered, ref queuedAtSender), Is.True);
+            var alias = packet;
+
+            Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref packet), Is.False);
+
+            Assert.That(packet, Is.Null);
+            Assert.That(alias.IsValid, Is.False);
+            AssertTransport(sender, TransportState.Faulted, TransportError.InvalidPacket);
+            AssertTransport(receiver, TransportState.Closed, TransportError.RemoteClosed);
+            AssertTerminalReceive(sender);
+            AssertTerminalReceive(receiver);
+
+            var afterClose = Lease(6);
+            Assert.That(receiver.TrySend(Channel.ReliableOrdered, ref afterClose), Is.False);
+            Assert.That(afterClose, Is.Null);
+            AssertTransport(receiver, TransportState.Closed, TransportError.RemoteClosed);
+            sender.Dispose();
+            receiver.Dispose();
+        }
+        private static void AssertTransport(MemoryTransport transport, TransportState state, TransportError error) { Assert.That(transport.State, Is.EqualTo(state)); Assert.That(transport.Error, Is.EqualTo(error)); }
+        private static void AssertTerminalReceive(MemoryTransport transport) { Assert.That(transport.TryReceive(out var channel, out var packet), Is.False); Assert.That(channel, Is.EqualTo(default(Channel))); Assert.That(packet, Is.Null); }
         private static byte[] EntityBytes(uint id) => new byte[] { (byte)id, (byte)(id >> 8), (byte)(id >> 16), (byte)(id >> 24), 0, 0, 1, 0 };
         private struct TestWorld : IWorldType { }
         private struct DispatchWorld : IWorldType { }
