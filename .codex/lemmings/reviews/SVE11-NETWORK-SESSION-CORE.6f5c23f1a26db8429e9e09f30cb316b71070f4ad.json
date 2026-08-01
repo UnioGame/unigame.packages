@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-SESSION-CORE",
+  "base": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
+  "head": "6f5c23f1a26db8429e9e09f30cb316b71070f4ad",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [
+    {
+      "priority": "P1",
+      "file": "unigame.staticecs.network/Runtime/Session.cs",
+      "line": 491,
+      "message": "Client admission topology drift publishes the wrong public result. After an accepted map creates the replica collaborators, a false final-Ack send followed by world/scope drift reaches ValidateScope from SendFinalAck and faults Topology while leaving Result null. The frozen terminal mapping requires Result=ChunkMapRejected for every client topology failure during admission. Make this validation phase-aware and change SessionTests.cs:331, which currently asserts the non-conformant null result."
+    },
+    {
+      "priority": "P1",
+      "file": "unigame.staticecs.network/Runtime/Session.cs",
+      "line": 21,
+      "message": "The new private fields _clientSchema and _clientHello are assigned in ProcessClientHello but never read, producing CS0414 warnings. Either use the stored values for admission evaluation or remove the unused storage."
+    },
+    {
+      "priority": "P2",
+      "file": "unigame.staticecs.network/Runtime/SessionProtocol.cs",
+      "line": 186,
+      "message": "Passing new NoOpTransform() to an IPayloadTransform parameter boxes the readonly struct on every control encode; Session.cs repeats the same boxing on every decode. Cache one stateless IPayloadTransform instance or add a non-boxing path."
+    },
+    {
+      "priority": "P2",
+      "file": "unigame.staticecs.network/Tests/Editor/SessionTests.cs",
+      "line": 143,
+      "message": "Add accepted and rejected pair-pump tests using production MemoryTransport capacity one, including client consumption and disposal before the rejecting server observes RemoteClosed."
+    },
+    {
+      "priority": "P2",
+      "file": "unigame.staticecs.network/Tests/Editor/SessionTests.cs",
+      "line": 479,
+      "message": "Add transports that transfer then throw, assign inbound ownership then throw, and throw from outbound after valid inbound progression; prove cleanup, consumed step index, committed receive state and byte-identical retry."
+    },
+    {
+      "priority": "P2",
+      "file": "unigame.staticecs.network/Tests/Editor/SessionTests.cs",
+      "line": 535,
+      "message": "Complete the phase-semantic mutation matrix and exercise the Session-level exhaustion branch through a sanctioned deterministic internal seam without reflection."
+    },
+    {
+      "priority": "P2",
+      "file": "unigame.staticecs.network/README.md",
+      "line": 90,
+      "message": "Correct the rejection barrier order: server enters Closing after enqueue; client consumes and disposes; server then steps RemoteClosed and publishes rejection. Warn against early rejecting-server disposal."
+    }
+  ],
+  "validation": [
+    "Reviewed the complete exact range 2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed..6f5c23f1a26db8429e9e09f30cb316b71070f4ad.",
+    "The range contains exactly one commit and the candidate worktree is clean; git diff --check passes.",
+    "All nine changed paths match ownership and all four new metadata GUIDs are unique.",
+    "No forbidden paths, Sample, SessionWorld, Main alias or gameplay transfer calls were introduced.",
+    "Public enum values, names, signatures and XML summaries match the contract.",
+    "Pre-decode bounds, four-packet handshake, sequences, epochs, retry, rejection barrier, Requested echo and lease cleanup are structurally present.",
+    "A focused compiler probe confirmed assigned-but-unread private fields produce CS0414.",
+    "Production MemoryTransport, stronger throwing transports, the full semantic matrix and Session-level exhaustion remain repair validation."
+  ]
+}
