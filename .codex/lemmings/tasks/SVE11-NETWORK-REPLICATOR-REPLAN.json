@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-REPLICATOR-REPLAN",
   "mode": "strict",
-  "state": "Ready",
-  "previousState": "Draft",
+  "state": "Candidate",
+  "previousState": "Ready",
   "role": "complex-worker",
   "branch": "codex/sve11-network-replicator-replan",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-replicator-replan",
@@ -54,15 +54,23 @@
   "models": {
     "requested": null,
     "assigned": "gpt-5.6-sol:medium",
-    "actual": null
+    "actual": "gpt-5.6-sol:medium"
   },
   "execution": {
-    "handoff": null,
-    "validationEvidence": []
+    "handoff": "Replication was rebuilt on the post-lease baseline with the reviewed transition repair, explicit value-handle ownership and allocation-free warmed capture.",
+    "validationEvidence": [
+      "Provenance commits were cherry-picked separately with -x before the lease adaptation commit",
+      "Focused compilation against actual project FFS.StaticEcs, unigame.staticecs and Unity NUnit passed with warnings as errors",
+      "Focused replication tests passed 13/13",
+      "Representative warmed Capture/dispose loop measured zero managed bytes",
+      "Exact base-to-head ownership, metadata, Sample scan, git diff --check and lemmings check --all passed",
+      "Temporary harness removed and candidate worktree is clean",
+      "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests"
+    ]
   },
   "baseSha": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
   "commits": {
-    "candidate": null,
+    "candidate": "68f5eb35cfe91e76b426aa58169f42edb7ff16ca",
     "fix": []
   },
   "validation": {
