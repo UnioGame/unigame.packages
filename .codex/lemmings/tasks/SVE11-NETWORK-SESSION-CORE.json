@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-CORE",
   "mode": "strict",
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Active",
+  "previousState": "Accepted",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-core",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-core",
@@ -79,7 +79,8 @@
       "Cycle 2 found no runtime defects and requires replanning only the remaining mandatory test matrices.",
       "The cycle-2 test-only replan was independently accepted by gpt-5.6-sol:high at integration head a55b1d9d5a699bd807b223f491dc868a71234ca7.",
       "Replanned repair changes only SessionTests.cs; focused SessionTests pass 30/30 and the complete package harness passes 103/103.",
-      "Independent bounds, server Client Hello, raw-header, state/direction, reserved-kind and Disconnect matrices now cover all cycle-2 findings."
+      "Independent bounds, server Client Hello, raw-header, state/direction, reserved-kind and Disconnect matrices now cover all cycle-2 findings.",
+      "Post-integration Unity compilation exposed test-only access to protocol-internal Hashing; production assemblies remain unaffected and the phase is reopened for a bounded test-helper repair."
     ]
   },
   "baseSha": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
