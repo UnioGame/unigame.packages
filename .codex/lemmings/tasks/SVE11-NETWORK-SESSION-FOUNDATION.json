@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-SESSION-FOUNDATION",
+  "mode": "strict",
+  "state": "Ready",
+  "previousState": "Planned",
+  "role": "complex-worker",
+  "branch": "codex/sve11-network-session-foundation",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-foundation",
+  "plan": {
+    "goal": "Close the deterministic wire, transport, command-outbox and dispatcher prerequisites required by Session.",
+    "acceptance": [
+      "Append Requested=8 with exact compatibility goldens and no other wire changes.",
+      "Add the exact stepped-transport barrier while preserving every MemoryTransport lifecycle and ownership invariant.",
+      "Implement the unified EnqueueResult and bounded fixed-ring CommandOutbox with explicit PacketLease ownership and exact retry/ack semantics.",
+      "Extend retained command invokers with internal AOT-safe encoding and configuration probes without changing replication invokers.",
+      "Make dispatcher construction reject uninitialized or incompletely registered command worlds before runtime activity.",
+      "Move the shared pool-test gate without editing replication tests and prove warmed outbox operations allocate zero managed bytes.",
+      "Preserve integrated PacketLease and replication documentation and pass the full package suite."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-session-foundation-closure.md",
+      "350dbbec7670010fd0792f3f8f49a9cd63a2c4ac"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/Protocol/WireTypes.cs",
+      "unigame.staticecs.network/Protocol/Payloads.cs",
+      "unigame.staticecs.network/Runtime/BuffersTransport.cs",
+      "unigame.staticecs.network/Runtime/Schema.cs",
+      "unigame.staticecs.network/Runtime/SchemaInvokers.cs",
+      "unigame.staticecs.network/Runtime/CommandDispatcher.cs",
+      "unigame.staticecs.network/Runtime/CommandOutbox.cs",
+      "unigame.staticecs.network/Runtime/CommandOutbox.cs.meta",
+      "unigame.staticecs.network/Tests/Editor/ProtocolTests.cs",
+      "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs",
+      "unigame.staticecs.network/Tests/Editor/CommandOutboxTests.cs",
+      "unigame.staticecs.network/Tests/Editor/CommandOutboxTests.cs.meta",
+      "unigame.staticecs.network/Tests/Editor/PoolTestGate.cs",
+      "unigame.staticecs.network/Tests/Editor/PoolTestGate.cs.meta",
+      "unigame.staticecs.network/README.md"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network/Protocol/PacketHeader.cs",
+      "unigame.staticecs.network/Runtime/Replication/**",
+      "unigame.staticecs.network/Tests/Editor/ReplicationTests.cs",
+      "unigame.staticecs.network/Runtime/Framing.cs",
+      "unigame.staticecs.network/Runtime/Staging.cs",
+      "unigame.staticecs.network/Runtime/History.cs",
+      "unigame.staticecs.network/Runtime/*.asmdef",
+      "unigame.staticecs.network/package.json",
+      "unigame.ai.lemmings/**",
+      "unigame.staticecs.unity/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": null
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": []
+  },
+  "baseSha": "350dbbec7670010fd0792f3f8f49a9cd63a2c4ac",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "Foundation closure shifts frozen wire or transport behavior",
+        "test": "Numeric/golden Requested tests and no-op BeginStep queue/state/owner fingerprints"
+      },
+      {
+        "risk": "Command retries, wrap or acknowledgement lose ordering or pooled ownership",
+        "test": "Canonical frozen-build, exact mark, cumulative ack, both ring wrap and escaped-owner matrix"
+      },
+      {
+        "risk": "Command additions overwrite integrated replication invokers or add hot-path allocation",
+        "test": "Read-only replication suite plus focused warmed outbox allocation and full package tests"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Focused warnings-as-errors compile and protocol/runtime/outbox tests",
+      "Exact ownership/meta and Sample scans",
+      "lemmings check --all",
+      "Unity EditMode unigame.staticecs.network.tests after integration"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "review": null,
+  "close": null
+}

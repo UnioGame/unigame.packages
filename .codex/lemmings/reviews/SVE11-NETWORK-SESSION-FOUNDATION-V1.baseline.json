@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-SESSION-FOUNDATION-V1",
+  "repoRoot": "D:/Dev/kontora/static.ecs.template/GameClient/Game.Packages",
+  "baselineSha": "350dbbec7670010fd0792f3f8f49a9cd63a2c4ac",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [],
+  "validation": [
+    "The baseline is the tracked-clean post-Replicator integration head and git diff --check passes.",
+    "Requested=8 is append-only, ISteppedTransport has exact BeginStep(ulong) semantics, and the unified EnqueueResult order is frozen.",
+    "CommandOutbox public API, fixed-ring ownership, transaction ordering, pending build, mark, acknowledgement, epoch and allocation semantics are exact.",
+    "Typed command lookup/write/configuration seams remain internal and AOT-safe; dispatcher early validation is an intentional break.",
+    "Schema, invoker and README edits must preserve integrated replication behavior and documentation.",
+    "The dedicated PoolTestGate preserves unchanged ReplicationTests while serializing all shared-pool allocation fixtures.",
+    "Focused and full package validation, ownership, metadata and forbidden paths are mandatory."
+  ]
+}
+
