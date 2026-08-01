@@ -84,7 +84,7 @@ namespace UniGame.StaticEcs.Network
         private int _entityCount;
         private int _recordCount;
 
-        internal StagedPayload(PacketKind kind, PacketLease payload) { Kind = kind; _payload = payload; }
+        internal StagedPayload(PacketKind kind, ref PacketLease payload) { Kind = kind; _payload = PacketLease.Transfer(ref payload); }
         /// <summary>Gets the staged payload kind.</summary>
         public PacketKind Kind { get; }
         /// <summary>Gets the exact schema hash that validated this stage, or an empty identifier for schema-less payloads.</summary>
@@ -97,68 +97,90 @@ namespace UniGame.StaticEcs.Network
         public ResyncRequestPayload ResyncRequest { get; internal set; }
         /// <summary>Gets a staged disconnect notification when applicable.</summary>
         public DisconnectPayload Disconnect { get; internal set; }
-        /// <summary>Gets canonical decoded bytes owned by this stage.</summary>
-        public ReadOnlyMemory<byte> Payload { get { EnsureActive(); return _payload.Memory; } }
-        /// <summary>Gets pooled staged chunk mappings.</summary>
+        /// <summary>Gets canonical decoded bytes borrowed until this stage is disposed.</summary>
+        public ReadOnlyMemory<byte> Payload { get { EnsureActive(); return _payload.AsReadOnlyMemory(); } }
+        /// <summary>Gets pooled staged chunk mappings borrowed until this stage is disposed.</summary>
         public ReadOnlySpan<ChunkMapping> Chunks { get { EnsureActive(); return _chunks == null ? ReadOnlySpan<ChunkMapping>.Empty : _chunks.AsSpan(0, _chunkCount); } }
-        /// <summary>Gets pooled staged commands.</summary>
+        /// <summary>Gets pooled staged commands borrowed until this stage is disposed.</summary>
         public ReadOnlySpan<StagedCommand> Commands { get { EnsureActive(); return _commands == null ? ReadOnlySpan<StagedCommand>.Empty : _commands.AsSpan(0, _commandCount); } }
-        /// <summary>Gets pooled staged entities.</summary>
+        /// <summary>Gets pooled staged entities borrowed until this stage is disposed.</summary>
         public ReadOnlySpan<StagedEntity> Entities { get { EnsureActive(); return _entities == null ? ReadOnlySpan<StagedEntity>.Empty : _entities.AsSpan(0, _entityCount); } }
-        /// <summary>Gets pooled staged records.</summary>
+        /// <summary>Gets pooled staged records borrowed until this stage is disposed.</summary>
         public ReadOnlySpan<StagedRecord> Records { get { EnsureActive(); return _records == null ? ReadOnlySpan<StagedRecord>.Empty : _records.AsSpan(0, _recordCount); } }
-        /// <summary>Gets canonical bytes for one staged command.</summary>
+        /// <summary>Gets canonical bytes for one staged command, borrowed until this stage is disposed.</summary>
         public ReadOnlySpan<byte> GetPayload(in StagedCommand command) { EnsureActive(); return _payload.Span.Slice(command.Offset, command.Length); }
-        /// <summary>Gets canonical bytes for one staged snapshot record.</summary>
+        /// <summary>Gets canonical bytes for one staged snapshot record, borrowed until this stage is disposed.</summary>
         public ReadOnlySpan<byte> GetPayload(in StagedRecord record) { EnsureActive(); return _payload.Span.Slice(record.Offset, record.Length); }
         /// <summary>Returns pooled indexes and decoded payload ownership.</summary>
         public void Dispose()
         {
-            if (_payload == null) return;
-            if (_chunks != null) ArrayPool<ChunkMapping>.Shared.Return(_chunks);
-            if (_commands != null) ArrayPool<StagedCommand>.Shared.Return(_commands);
-            if (_entities != null) ArrayPool<StagedEntity>.Shared.Return(_entities);
-            if (_records != null) ArrayPool<StagedRecord>.Shared.Return(_records);
+            if (!_payload.IsValid) return;
+            var payload = _payload;
+            var chunks = _chunks;
+            var commands = _commands;
+            var entities = _entities;
+            var records = _records;
+            _payload = default;
             _chunks = null; _commands = null; _entities = null; _records = null;
-            _payload.Dispose(); _payload = null;
+            _chunkCount = 0; _commandCount = 0; _entityCount = 0; _recordCount = 0;
+            try
+            {
+                if (chunks != null) ArrayPool<ChunkMapping>.Shared.Return(chunks);
+                if (commands != null) ArrayPool<StagedCommand>.Shared.Return(commands);
+                if (entities != null) ArrayPool<StagedEntity>.Shared.Return(entities);
+                if (records != null) ArrayPool<StagedRecord>.Shared.Return(records);
+            }
+            finally
+            {
+                payload.Dispose();
+            }
         }
         internal void SetChunks(ChunkMapping[] values, int count) { _chunks = values; _chunkCount = count; }
         internal void SetCommands(StagedCommand[] values, int count) { _commands = values; _commandCount = count; }
         internal void SetSnapshot(StagedEntity[] entities, int entityCount, StagedRecord[] records, int recordCount) { _entities = entities; _entityCount = entityCount; _records = records; _recordCount = recordCount; }
         internal void BindSchema(TypeId schemaHash) => SchemaHash = schemaHash;
-        internal bool IsActive => _payload != null;
-        private void EnsureActive() { if (_payload == null) throw new ObjectDisposedException(nameof(StagedPayload)); }
+        internal bool IsActive => _payload.IsValid;
+        private void EnsureActive() { if (!_payload.IsValid) throw new ObjectDisposedException(nameof(StagedPayload)); }
     }
 
     internal static class PayloadStager
     {
-        internal static bool TryStage(PacketKind kind, PacketLease payload, Schema schema, out StagedPayload staged)
+        internal static bool TryStage(PacketKind kind, ref PacketLease payload, Schema schema, out StagedPayload staged)
         {
             staged = null;
-            if (payload == null) return false;
-            var source = payload.Span;
-            var result = new StagedPayload(kind, payload);
-            var valid = false;
-            switch (kind)
+            if (!payload.IsValid) return false;
+            var result = new StagedPayload(kind, ref payload);
+            try
             {
-                case PacketKind.Hello:
-                    valid = PayloadCodec.TryReadHello(source, out var hello); result.Hello = hello; break;
-                case PacketKind.HelloAck:
-                    valid = TryStageHelloAck(source, result); break;
-                case PacketKind.CommandBatch:
-                    valid = schema != null && TryStageCommands(source, result) && schema.Validate(result); break;
-                case PacketKind.FullSnapshot:
-                    valid = schema != null && TryStageSnapshot(source, result) && schema.Validate(result); break;
-                case PacketKind.Ack:
-                    valid = source.IsEmpty; break;
-                case PacketKind.ResyncRequest:
-                    valid = PayloadCodec.TryReadResyncRequest(source, out var resync); result.ResyncRequest = resync; break;
-                case PacketKind.Disconnect:
-                    valid = PayloadCodec.TryReadDisconnect(source, out var disconnect); result.Disconnect = disconnect; break;
+                var source = result.Payload.Span;
+                var valid = false;
+                switch (kind)
+                {
+                    case PacketKind.Hello:
+                        valid = PayloadCodec.TryReadHello(source, out var hello); result.Hello = hello; break;
+                    case PacketKind.HelloAck:
+                        valid = TryStageHelloAck(source, result); break;
+                    case PacketKind.CommandBatch:
+                        valid = schema != null && TryStageCommands(source, result) && schema.Validate(result); break;
+                    case PacketKind.FullSnapshot:
+                        valid = schema != null && TryStageSnapshot(source, result) && schema.Validate(result); break;
+                    case PacketKind.Ack:
+                        valid = source.IsEmpty; break;
+                    case PacketKind.ResyncRequest:
+                        valid = PayloadCodec.TryReadResyncRequest(source, out var resync); result.ResyncRequest = resync; break;
+                    case PacketKind.Disconnect:
+                        valid = PayloadCodec.TryReadDisconnect(source, out var disconnect); result.Disconnect = disconnect; break;
+                }
+                if (!valid) return false;
+                if (kind == PacketKind.CommandBatch || kind == PacketKind.FullSnapshot) result.BindSchema(schema.Hash);
+                staged = result;
+                result = null;
+                return true;
             }
-            if (!valid) { result.Dispose(); return false; }
-            if (kind == PacketKind.CommandBatch || kind == PacketKind.FullSnapshot) result.BindSchema(schema.Hash);
-            staged = result; return true;
+            finally
+            {
+                result?.Dispose();
+            }
         }
 
         private static bool TryStageHelloAck(ReadOnlySpan<byte> source, StagedPayload staged)

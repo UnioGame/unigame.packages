@@ -1,40 +1,173 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace UniGame.StaticEcs.Network
 {
-    /// <summary>Owns one pooled packet buffer until explicitly transferred or disposed.</summary>
-    public sealed class PacketLease : IDisposable
+    /// <summary>Identifies one generation of pooled packet-buffer ownership.</summary>
+    public readonly struct PacketLease : IDisposable
     {
-        private byte[] _buffer;
-        private int _length;
-        private PacketLease(byte[] buffer, int length) { _buffer = buffer; _length = length; }
+        internal sealed class State
+        {
+            internal byte[] Buffer;
+            internal int Length;
+            internal long Generation = 1;
+            internal State Next;
+        }
+
+        private static readonly object PoolLock = new();
+        private static State _freeState;
+        private static int _freeStateCount;
+        private static int _stateAllocationCount;
+        private readonly State _state;
+        private readonly long _generation;
+
+        private PacketLease(State state, long generation) { _state = state; _generation = generation; }
         /// <summary>Rents a writable packet buffer with the requested capacity.</summary>
-        public static PacketLease Rent(int capacity) { if (capacity < 0 || capacity > ProtocolLimits.MaxDecodedPayloadBytes + PacketHeader.Size) throw new ArgumentOutOfRangeException(nameof(capacity)); return new PacketLease(ArrayPool<byte>.Shared.Rent(Math.Max(1, capacity)), 0); }
+        public static PacketLease Rent(int capacity)
+        {
+            if (capacity < 0 || capacity > ProtocolLimits.MaxDecodedPayloadBytes + PacketHeader.Size)
+                throw new ArgumentOutOfRangeException(nameof(capacity));
+
+            var state = AcquireState();
+            try
+            {
+                state.Buffer = ArrayPool<byte>.Shared.Rent(Math.Max(1, capacity));
+                state.Length = 0;
+                return new PacketLease(state, state.Generation);
+            }
+            catch
+            {
+                state.Buffer = null;
+                state.Length = 0;
+                ReleaseState(state);
+                throw;
+            }
+        }
         /// <summary>Gets whether this lease still owns its storage.</summary>
-        public bool IsValid => _buffer != null;
+        public bool IsValid => _state != null && _state.Generation == _generation && _state.Buffer != null;
         /// <summary>Gets the committed packet length.</summary>
-        public int Length { get { EnsureValid(); return _length; } }
-        /// <summary>Gets writable committed storage.</summary>
-        public Span<byte> Span { get { EnsureValid(); return _buffer.AsSpan(0, _length); } }
-        /// <summary>Gets read-only committed storage.</summary>
-        public ReadOnlyMemory<byte> Memory { get { EnsureValid(); return new ReadOnlyMemory<byte>(_buffer, 0, _length); } }
-        /// <summary>Gets writable storage across the full rented capacity.</summary>
-        public Span<byte> CapacitySpan { get { EnsureValid(); return _buffer; } }
+        public int Length { get { var state = EnsureValid(); return state.Length; } }
+        /// <summary>Gets writable committed storage borrowed until ownership transfers or returns.</summary>
+        public Span<byte> Span { get { var state = EnsureValid(); return state.Buffer.AsSpan(0, state.Length); } }
+        /// <summary>Gets writable capacity borrowed until ownership transfers or returns.</summary>
+        public Span<byte> CapacitySpan { get { var state = EnsureValid(); return state.Buffer; } }
         /// <summary>Commits a new packet length within the rented capacity.</summary>
-        public void SetLength(int length) { EnsureValid(); if (length < 0 || length > _buffer.Length) throw new ArgumentOutOfRangeException(nameof(length)); _length = length; }
+        public void SetLength(int length) { var state = EnsureValid(); if (length < 0 || length > state.Buffer.Length) throw new ArgumentOutOfRangeException(nameof(length)); state.Length = length; }
         /// <summary>Creates an independent pooled copy of the committed bytes.</summary>
-        public PacketLease Copy() { EnsureValid(); var copy = Rent(_length); _buffer.AsSpan(0, _length).CopyTo(copy.CapacitySpan); copy.SetLength(_length); return copy; }
+        public PacketLease Copy()
+        {
+            var state = EnsureValid();
+            var copy = Rent(state.Length);
+            try
+            {
+                state.Buffer.AsSpan(0, state.Length).CopyTo(copy.CapacitySpan);
+                copy.SetLength(state.Length);
+                return copy;
+            }
+            catch
+            {
+                if (copy.IsValid) copy.Dispose();
+                throw;
+            }
+        }
         /// <summary>Returns owned storage to the shared pool.</summary>
-        public void Dispose() { if (_buffer == null) throw new InvalidOperationException("Packet storage was already returned or transferred."); var buffer = _buffer; _buffer = null; _length = 0; ArrayPool<byte>.Shared.Return(buffer); }
+        public void Dispose()
+        {
+            var state = EnsureValid();
+            var buffer = state.Buffer;
+            state.Buffer = null;
+            state.Length = 0;
+            var retired = _generation == long.MaxValue;
+            if (!retired) state.Generation = _generation + 1;
+            ArrayPool<byte>.Shared.Return(buffer);
+            if (!retired) ReleaseState(state);
+        }
+
         internal static PacketLease Transfer(ref PacketLease lease)
         {
-            if (lease == null || !lease.IsValid) throw new InvalidOperationException("A valid packet lease is required.");
-            var source = lease; var result = new PacketLease(source._buffer, source._length);
-            source._buffer = null; source._length = 0; lease = null; return result;
+            var state = lease.EnsureValid();
+            if (lease._generation < long.MaxValue)
+            {
+                var generation = lease._generation + 1;
+                state.Generation = generation;
+                lease = default;
+                return new PacketLease(state, generation);
+            }
+
+            var replacement = AcquireState();
+            replacement.Buffer = state.Buffer;
+            replacement.Length = state.Length;
+            state.Buffer = null;
+            state.Length = 0;
+            lease = default;
+            return new PacketLease(replacement, replacement.Generation);
         }
-        private void EnsureValid() { if (_buffer == null) throw new InvalidOperationException("Packet storage has already been returned or transferred."); }
+
+        internal ReadOnlyMemory<byte> AsReadOnlyMemory()
+        {
+            var state = EnsureValid();
+            return new ReadOnlyMemory<byte>(state.Buffer, 0, state.Length);
+        }
+
+        internal static int PooledStateCountForTests
+        {
+            get { lock (PoolLock) return _freeStateCount; }
+        }
+
+        internal static int StateAllocationCountForTests => Volatile.Read(ref _stateAllocationCount);
+
+        internal bool IsDefault => _state == null;
+
+        internal static bool SameGeneration(in PacketLease left, in PacketLease right) =>
+            left._state != null && ReferenceEquals(left._state, right._state) && left._generation == right._generation;
+
+        internal static void ForceGenerationForTests(ref PacketLease lease, long generation)
+        {
+            if (generation < 1) throw new ArgumentOutOfRangeException(nameof(generation));
+            var state = lease.EnsureValid();
+            if (generation < lease._generation) throw new ArgumentOutOfRangeException(nameof(generation));
+            state.Generation = generation;
+            lease = new PacketLease(state, generation);
+        }
+
+        private State EnsureValid()
+        {
+            var state = _state;
+            if (state == null || state.Generation != _generation || state.Buffer == null)
+                throw new InvalidOperationException("Packet storage was already returned or transferred.");
+            return state;
+        }
+
+        private static State AcquireState()
+        {
+            lock (PoolLock)
+            {
+                if (_freeState != null)
+                {
+                    var state = _freeState;
+                    _freeState = state.Next;
+                    state.Next = null;
+                    _freeStateCount--;
+                    return state;
+                }
+            }
+
+            var created = new State();
+            Interlocked.Increment(ref _stateAllocationCount);
+            return created;
+        }
+
+        private static void ReleaseState(State state)
+        {
+            lock (PoolLock)
+            {
+                state.Next = _freeState;
+                _freeState = state;
+                _freeStateCount++;
+            }
+        }
     }
 
     /// <summary>Identifies transport delivery behavior.</summary>
@@ -108,6 +241,7 @@ namespace UniGame.StaticEcs.Network
             if (State != TransportState.Connected)
             {
                 owned.Dispose();
+                owned = default;
                 return false;
             }
 
@@ -115,12 +249,14 @@ namespace UniGame.StaticEcs.Network
             if (peer == null || peer.State != TransportState.Connected)
             {
                 owned.Dispose();
+                owned = default;
                 return false;
             }
 
             if (channel != Channel.ReliableOrdered && channel != Channel.UnreliableSequenced)
             {
                 owned.Dispose();
+                owned = default;
                 TerminatePair(
                     TransportState.Faulted,
                     TransportError.InvalidPacket,
@@ -137,6 +273,7 @@ namespace UniGame.StaticEcs.Network
                     owned.Length != PacketHeader.Size + header.WirePayloadLength)
                 {
                     owned.Dispose();
+                    owned = default;
                     TerminatePair(
                         TransportState.Faulted,
                         TransportError.InvalidPacket,
@@ -149,9 +286,27 @@ namespace UniGame.StaticEcs.Network
                 if (sequence <= peer._latestUnreliable)
                 {
                     owned.Dispose();
+                    owned = default;
                     return false;
                 }
+            }
 
+            Item queuedItem = null;
+            LinkedListNode<Item> queuedNode = null;
+            try
+            {
+                queuedItem = new Item(channel, ref owned);
+                queuedNode = new LinkedListNode<Item>(queuedItem);
+            }
+            catch
+            {
+                if (queuedItem != null) queuedItem.Dispose();
+                if (owned.IsValid) { owned.Dispose(); owned = default; }
+                throw;
+            }
+
+            if (channel == Channel.UnreliableSequenced)
+            {
                 var node = peer._incoming.First;
                 while (node != null)
                 {
@@ -159,7 +314,7 @@ namespace UniGame.StaticEcs.Network
                     if (node.Value.Channel == Channel.UnreliableSequenced)
                     {
                         peer._incoming.Remove(node);
-                        node.Value.Packet.Dispose();
+                        node.Value.Dispose();
                     }
                     node = next;
                 }
@@ -167,7 +322,7 @@ namespace UniGame.StaticEcs.Network
 
             if (peer._incoming.Count >= peer._capacity)
             {
-                owned.Dispose();
+                queuedItem.Dispose();
                 if (channel == Channel.ReliableOrdered)
                     TerminatePair(
                         TransportState.Faulted,
@@ -176,11 +331,22 @@ namespace UniGame.StaticEcs.Network
                         TransportError.QueueOverflow);
                 return false;
             }
+            peer._incoming.AddLast(queuedNode);
             if (channel == Channel.UnreliableSequenced) peer._latestUnreliable = sequence;
-            peer._incoming.AddLast(new Item(channel, owned)); return true;
+            return true;
         }
         /// <inheritdoc />
-        public bool TryReceive(out Channel channel, out PacketLease packet) { if (State != TransportState.Connected || _incoming.Count == 0) { channel = default; packet = null; return false; } var item = _incoming.First.Value; _incoming.RemoveFirst(); channel = item.Channel; packet = item.Packet; return true; }
+        public bool TryReceive(out Channel channel, out PacketLease packet)
+        {
+            channel = default;
+            packet = default;
+            if (State != TransportState.Connected || _incoming.Count == 0) return false;
+            var item = _incoming.First.Value;
+            packet = item.Take();
+            _incoming.RemoveFirst();
+            channel = item.Channel;
+            return true;
+        }
         /// <summary>Disposes the transport and drains every queued lease.</summary>
         public void Dispose()
         {
@@ -221,8 +387,16 @@ namespace UniGame.StaticEcs.Network
             Drain();
         }
 
-        private void Drain() { while (_incoming.Count > 0) { var packet = _incoming.First.Value.Packet; _incoming.RemoveFirst(); packet.Dispose(); } }
-        private readonly struct Item { internal Item(Channel channel, PacketLease packet) { Channel = channel; Packet = packet; } internal Channel Channel { get; } internal PacketLease Packet { get; } }
+        private void Drain() { while (_incoming.Count > 0) { var item = _incoming.First.Value; _incoming.RemoveFirst(); item.Dispose(); } }
+
+        private sealed class Item : IDisposable
+        {
+            private PacketLease _packet;
+            internal Item(Channel channel, ref PacketLease packet) { Channel = channel; _packet = PacketLease.Transfer(ref packet); }
+            internal Channel Channel { get; }
+            internal PacketLease Take() => PacketLease.Transfer(ref _packet);
+            public void Dispose() { if (!_packet.IsValid) return; var packet = _packet; _packet = default; packet.Dispose(); }
+        }
     }
 
     /// <summary>Transforms payload bytes within explicit decoded and encoded bounds.</summary>

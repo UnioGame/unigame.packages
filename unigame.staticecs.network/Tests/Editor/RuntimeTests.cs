@@ -1,11 +1,24 @@
 using System;
+using System.Threading;
 using FFS.Libraries.StaticEcs;
 using NUnit.Framework;
 
 namespace UniGame.StaticEcs.Network.Tests
 {
+    // Unity's pinned NUnit 3.5 predates NonParallelizableAttribute; pool-sensitive fixtures share this gate.
+    internal static class PoolTestGate
+    {
+        internal static readonly object Sync = new();
+    }
+
     public sealed class RuntimeTests
     {
+        [SetUp]
+        public void EnterLeaseTestLock() => Monitor.Enter(PoolTestGate.Sync);
+
+        [TearDown]
+        public void ExitLeaseTestLock() => Monitor.Exit(PoolTestGate.Sync);
+
         [Test]
         public void SchemaHashIsIndependentOfRegistrationOrderAndDuplicatesFail()
         {
@@ -49,6 +62,149 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
+        public void PacketLeaseIsAReadonlyValueHandleWithGenerationCheckedAliases()
+        {
+            Assert.That(typeof(PacketLease).IsValueType, Is.True);
+            var missing = default(PacketLease);
+            Assert.That(missing.IsValid, Is.False);
+            Assert.Throws<InvalidOperationException>(() => { var _ = missing.Length; });
+            Assert.Throws<InvalidOperationException>(() => { var _ = missing.Span; });
+            Assert.Throws<InvalidOperationException>(() => { var _ = missing.CapacitySpan; });
+            Assert.Throws<InvalidOperationException>(() => missing.SetLength(0));
+            Assert.Throws<InvalidOperationException>(() => missing.Copy());
+            Assert.Throws<InvalidOperationException>(() => missing.Dispose());
+            Assert.Throws<InvalidOperationException>(() => { PacketLease.Transfer(ref missing); });
+
+            var owner = Lease(7);
+            var alias = owner;
+            var transferred = PacketLease.Transfer(ref owner);
+            Assert.That(owner.IsValid, Is.False);
+            Assert.That(alias.IsValid, Is.False);
+            Assert.Throws<InvalidOperationException>(() => alias.Dispose());
+            Assert.That(transferred.Span[0], Is.EqualTo(7));
+
+            var copy = transferred.Copy();
+            transferred.Dispose();
+            Assert.That(copy.IsValid, Is.True);
+            Assert.That(copy.Span[0], Is.EqualTo(7));
+            Assert.Throws<InvalidOperationException>(() => transferred.Dispose());
+            copy.Dispose();
+        }
+
+        [Test]
+        public void PacketLeaseGenerationExhaustionRetiresStateWithoutAliasRevival()
+        {
+            var owner = Lease(9);
+            var originalAlias = owner;
+            PacketLease.ForceGenerationForTests(ref owner, long.MaxValue - 1);
+            Assert.That(originalAlias.IsValid, Is.False);
+
+            var nearExhaustionAlias = owner;
+            var exhausted = PacketLease.Transfer(ref owner);
+            Assert.That(owner.IsValid, Is.False);
+            Assert.That(nearExhaustionAlias.IsValid, Is.False);
+
+            var exhaustedAlias = exhausted;
+            var migrated = PacketLease.Transfer(ref exhausted);
+            Assert.That(exhausted.IsValid, Is.False);
+            Assert.That(exhaustedAlias.IsValid, Is.False);
+            Assert.That(migrated.IsValid, Is.True);
+            Assert.That(migrated.Span[0], Is.EqualTo(9));
+            migrated.Dispose();
+
+            var retireOnDispose = Lease(10);
+            PacketLease.ForceGenerationForTests(ref retireOnDispose, long.MaxValue);
+            var retiredAlias = retireOnDispose;
+            retireOnDispose.Dispose();
+            var recycled = Lease(11);
+            Assert.That(retiredAlias.IsValid, Is.False);
+            Assert.That(recycled.Span[0], Is.EqualTo(11));
+            recycled.Dispose();
+        }
+
+        [Test]
+        public void PacketLeasePoolAllocatesStatesOnlyForAConcurrencyHighWaterMark()
+        {
+            var pooled = PacketLease.PooledStateCountForTests;
+            var leases = new PacketLease[pooled + 2];
+            var allocations = PacketLease.StateAllocationCountForTests;
+            for (var i = 0; i < leases.Length; i++) leases[i] = PacketLease.Rent(1);
+            Assert.That(PacketLease.StateAllocationCountForTests - allocations, Is.EqualTo(2));
+            for (var i = 0; i < leases.Length; i++) { leases[i].Dispose(); leases[i] = default; }
+
+            allocations = PacketLease.StateAllocationCountForTests;
+            for (var i = 0; i < leases.Length; i++) leases[i] = PacketLease.Rent(1);
+            Assert.That(PacketLease.StateAllocationCountForTests, Is.EqualTo(allocations));
+            for (var i = 0; i < leases.Length; i++) { leases[i].Dispose(); leases[i] = default; }
+        }
+
+        [Test]
+        public void WarmedPacketLeaseRentDisposeLoopAllocatesNoManagedMemory()
+        {
+            const int capacity = 257;
+            const int iterations = 4096;
+            RentDisposeLoop(capacity, 1);
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < iterations; i++)
+            {
+                var lease = PacketLease.Rent(capacity);
+                lease.Dispose();
+            }
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.That(allocated, Is.Zero);
+        }
+
+        [Test]
+        public void WarmedPacketLeaseTransferDisposeLoopAllocatesNoManagedMemory()
+        {
+            const int capacity = 257;
+            const int iterations = 4096;
+            RentTransferDisposeLoop(capacity, 1);
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < iterations; i++)
+            {
+                var lease = PacketLease.Rent(capacity);
+                var transferred = PacketLease.Transfer(ref lease);
+                transferred.Dispose();
+            }
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.That(allocated, Is.Zero);
+        }
+
+        [Test]
+        public void PacketLeaseSupportsSerializedCrossThreadOwnershipHandoff()
+        {
+            var owner = Lease(12);
+            var staleAlias = owner;
+            var handoff = PacketLease.Transfer(ref owner);
+            Exception workerFailure = null;
+            var worker = new Thread(() =>
+            {
+                try
+                {
+                    if (!handoff.IsValid || handoff.Span[0] != 12) throw new InvalidOperationException("Transferred lease was not visible to the worker.");
+                    handoff.Span[0] = 13;
+                }
+                catch (Exception exception)
+                {
+                    workerFailure = exception;
+                }
+                finally
+                {
+                    if (handoff.IsValid) { handoff.Dispose(); handoff = default; }
+                }
+            });
+
+            worker.Start();
+            worker.Join();
+
+            if (workerFailure != null) throw workerFailure;
+            Assert.That(owner.IsValid, Is.False);
+            Assert.That(staleAlias.IsValid, Is.False);
+            Assert.That(handoff.IsValid, Is.False);
+        }
+
+        [Test]
         public void TransportStateAndErrorValuesAreStable()
         {
             Assert.That((int)TransportState.Connected, Is.Zero);
@@ -75,7 +231,7 @@ namespace UniGame.StaticEcs.Network.Tests
             var first = Lease(1);
             var second = Lease(2);
             Assert.That(sender.TrySend(Channel.ReliableOrdered, ref first), Is.True);
-            Assert.That(first, Is.Null);
+            Assert.That(first.IsValid, Is.False);
             Assert.That(sender.TrySend(Channel.ReliableOrdered, ref second), Is.True);
             Assert.That(receiver.TryReceive(out var channel, out var received), Is.True);
             Assert.That(channel, Is.EqualTo(Channel.ReliableOrdered));
@@ -112,7 +268,7 @@ namespace UniGame.StaticEcs.Network.Tests
             var afterClose = Lease(3);
             var afterCloseAlias = afterClose;
             Assert.That(right.TrySend(Channel.ReliableOrdered, ref afterClose), Is.False);
-            Assert.That(afterClose, Is.Null);
+            Assert.That(afterClose.IsValid, Is.False);
             Assert.That(afterCloseAlias.IsValid, Is.False);
             AssertTransport(right, TransportState.Closed, TransportError.RemoteClosed);
 
@@ -139,7 +295,7 @@ namespace UniGame.StaticEcs.Network.Tests
             var triggerAlias = trigger;
             Assert.That(sender.TrySend(Channel.ReliableOrdered, ref trigger), Is.False);
 
-            Assert.That(trigger, Is.Null);
+            Assert.That(trigger.IsValid, Is.False);
             Assert.That(triggerAlias.IsValid, Is.False);
             Assert.That(receiverAlias.IsValid, Is.False);
             Assert.That(senderAlias.IsValid, Is.False);
@@ -151,7 +307,7 @@ namespace UniGame.StaticEcs.Network.Tests
             var afterFault = Lease(3);
             var afterFaultAlias = afterFault;
             Assert.That(sender.TrySend(Channel.ReliableOrdered, ref afterFault), Is.False);
-            Assert.That(afterFault, Is.Null);
+            Assert.That(afterFault.IsValid, Is.False);
             Assert.That(afterFaultAlias.IsValid, Is.False);
             AssertTransport(sender, TransportState.Faulted, TransportError.QueueOverflow);
 
@@ -174,7 +330,7 @@ namespace UniGame.StaticEcs.Network.Tests
 
             Assert.That(sender.TrySend(Channel.ReliableOrdered, ref packet), Is.False);
 
-            Assert.That(packet, Is.Null);
+            Assert.That(packet.IsValid, Is.False);
             Assert.That(alias.IsValid, Is.False);
             AssertTransport(sender, TransportState.Disposed, TransportError.Disposed);
             AssertTransport(receiver, TransportState.Closed, TransportError.RemoteClosed);
@@ -185,7 +341,7 @@ namespace UniGame.StaticEcs.Network.Tests
         public void InvalidLeaseThrowsBeforeStateOrChannelMutation()
         {
             MemoryTransport.CreatePair(1, out var sender, out var receiver);
-            PacketLease missing = null;
+            PacketLease missing = default;
             Assert.Throws<InvalidOperationException>(
                 () => sender.TrySend((Channel)99, ref missing));
             AssertTransport(sender, TransportState.Connected, TransportError.None);
@@ -212,6 +368,67 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
+        public void TickRecordPreflightsEverySourceBeforeTransferringOwnership()
+        {
+            var generated = Lease(1);
+            var received = Lease(2);
+            var postApply = Lease(3);
+            var commands = new[] { Lease(4), default(PacketLease) };
+
+            Assert.Throws<ArgumentException>(() =>
+                new TickRecord(1, ref generated, ref received, ref postApply, 1, 2, 3, 4, 5, commands));
+
+            Assert.That(generated.IsValid, Is.True);
+            Assert.That(received.IsValid, Is.True);
+            Assert.That(postApply.IsValid, Is.True);
+            Assert.That(commands[0].IsValid, Is.True);
+            generated.Dispose();
+            received.Dispose();
+            postApply.Dispose();
+            commands[0].Dispose();
+
+            generated = Lease(6);
+            received = default;
+            postApply = default;
+            commands = new[] { generated };
+            Assert.Throws<ArgumentException>(() =>
+                new TickRecord(2, ref generated, ref received, ref postApply, 1, 2, 3, 4, 5, commands));
+            Assert.That(generated.IsValid, Is.True);
+            Assert.That(commands[0].IsValid, Is.True);
+            generated.Dispose();
+            Assert.That(commands[0].IsValid, Is.False);
+        }
+
+        [Test]
+        public void TickRecordTransfersMutableSourcesAndExposesBorrowedAliases()
+        {
+            var generated = Lease(1);
+            var received = Lease(2);
+            var postApply = Lease(3);
+            var commands = new[] { Lease(4), Lease(5) };
+            var record = new TickRecord(1, ref generated, ref received, ref postApply, 1, 2, 3, 4, 5, commands.AsSpan());
+
+            Assert.That(generated.IsValid, Is.False);
+            Assert.That(received.IsValid, Is.False);
+            Assert.That(postApply.IsValid, Is.False);
+            Assert.That(commands[0].IsValid, Is.False);
+            Assert.That(commands[1].IsValid, Is.False);
+            Assert.That(record.Bytes, Is.EqualTo(5));
+
+            var generatedBorrow = record.Generated;
+            var commandBorrow = record.Commands[0];
+            var retainedCopy = record.Generated.Copy();
+            record.Dispose();
+            record.Dispose();
+
+            Assert.That(generatedBorrow.IsValid, Is.False);
+            Assert.That(commandBorrow.IsValid, Is.False);
+            Assert.That(retainedCopy.IsValid, Is.True);
+            Assert.That(retainedCopy.Span[0], Is.EqualTo(1));
+            retainedCopy.Dispose();
+        }
+
+        [Test]
         public void CommandStageRetainsAotAuthorizerAndUsesTrustedContext()
         {
             var schema = new SchemaBuilder<TestWorld>().Command<TestCommand, TestCommandCodec, TestAuthorizer>(Id(10), 1, Codec(10), 4).Freeze();
@@ -232,9 +449,32 @@ namespace UniGame.StaticEcs.Network.Tests
         {
             var payload = PacketLease.Rent(1);
             payload.SetLength(0);
-            Assert.That(PayloadStager.TryStage(PacketKind.Ack, payload, null, out var staged), Is.True);
+            Assert.That(PayloadStager.TryStage(PacketKind.Ack, ref payload, null, out var staged), Is.True);
+            Assert.That(payload.IsValid, Is.False);
             Assert.That(staged.SchemaHash, Is.EqualTo(TypeId.Empty));
             staged.Dispose();
+        }
+
+        [Test]
+        public void PayloadStagerConsumesValidInputsOnSuccessAndFailure()
+        {
+            var valid = PacketLease.Rent(1);
+            valid.SetLength(0);
+            var validAlias = valid;
+            Assert.That(PayloadStager.TryStage(PacketKind.Ack, ref valid, null, out var staged), Is.True);
+            Assert.That(valid.IsValid, Is.False);
+            Assert.That(validAlias.IsValid, Is.False);
+            Assert.That(staged.Payload.IsEmpty, Is.True);
+            staged.Dispose();
+            staged.Dispose();
+            Assert.Throws<ObjectDisposedException>(() => { var _ = staged.Payload; });
+
+            var invalid = Lease(1);
+            var invalidAlias = invalid;
+            Assert.That(PayloadStager.TryStage(PacketKind.Ack, ref invalid, null, out staged), Is.False);
+            Assert.That(invalid.IsValid, Is.False);
+            Assert.That(invalidAlias.IsValid, Is.False);
+            Assert.That(staged, Is.Null);
         }
 
         [Test]
@@ -341,7 +581,7 @@ namespace UniGame.StaticEcs.Network.Tests
 
             var ackLease = PacketLease.Rent(1);
             ackLease.SetLength(0);
-            Assert.That(PayloadStager.TryStage(PacketKind.Ack, ackLease, null, out var ack), Is.True);
+            Assert.That(PayloadStager.TryStage(PacketKind.Ack, ref ackLease, null, out var ack), Is.True);
             Assert.That(dispatcher.Dispatch(ack, 0, 7), Is.EqualTo(DispatchResult.WrongPayload));
             ack.Dispose();
 
@@ -393,7 +633,7 @@ namespace UniGame.StaticEcs.Network.Tests
             var direct = PacketLease.Rent(length);
             direct.SetLength(length);
             bytes.AsSpan(0, length).CopyTo(direct.Span);
-            Assert.That(PayloadStager.TryStage(PacketKind.CommandBatch, direct, schema, out var directStage), Is.False);
+            Assert.That(PayloadStager.TryStage(PacketKind.CommandBatch, ref direct, schema, out var directStage), Is.False);
             Assert.That(directStage, Is.Null);
             Assert.That(direct.IsValid, Is.False);
 
@@ -408,6 +648,26 @@ namespace UniGame.StaticEcs.Network.Tests
             Assert.That(PacketFraming.TryDecode(raw, new NoOpTransform(), schema, out _, out var staged), Is.False);
             Assert.That(staged, Is.Null);
             raw.Dispose();
+        }
+
+        [Test]
+        public void FramingReturnsLocalLeaseOwnershipWhenTransformsThrow()
+        {
+            var header = Header(PacketKind.Ack, PacketFlags.ReliableOrdered, 1, TypeId.Empty);
+            var pooledBeforeEncode = PacketLease.PooledStateCountForTests;
+            Assert.Throws<InvalidOperationException>(() =>
+                PacketFraming.TryEncode(header, ReadOnlySpan<byte>.Empty, new ThrowingTransform(), out _));
+            Assert.That(PacketLease.PooledStateCountForTests, Is.GreaterThanOrEqualTo(pooledBeforeEncode));
+
+            Assert.That(PacketFraming.TryEncode(header, ReadOnlySpan<byte>.Empty, new NoOpTransform(), out var packet), Is.True);
+            var packetAlias = packet;
+            var pooledBeforeDecode = PacketLease.PooledStateCountForTests;
+            Assert.Throws<InvalidOperationException>(() =>
+                PacketFraming.TryDecode(in packet, new ThrowingTransform(), out _, out _));
+            Assert.That(packet.IsValid, Is.True);
+            Assert.That(packetAlias.IsValid, Is.True);
+            Assert.That(PacketLease.PooledStateCountForTests, Is.GreaterThanOrEqualTo(pooledBeforeDecode));
+            packet.Dispose();
         }
 
         [Test]
@@ -529,7 +789,7 @@ namespace UniGame.StaticEcs.Network.Tests
 
             Assert.That(sender.TrySend((Channel)99, ref packet), Is.False);
 
-            Assert.That(packet, Is.Null);
+            Assert.That(packet.IsValid, Is.False);
             Assert.That(alias.IsValid, Is.False);
             AssertTransport(sender, TransportState.Faulted, TransportError.InvalidPacket);
             AssertTransport(receiver, TransportState.Closed, TransportError.RemoteClosed);
@@ -543,10 +803,10 @@ namespace UniGame.StaticEcs.Network.Tests
         public void LeaseRejectsDoubleReturnAndUseAfterTransfer()
         {
             var lease = Lease(1); lease.Dispose(); Assert.Throws<InvalidOperationException>(() => lease.Dispose()); Assert.Throws<InvalidOperationException>(() => { var _ = lease.Span; });
-            MemoryTransport.CreatePair(1, out var sender, out var receiver); var sent = Lease(2); var alias = sent; sender.TrySend(Channel.ReliableOrdered, ref sent); Assert.That(sent, Is.Null); Assert.Throws<InvalidOperationException>(() => { var _ = alias.Span; }); receiver.TryReceive(out _, out var received); received.Dispose(); sender.Dispose(); receiver.Dispose();
+            MemoryTransport.CreatePair(1, out var sender, out var receiver); var sent = Lease(2); var alias = sent; sender.TrySend(Channel.ReliableOrdered, ref sent); Assert.That(sent.IsValid, Is.False); Assert.Throws<InvalidOperationException>(() => { var _ = alias.Span; }); receiver.TryReceive(out _, out var received); received.Dispose(); sender.Dispose(); receiver.Dispose();
         }
 
-        private static TickRecord Record(uint tick, int bytes) { var lease = PacketLease.Rent(bytes); lease.SetLength(bytes); return new TickRecord(tick, lease, null, null, tick, tick, tick, 0, 0, Array.Empty<PacketLease>()); }
+        private static TickRecord Record(uint tick, int bytes) { var lease = PacketLease.Rent(bytes); lease.SetLength(bytes); PacketLease received = default; PacketLease postApply = default; return new TickRecord(tick, ref lease, ref received, ref postApply, tick, tick, tick, 0, 0, Array.Empty<PacketLease>()); }
         private static PacketLease Lease(byte value) { var lease = PacketLease.Rent(1); lease.SetLength(1); lease.Span[0] = value; return lease; }
         private static Schema DispatchSchema() => new SchemaBuilder<DispatchWorld>()
             .Command<DispatchCommand, DispatchCommandCodec, DispatchAuthorizer>(Id(30), 1, Codec(30), 4)
@@ -557,7 +817,7 @@ namespace UniGame.StaticEcs.Network.Tests
             var payload = new CommandBatchPayload { Commands = new[] { new CommandRecord { TypeId = Id(30), Version = 1, Sequence = sequence, ClientTick = clientTick, Payload = BitConverter.GetBytes(value) } } };
             Assert.That(PayloadCodec.TryWrite(payload, bytes, out var length), Is.True);
             var lease = PacketLease.Rent(length); lease.SetLength(length); bytes.AsSpan(0, length).CopyTo(lease.Span);
-            Assert.That(PayloadStager.TryStage(PacketKind.CommandBatch, lease, schema, out var staged), Is.True);
+            Assert.That(PayloadStager.TryStage(PacketKind.CommandBatch, ref lease, schema, out var staged), Is.True);
             Assert.That(staged.SchemaHash, Is.EqualTo(schema.Hash));
             return staged;
         }
@@ -588,7 +848,7 @@ namespace UniGame.StaticEcs.Network.Tests
 
             Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref packet), Is.False);
 
-            Assert.That(packet, Is.Null);
+            Assert.That(packet.IsValid, Is.False);
             Assert.That(alias.IsValid, Is.False);
             Assert.That(queuedAtReceiverAlias.IsValid, Is.False);
             Assert.That(queuedAtSenderAlias.IsValid, Is.False);
@@ -599,13 +859,30 @@ namespace UniGame.StaticEcs.Network.Tests
 
             var afterClose = Lease(6);
             Assert.That(receiver.TrySend(Channel.ReliableOrdered, ref afterClose), Is.False);
-            Assert.That(afterClose, Is.Null);
+            Assert.That(afterClose.IsValid, Is.False);
             AssertTransport(receiver, TransportState.Closed, TransportError.RemoteClosed);
             sender.Dispose();
             receiver.Dispose();
         }
         private static void AssertTransport(MemoryTransport transport, TransportState state, TransportError error) { Assert.That(transport.State, Is.EqualTo(state)); Assert.That(transport.Error, Is.EqualTo(error)); }
-        private static void AssertTerminalReceive(MemoryTransport transport) { Assert.That(transport.TryReceive(out var channel, out var packet), Is.False); Assert.That(channel, Is.EqualTo(default(Channel))); Assert.That(packet, Is.Null); }
+        private static void AssertTerminalReceive(MemoryTransport transport) { Assert.That(transport.TryReceive(out var channel, out var packet), Is.False); Assert.That(channel, Is.EqualTo(default(Channel))); Assert.That(packet.IsValid, Is.False); }
+        private static void RentDisposeLoop(int capacity, int iterations)
+        {
+            for (var i = 0; i < iterations; i++)
+            {
+                var lease = PacketLease.Rent(capacity);
+                lease.Dispose();
+            }
+        }
+        private static void RentTransferDisposeLoop(int capacity, int iterations)
+        {
+            for (var i = 0; i < iterations; i++)
+            {
+                var lease = PacketLease.Rent(capacity);
+                var transferred = PacketLease.Transfer(ref lease);
+                transferred.Dispose();
+            }
+        }
         private static uint Crc32(ReadOnlySpan<byte> bytes)
         {
             var crc = uint.MaxValue;
@@ -643,6 +920,13 @@ namespace UniGame.StaticEcs.Network.Tests
         {
             internal static int Calls;
             public bool Authorize(in CommandContext context, in CrossWorldCommand command) { Calls++; return true; }
+        }
+        private sealed class ThrowingTransform : IPayloadTransform
+        {
+            public byte Id => 0;
+            public int MaxEncodedLength(int decodedLength) => decodedLength;
+            public bool TryEncode(ReadOnlySpan<byte> decoded, Span<byte> destination, out int written) { written = 0; throw new InvalidOperationException("Encode failure."); }
+            public bool TryDecode(ReadOnlySpan<byte> encoded, Span<byte> destination, out int written) { written = 0; throw new InvalidOperationException("Decode failure."); }
         }
         private struct TestCommandCodec : ICodec<TestCommand> { public bool TryWrite(in TestCommand value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out TestCommand value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new TestCommand { Value = raw }; return ok; } }
         private struct DispatchCommandCodec : ICodec<DispatchCommand> { public bool TryWrite(in DispatchCommand value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out DispatchCommand value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new DispatchCommand { Value = raw }; return ok; } }

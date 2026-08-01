@@ -33,21 +33,70 @@ namespace UniGame.StaticEcs.Network
     public sealed class TickRecord : IDisposable
     {
         private bool _disposed;
-        /// <summary>Creates an owned immutable tick bundle.</summary>
-        public TickRecord(uint tick, PacketLease generated, PacketLease received, PacketLease postApply, ulong generatedHash, ulong receivedHash, ulong postApplyHash, long timestamp, long duration, IReadOnlyList<PacketLease> commands)
+        private PacketLease _generated;
+        private PacketLease _received;
+        private PacketLease _postApply;
+        private readonly PacketLease[] _commands;
+
+        /// <summary>Transfers mutable lease sources into an immutable tick bundle after complete preflight validation.</summary>
+        public TickRecord(uint tick, ref PacketLease generated, ref PacketLease received, ref PacketLease postApply, ulong generatedHash, ulong receivedHash, ulong postApplyHash, long timestamp, long duration, PacketLease[] commands)
+            : this(tick, ref generated, ref received, ref postApply, generatedHash, receivedHash, postApplyHash, timestamp, duration, commands == null ? Span<PacketLease>.Empty : commands.AsSpan())
         {
-            Tick = tick; Generated = generated; Received = received; PostApply = postApply; GeneratedHash = generatedHash; ReceivedHash = receivedHash; PostApplyHash = postApplyHash; Timestamp = timestamp; Duration = duration;
-            var source = commands ?? Array.Empty<PacketLease>(); var copy = new PacketLease[source.Count]; for (var i = 0; i < copy.Length; i++) copy[i] = source[i] ?? throw new ArgumentException("Command leases cannot be null.", nameof(commands)); Commands = copy;
-            Bytes = Length(generated) + Length(received) + Length(postApply); for (var i = 0; i < copy.Length; i++) Bytes += copy[i].Length;
+        }
+
+        /// <summary>Transfers mutable lease sources into an immutable tick bundle after complete preflight validation.</summary>
+        public TickRecord(uint tick, ref PacketLease generated, ref PacketLease received, ref PacketLease postApply, ulong generatedHash, ulong receivedHash, ulong postApplyHash, long timestamp, long duration, Span<PacketLease> commands)
+        {
+            ValidateOptional(in generated, nameof(generated));
+            ValidateOptional(in received, nameof(received));
+            ValidateOptional(in postApply, nameof(postApply));
+            ValidateDistinct(in generated, in received, nameof(received));
+            ValidateDistinct(in generated, in postApply, nameof(postApply));
+            ValidateDistinct(in received, in postApply, nameof(postApply));
+            long bytes = checked((long)Length(in generated) + Length(in received) + Length(in postApply));
+            for (var i = 0; i < commands.Length; i++)
+            {
+                if (!commands[i].IsValid) throw new ArgumentException("Command leases must be valid.", nameof(commands));
+                ValidateDistinct(in generated, in commands[i], nameof(commands));
+                ValidateDistinct(in received, in commands[i], nameof(commands));
+                ValidateDistinct(in postApply, in commands[i], nameof(commands));
+                for (var j = 0; j < i; j++) ValidateDistinct(in commands[j], in commands[i], nameof(commands));
+                bytes = checked(bytes + commands[i].Length);
+            }
+
+            _commands = new PacketLease[commands.Length];
+            Tick = tick;
+            GeneratedHash = generatedHash;
+            ReceivedHash = receivedHash;
+            PostApplyHash = postApplyHash;
+            Timestamp = timestamp;
+            Duration = duration;
+            Bytes = bytes;
+            try
+            {
+                if (generated.IsValid) _generated = PacketLease.Transfer(ref generated);
+                if (received.IsValid) _received = PacketLease.Transfer(ref received);
+                if (postApply.IsValid) _postApply = PacketLease.Transfer(ref postApply);
+                for (var i = 0; i < commands.Length; i++)
+                    _commands[i] = PacketLease.Transfer(ref commands[i]);
+            }
+            catch
+            {
+                DisposeOwned(ref _generated);
+                DisposeOwned(ref _received);
+                DisposeOwned(ref _postApply);
+                for (var i = 0; i < _commands.Length; i++) DisposeOwned(ref _commands[i]);
+                throw;
+            }
         }
         /// <summary>Gets the bundle tick.</summary>
         public uint Tick { get; }
-        /// <summary>Gets the generated canonical snapshot lease.</summary>
-        public PacketLease Generated { get; }
-        /// <summary>Gets the received canonical snapshot lease.</summary>
-        public PacketLease Received { get; }
-        /// <summary>Gets the post-apply canonical snapshot lease.</summary>
-        public PacketLease PostApply { get; }
+        /// <summary>Gets the generated canonical snapshot lease borrowed until this record is disposed.</summary>
+        public PacketLease Generated => _generated;
+        /// <summary>Gets the received canonical snapshot lease borrowed until this record is disposed.</summary>
+        public PacketLease Received => _received;
+        /// <summary>Gets the post-apply canonical snapshot lease borrowed until this record is disposed.</summary>
+        public PacketLease PostApply => _postApply;
         /// <summary>Gets the generated canonical hash.</summary>
         public ulong GeneratedHash { get; }
         /// <summary>Gets the received canonical hash.</summary>
@@ -58,13 +107,33 @@ namespace UniGame.StaticEcs.Network
         public long Timestamp { get; }
         /// <summary>Gets caller-defined processing duration.</summary>
         public long Duration { get; }
-        /// <summary>Gets owned command payload leases in source order.</summary>
-        public IReadOnlyList<PacketLease> Commands { get; }
+        /// <summary>Gets command payload leases borrowed in source order until this record is disposed.</summary>
+        public IReadOnlyList<PacketLease> Commands => _commands;
         /// <summary>Gets total retained bytes.</summary>
         public long Bytes { get; }
         /// <summary>Disposes every lease owned by this bundle.</summary>
-        public void Dispose() { if (_disposed) return; _disposed = true; Generated?.Dispose(); Received?.Dispose(); PostApply?.Dispose(); for (var i = 0; i < Commands.Count; i++) Commands[i].Dispose(); }
-        private static int Length(PacketLease lease) => lease?.Length ?? 0;
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            DisposeOwned(ref _generated);
+            DisposeOwned(ref _received);
+            DisposeOwned(ref _postApply);
+            for (var i = 0; i < _commands.Length; i++) DisposeOwned(ref _commands[i]);
+        }
+
+        private static void ValidateOptional(in PacketLease lease, string name)
+        {
+            if (!lease.IsDefault && !lease.IsValid) throw new ArgumentException("The lease must be default or valid.", name);
+        }
+
+        private static void ValidateDistinct(in PacketLease left, in PacketLease right, string name)
+        {
+            if (PacketLease.SameGeneration(in left, in right)) throw new ArgumentException("Each lease source must own a distinct generation.", name);
+        }
+
+        private static int Length(in PacketLease lease) => lease.IsValid ? lease.Length : 0;
+        private static void DisposeOwned(ref PacketLease lease) { if (!lease.IsValid) return; var owned = lease; lease = default; owned.Dispose(); }
     }
 
     /// <summary>Retains bounded whole-tick bundles and owns all accepted leases.</summary>
