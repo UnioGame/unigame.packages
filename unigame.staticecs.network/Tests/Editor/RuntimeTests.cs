@@ -63,6 +63,42 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
+        public void MalformedCommandCodecIsRejectedBeforeStagedPayloadEscapes()
+        {
+            var schema = new SchemaBuilder<TestWorld>().Command<TestCommand, TestCommandCodec, TestAuthorizer>(Id(10), 1, Codec(10), 4).Freeze();
+            var bytes = new byte[64];
+            var payload = new CommandBatchPayload
+            {
+                Commands = new[]
+                {
+                    new CommandRecord { TypeId = Id(10), Version = 1, Sequence = 1, ClientTick = 4, Payload = new byte[3] }
+                }
+            };
+            Assert.That(PayloadCodec.TryWrite(payload, bytes, out var length), Is.True);
+            var header = Header(PacketKind.CommandBatch, PacketFlags.ReliableOrdered, 1, schema.Hash);
+            Assert.That(PacketFraming.TryEncode(header, bytes.AsSpan(0, length), new NoOpTransform(), schema, out _), Is.False);
+
+            var direct = PacketLease.Rent(length);
+            direct.SetLength(length);
+            bytes.AsSpan(0, length).CopyTo(direct.Span);
+            Assert.That(PayloadStager.TryStage(PacketKind.CommandBatch, direct, schema, out var directStage), Is.False);
+            Assert.That(directStage, Is.Null);
+            Assert.That(direct.IsValid, Is.False);
+
+            header.WirePayloadLength = (uint)length;
+            header.DecodedPayloadLength = (uint)length;
+            // Frozen xxHash64 for this canonical malformed CommandBatch.
+            header.PayloadHash = 5696635365932090410UL;
+            var raw = PacketLease.Rent(PacketHeader.Size + length);
+            raw.SetLength(PacketHeader.Size + length);
+            Assert.That(header.TryWrite(raw.Span), Is.True);
+            bytes.AsSpan(0, length).CopyTo(raw.Span.Slice(PacketHeader.Size));
+            Assert.That(PacketFraming.TryDecode(raw, new NoOpTransform(), schema, out _, out var staged), Is.False);
+            Assert.That(staged, Is.Null);
+            raw.Dispose();
+        }
+
+        [Test]
         public void SnapshotStageValidatesEveryRecordShapeAndCodec()
         {
             var schema = new SchemaBuilder<TestWorld>()

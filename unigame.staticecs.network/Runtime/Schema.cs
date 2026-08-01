@@ -82,7 +82,7 @@ namespace UniGame.StaticEcs.Network
             if (staged.Kind == PacketKind.CommandBatch)
             {
                 var commands = staged.Commands;
-                for (var i = 0; i < commands.Length; i++) { ref readonly var command = ref commands[i]; if (!TryGet(command.TypeId, out var entry) || entry.Kind != SchemaKind.Command || entry.Version != command.Version || staged.GetPayload(command).Length > entry.MaxPayload || entry.CommandInvoker == null) return false; }
+                for (var i = 0; i < commands.Length; i++) { ref readonly var command = ref commands[i]; var payload = staged.GetPayload(command); if (!TryGet(command.TypeId, out var entry) || entry.Kind != SchemaKind.Command || entry.Version != command.Version || payload.Length > entry.MaxPayload || entry.CommandInvoker == null || !entry.CommandInvoker.Validate(payload, 1)) return false; }
                 return true;
             }
             if (staged.Kind != PacketKind.FullSnapshot) return true;
