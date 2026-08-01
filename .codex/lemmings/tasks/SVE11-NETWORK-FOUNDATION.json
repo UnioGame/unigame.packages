@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-FOUNDATION",
+  "mode": "strict",
+  "state": "Ready",
+  "previousState": "Planned",
+  "role": "complex-worker",
+  "branch": "codex/sve11-network-foundation",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-foundation",
+  "plan": {
+    "goal": "Implement the accepted SVE11 network foundation contract as a reusable Unity-free Static ECS package and make EcsServiceRegistry safe for Main plus ServerWorld.",
+    "acceptance": [
+      "Implement every public contract and invariant in .codex/lemmings/contracts/SVE11-network-foundation.md without inventing client/server gameplay policy.",
+      "Use package id com.unigame.staticecs.network and namespace-first names.",
+      "Provide deterministic golden-byte, malformed-input, schema, ownership, transport and history EditMode tests.",
+      "Preserve Main compatibility while adding typed multiworld EcsService registration and lookup.",
+      "Add English XML summaries for public APIs and an English README with Capabilities, Usage and Configuration.",
+      "Create one candidate commit and report exact validation and deferred Unity integration evidence."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-foundation.md",
+      "unigame.staticecs",
+      "unigame.staticecs.unity"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/**",
+      "unigame.staticecs.unity/Runtime/Service/IEcsService.cs",
+      "unigame.staticecs.unity/Runtime/Service/EcsService.cs",
+      "unigame.staticecs.unity/Runtime/Service/EcsServiceRegistry.cs",
+      "unigame.staticecs.unity/Tests/Editor/EcsServiceRegistryTests.cs",
+      "unigame.staticecs.unity/Tests/Editor/unigame.staticecs.unity.tests.asmdef"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.ai.lemmings/**",
+      "unigame.staticecs.features/**",
+      "unity.*/*"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": null
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": []
+  },
+  "baseSha": "49647b26da3dac267d4909c866623bd638e2cbe6",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "Wire format divergence or unsafe bounds handling",
+        "test": "Golden-byte and malformed/truncated/oversized protocol tests"
+      },
+      {
+        "risk": "Unstable schema or AOT-unsafe dispatch",
+        "test": "Deterministic schema hash and duplicate/missing typed registration tests"
+      },
+      {
+        "risk": "Pooled buffer leak or ownership ambiguity",
+        "test": "Send/receive/fault/dispose ownership tests"
+      },
+      {
+        "risk": "Unbounded snapshot history",
+        "test": "Count, command and shared byte-budget eviction tests"
+      },
+      {
+        "risk": "ServerWorld registration replaces Main compatibility",
+        "test": "Typed lookup, duplicate registration, unregister, rollback and LastReport tests"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Unity EditMode: unigame.staticecs.network.tests",
+      "Unity EditMode: unigame.staticecs.unity.tests"
+    ],
+    "allowedOutputs": [],
+    "debt": [
+      {
+        "reason": "The new package is not referenced by the root Unity manifest until the integration wave.",
+        "owner": "orchestrator",
+        "futureGate": "Root manifest integration and Unity EditMode compilation before accepting the integrated package",
+        "blocking": false
+      }
+    ]
+  },
+  "review": {
+    "taskId": "SVE11-NETWORK-FOUNDATION",
+    "base": null,
+    "status": "Pending",
+    "cycle": 0,
+    "head": null,
+    "evidence": null
+  },
+  "close": {
+    "mergeCommit": null,
+    "integrationValidationPassed": false
+  }
+}

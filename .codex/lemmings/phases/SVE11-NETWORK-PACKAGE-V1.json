@@ -18,6 +18,12 @@
       "owner": "orchestrator",
       "scope": "Only the orchestrator integrates accepted candidate commits",
       "status": "Active"
+    },
+    {
+      "resource": "sve11-network-foundation worktree",
+      "owner": "SVE11-NETWORK-FOUNDATION",
+      "scope": "Foundation-owned package and registry paths only",
+      "status": "Active"
     }
   ],
   "close": {
