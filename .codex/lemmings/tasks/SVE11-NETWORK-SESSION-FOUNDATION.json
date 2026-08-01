@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-FOUNDATION",
   "mode": "strict",
-  "state": "ChangesRequested",
-  "previousState": "Candidate",
+  "state": "Candidate",
+  "previousState": "ChangesRequested",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-foundation",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-foundation",
@@ -71,13 +71,17 @@
       "Full available package harness: 70/70 passed.",
       "Warmed 1024-cycle enqueue/build/dispose/mark/ack path: exactly 0 managed bytes.",
       "lemmings check and lemmings check --all: 0 errors, 0 warnings.",
-      "Forbidden-path audit clean; no .codex, replication, PacketHeader, framing, staging, history, asmdef or package edits."
+      "Forbidden-path audit clean; no .codex, replication, PacketHeader, framing, staging, history, asmdef or package edits.",
+      "Repair cycle 1 added only the requested boundary proofs; warnings-as-errors build and full package harness passed 73/73.",
+      "Repair proves an actual byte-ring split at physical byte 161, repeated independent frozen-prefix leases, faulted BeginStep no-op, and null/rejected-only dispatcher constructor precedence."
     ]
   },
   "baseSha": "350dbbec7670010fd0792f3f8f49a9cd63a2c4ac",
   "commits": {
     "candidate": "0a497e0abb637f44caa2c4fef435fc28ee958fb1",
-    "fix": []
+    "fix": [
+      "62d7a52222d03b605cfbd57df7bf24af553a28cc"
+    ]
   },
   "validation": {
     "riskToTest": [
@@ -109,7 +113,7 @@
     "base": "350dbbec7670010fd0792f3f8f49a9cd63a2c4ac",
     "status": "ChangesRequested",
     "cycle": 1,
-    "head": "0a497e0abb637f44caa2c4fef435fc28ee958fb1",
+    "head": "62d7a52222d03b605cfbd57df7bf24af553a28cc",
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SESSION-FOUNDATION.0a497e0abb637f44caa2c4fef435fc28ee958fb1.json"
   },
   "close": null
