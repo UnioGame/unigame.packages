@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-CORE",
   "mode": "strict",
-  "state": "Active",
-  "previousState": "Ready",
+  "state": "Candidate",
+  "previousState": "Active",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-core",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-core",
@@ -59,15 +59,23 @@
   "models": {
     "requested": null,
     "assigned": "gpt-5.6-sol:medium",
-    "actual": null
+    "actual": "gpt-5.6-sol:medium"
   },
   "execution": {
-    "handoff": null,
-    "validationEvidence": []
+    "handoff": "Candidate 6f5c23f1a26db8429e9e09f30cb316b71070f4ad is exactly one commit from the frozen baseline and the worktree is clean.",
+    "validationEvidence": [
+      "Warnings-as-errors compile: 0 warnings, 0 errors.",
+      "Focused SessionTests: 20/20 passed.",
+      "Complete package harness: 93/93 passed.",
+      "Exactly nine owned paths changed; no forbidden, Unity, protocol, replication, asmdef, manifest or .codex edits.",
+      "No Sample identifiers and git diff --check clean.",
+      "lemmings check --all: 0 findings.",
+      "Unity EditMode deferred to post-integration because the isolated worktree is package-only."
+    ]
   },
   "baseSha": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
   "commits": {
-    "candidate": null,
+    "candidate": "6f5c23f1a26db8429e9e09f30cb316b71070f4ad",
     "fix": []
   },
   "validation": {
