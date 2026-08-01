@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-TRANSPORT-CLOSE",
   "mode": "strict",
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "focused-worker",
   "branch": "codex/sve11-network-transport-close",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-transport-close",
@@ -51,6 +51,8 @@
       "Temporary outputs removed; worktree clean",
       "Repair covers valid-CRC wrong flags, capacity sequence preservation, Faulted double Dispose, replaced snapshot alias disposal and invalid-terminal queued alias disposal",
       "Repair overlay compile passed and the focused transport suite remains 10/10",
+      "Unity recompile produced no new compiler errors",
+      "Unity EditMode unigame.staticecs.network.tests: 31 passed, 0 failed in 0.71s",
       "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests"
     ]
   },
@@ -93,7 +95,7 @@
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-TRANSPORT-CLOSE.7db6dd201d210bc887b526d3575efa3881301a15.json"
   },
   "close": {
-    "mergeCommit": null,
-    "integrationValidationPassed": false
+    "mergeCommit": "9a61dc6241fc3cff059891c1b006f8aabb4a7091",
+    "integrationValidationPassed": true
   }
 }

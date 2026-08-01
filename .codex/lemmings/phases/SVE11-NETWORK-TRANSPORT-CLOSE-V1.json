@@ -13,7 +13,14 @@
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-TRANSPORT-CLOSE-V1.baseline.json"
   },
   "close": {
-    "mergeCommits": [],
-    "phaseValidation": []
+    "mergeCommits": [
+      "9a61dc6241fc3cff059891c1b006f8aabb4a7091"
+    ],
+    "phaseValidation": [
+      "Candidate overlay compilation passed",
+      "Focused transport tests passed 10/10",
+      "Unity recompile produced no new compiler errors",
+      "Unity EditMode unigame.staticecs.network.tests: 31 passed, 0 failed in 0.71s"
+    ]
   }
 }
