@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-LEASE",
+  "mode": "strict",
+  "state": "Ready",
+  "previousState": "Draft",
+  "role": "focused-worker",
+  "branch": "codex/sve11-network-lease",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-lease",
+  "plan": {
+    "goal": "Make PacketLease ownership generation-safe and allocation-free after warm-up across all baseline consumers.",
+    "acceptance": [
+      "Implement the exact readonly generational handle, non-wrapping token and intrusive state-pool contract.",
+      "Migrate staging, framing, transport and history compile-atomically to explicit ref-transfer/default ownership.",
+      "Remove PacketLease.Memory and document borrowed Span and aggregate ReadOnlyMemory lifetimes.",
+      "Prove invalid/stale/double ownership failures and forced generation exhaustion without alias revival.",
+      "Prove warmed Rent/Dispose and Rent/Transfer/Dispose loops allocate zero managed bytes in isolated tests.",
+      "Preserve the existing wire format, protocol behavior and transport lifecycle semantics."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-packet-lease.md",
+      "d2b3207c3dbeef448f9b635bdb57030fe1f6f2df"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/Runtime/BuffersTransport.cs",
+      "unigame.staticecs.network/Runtime/Framing.cs",
+      "unigame.staticecs.network/Runtime/Staging.cs",
+      "unigame.staticecs.network/Runtime/History.cs",
+      "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs",
+      "unigame.staticecs.network/README.md"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network/Protocol/**",
+      "unigame.staticecs.network/Runtime/Schema*.cs",
+      "unigame.staticecs.network/Runtime/Replication/**",
+      "unigame.staticecs.network/Runtime/*.asmdef",
+      "unigame.ai.lemmings/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": null
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": []
+  },
+  "baseSha": "d2b3207c3dbeef448f9b635bdb57030fe1f6f2df",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "A copied or transferred handle returns or revives pooled storage twice",
+        "test": "Default/stale/double/use-after-return and forced token-exhaustion tests"
+      },
+      {
+        "risk": "Ownership migration leaks or duplicates leases across aggregates and queues",
+        "test": "Focused staging, framing, history and transport transfer regression matrix"
+      },
+      {
+        "risk": "The lease optimization still allocates one managed wrapper per packet",
+        "test": "Isolated warmed Rent/Dispose and Rent/Transfer/Dispose allocation loops"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Focused runtime/test compile and tests",
+      "lemmings check --all",
+      "Unity EditMode unigame.staticecs.network.tests after integration"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "review": null,
+  "close": null
+}
