@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-TRANSPORT-CLOSE",
   "mode": "strict",
-  "state": "Candidate",
-  "previousState": "ChangesRequested",
+  "state": "Accepted",
+  "previousState": "Candidate",
   "role": "focused-worker",
   "branch": "codex/sve11-network-transport-close",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-transport-close",
@@ -87,10 +87,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-TRANSPORT-CLOSE",
     "base": "4293593b25e6c00b1a61642230d0e621bd746733",
-    "status": "ChangesRequested",
-    "cycle": 1,
+    "status": "Accepted",
+    "cycle": 2,
     "head": "7db6dd201d210bc887b526d3575efa3881301a15",
-    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-TRANSPORT-CLOSE.e07464d3e18daa66a17a5fb38fe97676cd25c62c.json"
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-TRANSPORT-CLOSE.7db6dd201d210bc887b526d3575efa3881301a15.json"
   },
   "close": {
     "mergeCommit": null,

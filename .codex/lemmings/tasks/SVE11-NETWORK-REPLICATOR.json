@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-REPLICATOR",
   "mode": "strict",
-  "state": "Candidate",
-  "previousState": "Assigned",
+  "state": "ChangesRequested",
+  "previousState": "Candidate",
   "role": "complex-worker",
   "branch": "codex/sve11-network-replicator",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-replicator",
@@ -95,10 +95,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-REPLICATOR",
     "base": "7773efd0df507f83f7056aecf5941bb26d0a2185",
-    "status": "Pending",
-    "cycle": 0,
+    "status": "ChangesRequested",
+    "cycle": 1,
     "head": "10893ac002569f07535144c62e9bafe3f3852a76",
-    "evidence": null
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-REPLICATOR.10893ac002569f07535144c62e9bafe3f3852a76.json"
   },
   "close": {
     "mergeCommit": null,
