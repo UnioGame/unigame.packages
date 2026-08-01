@@ -11,9 +11,9 @@
     ".codex/lemmings/contracts/SVE11-network-replication.md"
   ],
   "baselineReview": {
-    "status": "Pending",
+    "status": "ChangesRequested",
     "reviewerModel": "gpt-5.6-sol:high",
-    "evidence": null
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SESSION-CORE-V1.baseline.changes-requested.json"
   },
   "leases": [
     {

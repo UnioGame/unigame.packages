@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-SESSION-CORE-V1",
+  "repoRoot": "D:/Dev/kontora/static.ecs.template/GameClient/Game.Packages",
+  "baselineSha": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [
+    "Contract line 99 incorrectly rejects zero chunk and cluster identifiers although Static ECS permits registered zero identities.",
+    "Configured inbound wire and decoded payload limits are not explicitly enforced before PacketFraming decoding and decoded-buffer allocation.",
+    "The every-packet local schema comparison contradicts explicit SchemaMismatch delivery and must be replaced with phase-specific schema binding rules.",
+    "Allowed ConnectResult values, rejection send commitment, public Result timing, and client-local ChunkMapRejected semantics are not frozen.",
+    "Authority and replica scope validation is not repeated at acceptance and establishment boundaries or after Static ECS lifecycle/topology drift.",
+    "DisconnectReason meaning and terminal mappings omit received TransportClosed, ServerShutdown direction, and the no-generated-fault-disconnect policy.",
+    "StepResult, first/non-increasing step indices, exhaustion ordering, and Close behavior in terminal states require exact semantics.",
+    "The contract lacks an explicit authentication/replay security non-goal and caller uniqueness requirements for server nonce and epoch."
+  ],
+  "validation": [
+    "Reviewed proposal contract at planning head db84d00b9330639d9a548d96e6af85b625e9bb9d against frozen code baseline 2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed.",
+    "The planning range adds only the Session Core contract and phase file, and git diff --check passes.",
+    "The four-packet Client Hello, Server Hello, Server HelloAck, Client Ack handshake is compatible with PacketHeader, PayloadCodec, PacketFraming and capacity-one MemoryTransport ordering.",
+    "Separate reliable receive domains correctly observe sequences 1 and 2; delaying Server HelloAck until a later server Step produces three client-first pair-pump iterations.",
+    "PacketLease ownership supports semantic-intent retries because TrySend consumes both successful and failed leases and framing can rebuild deterministic bytes.",
+    "No automatic transport disposal on Closed or Faulted is required to preserve an already queued rejection or Requested echo in MemoryTransport.",
+    "ReplicaScope and Replicator can be constructed and validated without Capture, Apply or ECS mutation; Session must explicitly call the internal ValidateCurrent seam.",
+    "The proposed public names SessionRole, SessionState, SessionError, StepResult, SessionConfig and Session<TWorld> are short, distinct and compatible with the package layer.",
+    "No Main-default alias is appropriate because the package has no Unity Main dependency.",
+    "The owned additions and README-only modification are sufficient; no protocol, framing, replication, asmdef or manifest change is required.",
+    "Session Foundation is integrated and closed at the baseline, including Unity 6000.3.20f1 compilation and 73/73 EditMode tests."
+  ]
+}
