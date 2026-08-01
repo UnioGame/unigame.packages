@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-FOUNDATION",
+  "base": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
+  "head": "c8c878d2a66c515ea07e4e129c58274862b01d95",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [
+    {
+      "severity": "P1",
+      "file": "unigame.staticecs.network/Runtime/Schema.cs",
+      "line": "82-86",
+      "rationale": "CommandBatch staging does not invoke CommandInvoker.Validate, so a framed payload within maxBytes but not exactly decodable by its registered codec is exposed as validated and fails only during later authorization."
+    }
+  ],
+  "validation": [
+    "Exact full and incremental ancestry verified; worktree clean; ownership preserved",
+    "git diff --check passed",
+    "Five other cycle-one findings confirmed closed",
+    "Protocol/runtime boundaries and README remain aligned with the frozen contract",
+    "Lifecycle disposition: Replan Required after the second failed review"
+  ]
+}

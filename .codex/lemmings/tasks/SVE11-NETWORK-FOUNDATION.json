@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-FOUNDATION",
   "mode": "strict",
-  "state": "Candidate",
-  "previousState": "Active",
+  "state": "Replan Required",
+  "previousState": "Candidate",
   "role": "complex-worker",
   "branch": "codex/sve11-network-foundation-candidate",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-foundation",
@@ -100,10 +100,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-FOUNDATION",
     "base": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
-    "status": "Pending",
+    "status": "ChangesRequested",
     "cycle": 2,
     "head": "c8c878d2a66c515ea07e4e129c58274862b01d95",
-    "evidence": null
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-FOUNDATION.c8c878d2a66c515ea07e4e129c58274862b01d95.json"
   },
   "close": {
     "mergeCommit": null,
