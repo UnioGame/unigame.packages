@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-REPLICATION-V1",
+  "baselineSha": "f04e4003f7aa21f48c141f5522fbdadc3c654dc0",
+  "integrationBranch": "codex/sve11-network-package",
+  "contractsFrozen": true,
+  "contracts": [
+    ".codex/lemmings/contracts/SVE11-network-replication.md"
+  ],
+  "baselineReview": {
+    "status": "Accepted",
+    "reviewerModel": "gpt-5.6-sol:high",
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-REPLICATION-V1.baseline.json"
+  },
+  "close": {
+    "mergeCommits": [],
+    "phaseValidation": []
+  }
+}

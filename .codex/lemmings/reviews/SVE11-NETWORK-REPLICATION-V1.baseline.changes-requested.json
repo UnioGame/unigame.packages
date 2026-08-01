@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-REPLICATION-V1",
+  "baselineSha": "f04e4003f7aa21f48c141f5522fbdadc3c654dc0",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [
+    "Bind ReplicaScope to an explicit local role and forbid implicit cluster/chunk registration or adoption.",
+    "Define disabled Tag and noncomponent normalization semantics for wire v1.",
+    "Use an exact per-session replica ledger and require relation targets in the same snapshot.",
+    "Freeze public signatures, ownership, result precedence and staged schema identity.",
+    "Limit atomicity to returned preflight failures because ECS hooks may throw during mutation."
+  ]
+}

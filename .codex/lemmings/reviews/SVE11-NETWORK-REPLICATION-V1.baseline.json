@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-REPLICATION-V1",
+  "baselineSha": "f04e4003f7aa21f48c141f5522fbdadc3c654dc0",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [],
+  "validation": [
+    "Exact baseline HEAD and clean tracked tree verified; lemmings check --all passed with zero findings.",
+    "Revision closes explicit role/owner validation, no-adoption, schema-bound staging and exhaustive result semantics.",
+    "Revision freezes disabled noncomponent behavior, exact session ledger ownership, relation target scope and ReplicatedTag control semantics.",
+    "Revision matches FFS collection/unmanaged limits and distinguishes preflight guarantees from user-hook exceptions.",
+    "The no-remap GID contract is valid because wire preserves Id, ClusterId and Version and FFS derives chunk from Id."
+  ]
+}
