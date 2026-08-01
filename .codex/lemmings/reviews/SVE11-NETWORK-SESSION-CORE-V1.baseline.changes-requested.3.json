@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-SESSION-CORE-V1",
+  "repoRoot": "D:/Dev/kontora/static.ecs.template/GameClient/Game.Packages",
+  "baselineSha": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [
+    "Contract line 151 classifies a non-zero Server Hello tick as invalid and does not distinguish a malformed tick shape from a valid exact non-zero tick outside the client range that must await TickRateUnsupported."
+  ],
+  "validation": [
+    "Reviewed the cycle-3 proposal at planning head 0d37e63c7db6a6cd942f566abba1407709834a06 against frozen code baseline 2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed.",
+    "The planning range contains only Lemmings contract, phase and immutable prior-review evidence; git diff --check passes.",
+    "A canonical LimitsRejected is now correctly accepted when higher-priority observable schema and tick causes are absent because private rejected map size is not visible to the client.",
+    "SchemaMismatch and TickRateUnsupported rejection precedence remains independently verifiable.",
+    "Hello, HelloAck and final-Ack mutations now have explicit lease disposal, state-commit and terminal mappings apart from the contradictory Server Hello tick row.",
+    "Final Ack wrong schema, epoch, payload and common fields are classified explicitly.",
+    "Transport abstraction exceptions propagate unchanged after local lease and stage cleanup.",
+    "The step index is committed before BeginStep, throwing sends do not commit sequence or intent, and inbound state already committed before a later exception is not rolled back.",
+    "No throwing Step fabricates StepResult or rewrites the transport exception into Session state.",
+    "The rejecting server correctly remains Closing after successful HelloAck enqueue, keeping MemoryTransport alive until the client consumes the rejection and disposes its terminal Session.",
+    "RemoteClosed after the rejection marker publishes the stored result and closes the server without draining the queued rejection.",
+    "Pre-decode configured-limit enforcement, phase-specific schema binding, lifecycle drift checks, client topology Result timing, Requested echo, no automatic transport disposal and security non-goal remain coherent.",
+    "Public API names and exact owned-file boundaries remain accepted."
+  ]
+}

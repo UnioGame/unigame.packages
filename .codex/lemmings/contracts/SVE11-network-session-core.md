@@ -148,7 +148,8 @@ Handshake semantic mutations are classified before state advancement:
 |---|---|---|
 | Client Hello nonce zero or invalid non-limit tick shape | `Faulted/Protocol/ProtocolViolation` | not applicable |
 | Client Hello advertised receive limit below 24 | continue two-Hello flow, then `LimitsRejected` | not applicable |
-| Server Hello nonce zero, unequal/non-zero tick shape, or invalid exact tick | not applicable | `Faulted/Protocol/ProtocolViolation` |
+| Server Hello nonce zero, unequal min/max tick, or exact tick zero | not applicable | `Faulted/Protocol/ProtocolViolation` |
+| Server Hello exact non-zero tick outside the client range | not applicable | store Hello, remain `AwaitHelloAck`, and accept only coherent `TickRateUnsupported` |
 | Server Hello advertised receive limit below 24 or non-zero capabilities | not applicable | `Faulted/Limits/LimitsExceeded` |
 | Globally out-of-range Hello values rejected by PayloadCodec/framing | `Faulted/Protocol/ProtocolViolation` | `Faulted/Protocol/ProtocolViolation` |
 | Accepted HelloAck with zero epoch or peer id, wrong nonce/tick, non-empty rule violation, or wrong common fields | not applicable | `Faulted/Protocol/ProtocolViolation`, Result unchanged |
