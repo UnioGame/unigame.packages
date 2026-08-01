@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-REPLICATOR-PROOF",
+  "base": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
+  "head": "c2ad8560740ce2b8fb3283fc86ebbb92d6fd4d4c",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [],
+  "validation": [
+    "The exact clean range contains five linear commits from the accepted baseline: four separate -x replay commits followed by one proof-only commit.",
+    "Stable patch IDs match all four source commits, and the pre-proof tree is byte-identical to reviewed head 14c1eb47af6e94ff5471b4417afbcd86dc3395b2.",
+    "The proof commit changes only ReplicationTests.cs.",
+    "The complete runtime range conforms to all three frozen contracts for ownership, ordering, scope, schema, preflight, transitions, phased apply, hooks and dependencies.",
+    "The survivor-conflict test establishes the transitioned survivor plus representative rich state immediately before failure and proves the complete fingerprint identical afterward.",
+    "All prior findings are closed, including Capture failure ownership, pooled-state reuse, FFS OnAdd propagation, rich fingerprints, README guidance and Strict lifecycle metadata.",
+    "README structure, pre-initialization duties, lease disposal, preflight guarantees and v1 limitations are complete.",
+    "Ownership, forbidden paths, asmdefs, metadata, GUIDs, no-Sample scan and worktree cleanliness passed.",
+    "git diff --check, ancestry, ownership, metadata, proof-scope and lemmings check --all passed.",
+    "Warnings-as-errors compilation and focused replication tests passed 15/15 including zero-allocation Capture; Unity EditMode remains the integration gate."
+  ]
+}
+

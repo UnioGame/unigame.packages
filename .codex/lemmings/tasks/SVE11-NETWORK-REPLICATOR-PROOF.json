@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-REPLICATOR-PROOF",
   "mode": "strict",
-  "state": "Candidate",
-  "previousState": "Active",
+  "state": "Accepted",
+  "previousState": "Candidate",
   "role": "complex-worker",
   "branch": "codex/sve11-network-replicator-proof",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-replicator-proof",
@@ -98,6 +98,13 @@
     "allowedOutputs": [],
     "debt": []
   },
-  "review": null,
+  "review": {
+    "taskId": "SVE11-NETWORK-REPLICATOR-PROOF",
+    "base": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
+    "status": "Accepted",
+    "cycle": 1,
+    "head": "c2ad8560740ce2b8fb3283fc86ebbb92d6fd4d4c",
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-REPLICATOR-PROOF.c2ad8560740ce2b8fb3283fc86ebbb92d6fd4d4c.json"
+  },
   "close": null
 }
