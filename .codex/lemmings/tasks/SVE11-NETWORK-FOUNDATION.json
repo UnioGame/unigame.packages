@@ -46,13 +46,17 @@
       "NETWORK_FOUNDATION_TESTS=8 PASS",
       "git diff --check 0231d545a3065a54e9d2d6d68a5ed3378d933966..58fac5c92903b1cc6997e7a1e005d33bb1eef460: passed",
       "Missing paired Unity meta files: 0; forbidden dependency scan: clean",
+      "Review repair harness compiled Protocol, Runtime and Editor tests against actual FFS.StaticEcs.dll: NETWORK_FOUNDATION_TESTS=15 PASS, 0 warnings, 0 errors",
+      "Repair diff/meta/ownership checks passed; worktree clean",
       "Deferred integration gate: import package through root manifest and run unigame.staticecs.network.tests in Unity EditMode"
     ]
   },
   "baseSha": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
   "commits": {
     "candidate": "58fac5c92903b1cc6997e7a1e005d33bb1eef460",
-    "fix": []
+    "fix": [
+      "c8c878d2a66c515ea07e4e129c58274862b01d95"
+    ]
   },
   "validation": {
     "riskToTest": [
@@ -96,10 +100,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-FOUNDATION",
     "base": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
-    "status": "ChangesRequested",
-    "cycle": 1,
-    "head": "58fac5c92903b1cc6997e7a1e005d33bb1eef460",
-    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-FOUNDATION.58fac5c92903b1cc6997e7a1e005d33bb1eef460.json"
+    "status": "Pending",
+    "cycle": 2,
+    "head": "c8c878d2a66c515ea07e4e129c58274862b01d95",
+    "evidence": null
   },
   "close": {
     "mergeCommit": null,
