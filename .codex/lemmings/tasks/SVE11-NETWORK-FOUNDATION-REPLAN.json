@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-FOUNDATION-REPLAN",
   "mode": "strict",
-  "state": "Ready",
-  "previousState": "Planned",
+  "state": "Candidate",
+  "previousState": "Active",
   "role": "complex-worker",
   "branch": "codex/sve11-network-foundation-replan",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-foundation-replan",
@@ -37,15 +37,21 @@
   "models": {
     "requested": null,
     "assigned": "gpt-5.6-sol:medium",
-    "actual": null
+    "actual": "gpt-5.6-sol:medium"
   },
   "execution": {
-    "handoff": null,
-    "validationEvidence": []
+    "handoff": "Replanned candidate preserves the five confirmed repairs and validates every staged command through its retained exact codec before the stage escapes.",
+    "validationEvidence": [
+      "NETWORK_FOUNDATION_TESTS=16 PASS using the real Protocol, Runtime and Editor test sources",
+      "netstandard2.1 compile against actual FFS.StaticEcs.dll: 0 warnings, 0 errors",
+      "Malformed 3-byte payload for an exact 4-byte registered codec is rejected by TryEncode, direct PayloadStager and hash/CRC-correct TryDecode",
+      "git diff checks passed; missing paired meta files: 0; worktree clean",
+      "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests after root manifest import"
+    ]
   },
   "baseSha": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
   "commits": {
-    "candidate": null,
+    "candidate": "367c4c95847d486b132545a2e207abcc9ee0afe7",
     "fix": []
   },
   "validation": {
@@ -76,10 +82,10 @@
   },
   "review": {
     "taskId": "SVE11-NETWORK-FOUNDATION-REPLAN",
-    "base": null,
+    "base": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
     "status": "Pending",
     "cycle": 0,
-    "head": null,
+    "head": "367c4c95847d486b132545a2e207abcc9ee0afe7",
     "evidence": null
   },
   "close": {
