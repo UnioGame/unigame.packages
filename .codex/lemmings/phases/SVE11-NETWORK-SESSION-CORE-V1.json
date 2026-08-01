@@ -13,7 +13,7 @@
   "baselineReview": {
     "status": "ChangesRequested",
     "reviewerModel": "gpt-5.6-sol:high",
-    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SESSION-CORE-V1.baseline.changes-requested.json"
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SESSION-CORE-V1.baseline.changes-requested.2.json"
   },
   "leases": [
     {

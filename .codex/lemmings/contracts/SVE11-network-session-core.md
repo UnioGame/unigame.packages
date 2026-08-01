@@ -134,13 +134,30 @@ After an Accepted HelloAck, a canonical strictly ordered map that conflicts with
 
 Capabilities are exactly zero. Non-zero capabilities are `LimitsRejected` on the server or `SessionError.Limits` on the client. Protocol version mismatch is reserved because invalid versions fail fixed-header decoding before a Hello can be exposed; such input faults without a reply.
 
-Client validates that a rejection is coherent with the Server Hello and its own request: `SchemaMismatch` requires unequal hashes, `TickRateUnsupported` requires the advertised exact server tick outside the client range, and `LimitsRejected` requires non-zero capabilities or a violated advertised payload bound. A rejection without its corresponding observed cause, an unsupported result value, non-zero rejected scalar, non-empty rejected map, or nonce mismatch is `Protocol/ProtocolViolation` and leaves `Result` null.
+Client validates rejection coherence with Server Hello and its own request. `SchemaMismatch` requires unequal hashes, and `TickRateUnsupported` requires the advertised exact server tick outside the client range. A canonical `LimitsRejected` is accepted whenever no higher-priority observable schema or tick cause exists: it may reflect the server's private canonical-map payload size, which is intentionally omitted from a rejected HelloAck and cannot be proven by the client. An unsupported result value, wrong precedence, non-zero rejected scalar, non-empty rejected map, or nonce mismatch is `Protocol/ProtocolViolation` and leaves `Result` null.
 
 ## Header, limits, and sequence matrix
 
 Every handshake or close packet uses transform zero, exact payload framing/hash, `ReliableOrdered` channel and flag, `ServerTick=NoneTick`, `BaselineTick=NoneTick`, `AcknowledgedSnapshotTick=NoneTick`, `AcknowledgedCommandSequence=0`. Before `PacketFraming.TryDecode`, Session must perform `PacketHeader.TryRead`, exact packet-length validation, and checks of header wire and decoded payload lengths against local configured receive limits. A bound failure faults as `Limits/LimitsExceeded` without renting the attacker-declared decoded size. Other fixed-header or exact-length failures fault as `Protocol/ProtocolViolation`.
 
 Schema binding is phase-specific. Client Hello carries the client schema and server stores it for admission rather than faulting on mismatch. Server Hello carries the server schema and client stores it even when it differs locally so an explicit SchemaMismatch rejection can arrive. HelloAck header schema must equal the stored Server Hello schema. A rejected `SchemaMismatch` is coherent only when that stored hash differs from the client schema. Accepted requires equality with the client schema. Final Ack uses and requires the negotiated server schema. Close packets require the negotiated schema after establishment.
+
+Handshake semantic mutations are classified before state advancement:
+
+| Mutation | Server behavior | Client behavior |
+|---|---|---|
+| Client Hello nonce zero or invalid non-limit tick shape | `Faulted/Protocol/ProtocolViolation` | not applicable |
+| Client Hello advertised receive limit below 24 | continue two-Hello flow, then `LimitsRejected` | not applicable |
+| Server Hello nonce zero, unequal/non-zero tick shape, or invalid exact tick | not applicable | `Faulted/Protocol/ProtocolViolation` |
+| Server Hello advertised receive limit below 24 or non-zero capabilities | not applicable | `Faulted/Limits/LimitsExceeded` |
+| Globally out-of-range Hello values rejected by PayloadCodec/framing | `Faulted/Protocol/ProtocolViolation` | `Faulted/Protocol/ProtocolViolation` |
+| Accepted HelloAck with zero epoch or peer id, wrong nonce/tick, non-empty rule violation, or wrong common fields | not applicable | `Faulted/Protocol/ProtocolViolation`, Result unchanged |
+| Rejected HelloAck with non-zero epoch or any non-canonical rejected scalar/map | not applicable | `Faulted/Protocol/ProtocolViolation`, Result unchanged |
+| Final Ack with wrong negotiated schema | `Faulted/Schema/SchemaMismatch` | not applicable |
+| Final Ack with wrong negotiated epoch | `Faulted/Epoch/UnexpectedEpoch` | not applicable |
+| Final Ack with non-empty payload or wrong common fields | `Faulted/Protocol/ProtocolViolation` | not applicable |
+
+Here `State/Error/Reason` shorthand leaves Result unchanged unless the explicit admission rules above say otherwise. All semantic failures consume and dispose the received lease and do not commit the next handshake state.
 
 Maintain independent reliable transmit, reliable receive, unreliable transmit, and unreliable receive high-water values. Core exercises the reliable domains but retains all four for transfer. Reliable receive requires exactly previous plus one. Unreliable receive later accepts only greater-than-high-water. Every Session packet sequence is non-zero. No domain wraps.
 
@@ -161,6 +178,8 @@ For each non-terminal `Step(stepIndex)`:
 7. return flags for actual receive, successful send, and public state change.
 
 `Received` is set whenever `TryReceive` succeeds, even if semantic validation then rejects the packet. `Sent` is set only when `TrySend` returns true. `StateChanged` is set only when the public `SessionState` changes, not for internal handshake-stage or property changes. `Step` on `Disposed` throws `ObjectDisposedException`. `Step` on `Closed` or `Faulted` returns `None` and performs no transport activity. The strictly increasing rule applies to every non-terminal call, including calls that become terminal during the step.
+
+Transport abstraction exceptions propagate unchanged. The step index becomes consumed immediately before invoking `BeginStep`, so a throw from `BeginStep`, `TryReceive`, or `TrySend` cannot reuse that index. `finally` cleanup disposes any locally visible received, framed, or staged owner. A throwing send does not commit transmit sequence, successful-send state, or outbound intent; the semantic intent remains retryable on the next higher step. State already committed by a successfully processed inbound packet is not rolled back. No throwing Step returns a synthetic `StepResult` or rewrites the transport exception into Session state.
 
 Outbound state is semantic intent, never a retained framed lease. `TrySend` consumes every valid lease even when it returns false. A false reliable send while the transport remains connected retains the same intent and uncommitted sequence; the next Step rebuilds byte-identical framing and retries. State and sequence advance only after success. Exhaustion is checked after mandatory BeginStep, terminal mapping, scope validation, and receive, but before Rent, encode, or TrySend.
 

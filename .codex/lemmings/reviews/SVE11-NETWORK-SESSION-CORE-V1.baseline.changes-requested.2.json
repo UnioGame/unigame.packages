@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-SESSION-CORE-V1",
+  "repoRoot": "D:/Dev/kontora/static.ecs.template/GameClient/Game.Packages",
+  "baselineSha": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [
+    "Contract line 137 requires the client to observe a LimitsRejected cause that may depend on the server's private omitted chunk-map size and is therefore not always externally verifiable.",
+    "The terminal table does not yet define outcomes for all promised independent Hello, HelloAck and final-Ack semantic mutations.",
+    "Step does not define exception propagation, lease cleanup, step-index commitment or retry state for throwing ITransport and ISteppedTransport implementations."
+  ],
+  "validation": [
+    "Reviewed revised proposal at planning head dc73d072d5147bbea6cff2a1fa8dc2d6b7c8c56f against frozen code baseline 2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed.",
+    "The planning range changes only Lemmings contract and phase artifacts and git diff --check passes.",
+    "Zero chunk and cluster identifiers are now correctly allowed when registered, cluster-matched and role-owned.",
+    "Payload limits are explicitly defined without the 72-byte header and are checked from PacketHeader before PacketFraming or decoded-buffer rental.",
+    "Schema binding is now phase-specific and permits explicit SchemaMismatch rejection without accepting an incoherent HelloAck.",
+    "Accepted Result timing and client-local ChunkMapRejected topology outcomes are explicit.",
+    "Authority and replica scopes are revalidated before acceptance, retries, establishment and established receive processing.",
+    "The rejection delivery barrier correctly preserves a queued MemoryTransport packet by keeping the rejecting server Closing until client disposal produces RemoteClosed.",
+    "Connected false-send retry preserves semantic intent, packet sequence, state and public Result.",
+    "StepResult flag meanings, first-step zero, monotonic-index exception and outbound exhaustion ordering are now explicit.",
+    "Requested initiation, echo, simultaneous close, no automatic transport disposal and the special rejection RemoteClosed mapping are internally consistent.",
+    "Received TransportClosed, direction-bound ServerShutdown and local no-synthesized-fault-disconnect behavior are now defined.",
+    "SessionError remains separate from wire-compatible DisconnectReason and the public names remain short and coherent.",
+    "The security section correctly states that nonce, epoch, CRC32 and xxHash do not authenticate or prevent replay and requires an authenticated external transport boundary.",
+    "The exact owned files remain sufficient; no protocol, framing, replication, existing-test, asmdef or manifest edit is required."
+  ]
+}
