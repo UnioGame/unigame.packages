@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SCHEMA-DISPATCH",
   "mode": "strict",
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "complex-worker",
   "branch": "codex/sve11-network-schema-dispatch",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-schema-dispatch",
@@ -57,6 +57,8 @@
       "Repair cycle: Schema retains local WorldType while wire hash remains world-independent; generic consumers enforce EnsureWorld<TWorld>()",
       "Repair regression: two worlds keep equal schema hashes while mismatched dispatcher construction rejects before authorizer, event registration or world creation",
       "Repair runtime/test builds: 0 warnings, 0 errors; 11 focused tests passed",
+      "Unity recompile completed with no new network compiler errors",
+      "Unity EditMode unigame.staticecs.network.tests: 23 passed, 0 failed in 0.72s",
       "git diff --check, meta pairing and ownership checks passed; worktree clean",
       "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests"
     ]
@@ -100,7 +102,7 @@
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SCHEMA-DISPATCH.4f69a5fef2f65543e2ee7f00f8431390372d6e11.json"
   },
   "close": {
-    "mergeCommit": null,
-    "integrationValidationPassed": false
+    "mergeCommit": "3c29ddb0f83ea60cfda6ef46b566df75e046eccd",
+    "integrationValidationPassed": true
   }
 }
