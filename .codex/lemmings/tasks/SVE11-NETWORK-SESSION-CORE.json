@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-CORE",
   "mode": "strict",
-  "state": "Active",
-  "previousState": "Ready",
+  "state": "Candidate",
+  "previousState": "Active",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-core",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-core",
@@ -77,14 +77,17 @@
       "Repair cycle 1 closes all seven review findings; focused SessionTests pass 27/27 and the complete package harness passes 100/100.",
       "Repair adds production MemoryTransport barriers, transfer-then-throw ownership, full semantic/disconnect matrices, Session-level exhaustion, cached-transform zero allocation and corrected README guidance.",
       "Cycle 2 found no runtime defects and requires replanning only the remaining mandatory test matrices.",
-      "The cycle-2 test-only replan was independently accepted by gpt-5.6-sol:high at integration head a55b1d9d5a699bd807b223f491dc868a71234ca7."
+      "The cycle-2 test-only replan was independently accepted by gpt-5.6-sol:high at integration head a55b1d9d5a699bd807b223f491dc868a71234ca7.",
+      "Replanned repair changes only SessionTests.cs; focused SessionTests pass 30/30 and the complete package harness passes 103/103.",
+      "Independent bounds, server Client Hello, raw-header, state/direction, reserved-kind and Disconnect matrices now cover all cycle-2 findings."
     ]
   },
   "baseSha": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
   "commits": {
     "candidate": "6f5c23f1a26db8429e9e09f30cb316b71070f4ad",
     "fix": [
-      "58f416cf850030fa09df1ccbfa6e3f780d828085"
+      "58f416cf850030fa09df1ccbfa6e3f780d828085",
+      "24e6b1dee284ef2cf8939f3a997070231856369c"
     ]
   },
   "validation": {
@@ -130,7 +133,7 @@
     "base": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
     "status": "ChangesRequested",
     "cycle": 2,
-    "head": "58f416cf850030fa09df1ccbfa6e3f780d828085",
+    "head": "24e6b1dee284ef2cf8939f3a997070231856369c",
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SESSION-CORE.58f416cf850030fa09df1ccbfa6e3f780d828085.json"
   },
   "close": null
