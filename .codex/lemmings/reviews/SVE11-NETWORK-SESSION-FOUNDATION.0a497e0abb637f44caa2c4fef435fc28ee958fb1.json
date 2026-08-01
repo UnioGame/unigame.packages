@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-SESSION-FOUNDATION",
+  "base": "350dbbec7670010fd0792f3f8f49a9cd63a2c4ac",
+  "head": "0a497e0abb637f44caa2c4fef435fc28ee958fb1",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [
+    {
+      "priority": "P2",
+      "file": "unigame.staticecs.network/Tests/Editor/CommandOutboxTests.cs",
+      "line": 57,
+      "message": "Frozen CommandOutbox edge coverage is incomplete: add negative written-length handling, empty TryBuild false/default/0, and a payload that actually straddles the byte-ring boundary with repeated frozen multi-entry prefix builds. The current 20-byte payload with 140-byte capacity only wraps the tail exactly to zero."
+    },
+    {
+      "priority": "P2",
+      "file": "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs",
+      "line": 613,
+      "message": "MemoryTransport.BeginStep is not tested in Faulted state, although the frozen contract requires a no-op in every lifecycle state. Exercise a reliably faulted pair and prove that BeginStep preserves QueueOverflow and terminal receive behavior."
+    },
+    {
+      "priority": "P2",
+      "file": "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs",
+      "line": 532,
+      "message": "CommandDispatcher constructor coverage does not prove the complete frozen validation matrix and precedence: add null-first coverage and a rejected-only world to prove missing CommandAcceptedEvent handling before codec or authorizer access."
+    }
+  ],
+  "validation": [
+    "Reviewed full range 350dbbec7670010fd0792f3f8f49a9cd63a2c4ac..0a497e0abb637f44caa2c4fef435fc28ee958fb1",
+    "git diff --check passed",
+    "Candidate worktree was clean",
+    "Changed paths remained within task ownership",
+    "No forbidden paths or Sample identifiers found",
+    "Meta GUIDs were unique",
+    "Reported warnings-as-errors: 0",
+    "Reported protocol tests: 8/8",
+    "Reported runtime tests: 36/36",
+    "Reported outbox tests: 11/11",
+    "Reported full harness: 70/70",
+    "Reported warmed 1024-cycle allocation: 0 bytes",
+    "Unity EditMode validation remains deferred until integration"
+  ]
+}
