@@ -8,12 +8,11 @@
   "branch": "codex/sve11-network-foundation",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-foundation",
   "plan": {
-    "goal": "Implement the accepted SVE11 network foundation contract as a reusable Unity-free Static ECS package and make EcsServiceRegistry safe for Main plus ServerWorld.",
+    "goal": "Implement the accepted SVE11 network foundation contract as a reusable Unity-free Static ECS package.",
     "acceptance": [
       "Implement every public contract and invariant in .codex/lemmings/contracts/SVE11-network-foundation.md without inventing client/server gameplay policy.",
       "Use package id com.unigame.staticecs.network and namespace-first names.",
       "Provide deterministic golden-byte, malformed-input, schema, ownership, transport and history EditMode tests.",
-      "Preserve Main compatibility while adding typed multiworld EcsService registration and lookup.",
       "Add English XML summaries for public APIs and an English README with Capabilities, Usage and Configuration.",
       "Create one candidate commit and report exact validation and deferred Unity integration evidence."
     ],
@@ -25,12 +24,7 @@
   },
   "ownership": {
     "owned": [
-      "unigame.staticecs.network/**",
-      "unigame.staticecs.unity/Runtime/Service/IEcsService.cs",
-      "unigame.staticecs.unity/Runtime/Service/EcsService.cs",
-      "unigame.staticecs.unity/Runtime/Service/EcsServiceRegistry.cs",
-      "unigame.staticecs.unity/Tests/Editor/EcsServiceRegistryTests.cs",
-      "unigame.staticecs.unity/Tests/Editor/unigame.staticecs.unity.tests.asmdef"
+      "unigame.staticecs.network/**"
     ],
     "shared": [],
     "forbidden": [
@@ -71,16 +65,11 @@
       {
         "risk": "Unbounded snapshot history",
         "test": "Count, command and shared byte-budget eviction tests"
-      },
-      {
-        "risk": "ServerWorld registration replaces Main compatibility",
-        "test": "Typed lookup, duplicate registration, unregister, rollback and LastReport tests"
       }
     ],
     "commands": [
       "git diff --check",
-      "Unity EditMode: unigame.staticecs.network.tests",
-      "Unity EditMode: unigame.staticecs.unity.tests"
+      "Unity EditMode: unigame.staticecs.network.tests"
     ],
     "allowedOutputs": [],
     "debt": [
@@ -88,6 +77,12 @@
         "reason": "The new package is not referenced by the root Unity manifest until the integration wave.",
         "owner": "orchestrator",
         "futureGate": "Root manifest integration and Unity EditMode compilation before accepting the integrated package",
+        "blocking": false
+      },
+      {
+        "reason": "Typed multi-world EcsServiceRegistry belongs to the nested unigame.staticecs.unity repository and cannot be reviewed in this package commit range.",
+        "owner": "orchestrator",
+        "futureGate": "A separate Strict task, branch and immutable review in unigame.staticecs.unity before root dual-world integration",
         "blocking": false
       }
     ]
