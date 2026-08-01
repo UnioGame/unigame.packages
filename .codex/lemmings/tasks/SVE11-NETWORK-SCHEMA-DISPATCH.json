@@ -2,7 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SCHEMA-DISPATCH",
   "mode": "strict",
-  "state": "Assigned",
+  "state": "Candidate",
+  "previousState": "Assigned",
   "role": "complex-worker",
   "branch": "codex/sve11-network-schema-dispatch",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-schema-dispatch",
@@ -48,12 +49,18 @@
     "actual": "gpt-5.6-sol:medium"
   },
   "execution": {
-    "handoff": null,
-    "validationEvidence": []
+    "handoff": "Retained generic schema invokers now bind staged payloads to the validating schema and dispatch trusted commands into explicit closed generic events.",
+    "validationEvidence": [
+      "Focused netstandard runtime build: 0 warnings, 0 errors",
+      "Focused test assembly build: 0 warnings, 0 errors",
+      "Ten schema, staging and dispatcher tests passed, including accepted, rejected, configuration, no-receiver and schema-mismatch paths",
+      "git diff --check, meta pairing and ownership checks passed; worktree clean",
+      "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests"
+    ]
   },
   "baseSha": "f04e4003f7aa21f48c141f5522fbdadc3c654dc0",
   "commits": {
-    "candidate": null,
+    "candidate": "1e2eb891c9315ae604ce1841d47a73cdbf7d664a",
     "fix": []
   },
   "validation": {
@@ -84,7 +91,7 @@
     "base": "f04e4003f7aa21f48c141f5522fbdadc3c654dc0",
     "status": "Pending",
     "cycle": 0,
-    "head": null,
+    "head": "1e2eb891c9315ae604ce1841d47a73cdbf7d664a",
     "evidence": null
   },
   "close": {
