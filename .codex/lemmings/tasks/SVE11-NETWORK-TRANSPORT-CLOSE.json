@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-TRANSPORT-CLOSE",
   "mode": "strict",
-  "state": "ChangesRequested",
-  "previousState": "Candidate",
+  "state": "Candidate",
+  "previousState": "ChangesRequested",
   "role": "focused-worker",
   "branch": "codex/sve11-network-transport-close",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-transport-close",
@@ -49,13 +49,17 @@
       "Focused transport lifecycle and lease matrix: 10 passed, 0 failed",
       "Exact two-file ownership, git diff --check and lemmings check --all passed",
       "Temporary outputs removed; worktree clean",
+      "Repair covers valid-CRC wrong flags, capacity sequence preservation, Faulted double Dispose, replaced snapshot alias disposal and invalid-terminal queued alias disposal",
+      "Repair overlay compile passed and the focused transport suite remains 10/10",
       "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests"
     ]
   },
   "baseSha": "4293593b25e6c00b1a61642230d0e621bd746733",
   "commits": {
     "candidate": "e07464d3e18daa66a17a5fb38fe97676cd25c62c",
-    "fix": []
+    "fix": [
+      "7db6dd201d210bc887b526d3575efa3881301a15"
+    ]
   },
   "validation": {
     "riskToTest": [
@@ -85,7 +89,7 @@
     "base": "4293593b25e6c00b1a61642230d0e621bd746733",
     "status": "ChangesRequested",
     "cycle": 1,
-    "head": "e07464d3e18daa66a17a5fb38fe97676cd25c62c",
+    "head": "7db6dd201d210bc887b526d3575efa3881301a15",
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-TRANSPORT-CLOSE.e07464d3e18daa66a17a5fb38fe97676cd25c62c.json"
   },
   "close": {
