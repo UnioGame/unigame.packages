@@ -158,6 +158,9 @@ namespace UniGame.StaticEcs.Network.Tests
             sender.Dispose();
             AssertTransport(sender, TransportState.Disposed, TransportError.Disposed);
             AssertTransport(receiver, TransportState.Faulted, TransportError.QueueOverflow);
+            sender.Dispose();
+            AssertTransport(sender, TransportState.Disposed, TransportError.Disposed);
+            AssertTransport(receiver, TransportState.Faulted, TransportError.QueueOverflow);
             receiver.Dispose();
         }
 
@@ -439,6 +442,7 @@ namespace UniGame.StaticEcs.Network.Tests
             var reliable = Lease(9);
             Assert.That(sender.TrySend(Channel.ReliableOrdered, ref reliable), Is.True);
             var first = HeaderPacket(PacketKind.FullSnapshot, 0, 1);
+            var firstAlias = first;
             Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref first), Is.True);
             var latest = HeaderPacket(PacketKind.FullSnapshot, 0, 2);
             Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref latest), Is.True);
@@ -452,6 +456,8 @@ namespace UniGame.StaticEcs.Network.Tests
 
             Assert.That(equalAlias.IsValid, Is.False);
             Assert.That(staleAlias.IsValid, Is.False);
+            Assert.That(firstAlias.IsValid, Is.False);
+            Assert.Throws<InvalidOperationException>(() => { var _ = firstAlias.Span; });
             AssertTransport(sender, TransportState.Connected, TransportError.None);
             AssertTransport(receiver, TransportState.Connected, TransportError.None);
             Assert.That(receiver.TryReceive(out var channel, out var received), Is.True);
@@ -484,6 +490,14 @@ namespace UniGame.StaticEcs.Network.Tests
             Assert.That(receiver.TryReceive(out var channel, out var received), Is.True);
             Assert.That(channel, Is.EqualTo(Channel.ReliableOrdered));
             Assert.That(received.Span[0], Is.EqualTo(7));
+            received.Dispose();
+
+            var retry = HeaderPacket(PacketKind.FullSnapshot, 0, 1);
+            Assert.That(sender.TrySend(Channel.UnreliableSequenced, ref retry), Is.True);
+            Assert.That(receiver.TryReceive(out channel, out received), Is.True);
+            Assert.That(channel, Is.EqualTo(Channel.UnreliableSequenced));
+            Assert.That(PacketHeader.TryRead(received.Span, out var header), Is.True);
+            Assert.That(header.PacketSequence, Is.EqualTo(1));
             received.Dispose();
             sender.Dispose();
             receiver.Dispose();
@@ -552,13 +566,22 @@ namespace UniGame.StaticEcs.Network.Tests
         private static PacketHeader Header(PacketKind kind, PacketFlags flags, uint sequence, TypeId schema) => new() { Kind = kind, Flags = flags, PacketSequence = sequence, BaselineTick = PacketHeader.NoneTick, SchemaHash = schema };
         private static PacketLease HeaderPacket(PacketKind kind, PacketFlags flags, uint sequence) { var lease = PacketLease.Rent(PacketHeader.Size); lease.SetLength(PacketHeader.Size); Header(kind, flags, sequence, TypeId.Empty).TryWrite(lease.Span); return lease; }
         private static PacketLease CorruptSnapshotPacket() { var lease = HeaderPacket(PacketKind.FullSnapshot, 0, 1); lease.Span[0] ^= 1; return lease; }
-        private static PacketLease InvalidSnapshotFlagsPacket() { var lease = HeaderPacket(PacketKind.FullSnapshot, 0, 1); lease.Span[9] = (byte)PacketFlags.ReliableOrdered; return lease; }
+        private static PacketLease InvalidSnapshotFlagsPacket()
+        {
+            var lease = HeaderPacket(PacketKind.FullSnapshot, 0, 1);
+            lease.Span[9] = (byte)PacketFlags.ReliableOrdered;
+            lease.Span.Slice(64, 4).Clear();
+            WriteUInt32(lease.Span, 64, Crc32(lease.Span));
+            return lease;
+        }
         private static PacketLease InconsistentSnapshotLengthPacket() { var lease = PacketLease.Rent(PacketHeader.Size); lease.SetLength(PacketHeader.Size); var header = Header(PacketKind.FullSnapshot, 0, 1, TypeId.Empty); header.WirePayloadLength = 1; header.DecodedPayloadLength = 1; Assert.That(header.TryWrite(lease.Span), Is.True); return lease; }
         private static void AssertInvalidUnreliable(PacketLease packet)
         {
             MemoryTransport.CreatePair(2, out var sender, out var receiver);
             var queuedAtReceiver = Lease(4);
+            var queuedAtReceiverAlias = queuedAtReceiver;
             var queuedAtSender = Lease(5);
+            var queuedAtSenderAlias = queuedAtSender;
             Assert.That(sender.TrySend(Channel.ReliableOrdered, ref queuedAtReceiver), Is.True);
             Assert.That(receiver.TrySend(Channel.ReliableOrdered, ref queuedAtSender), Is.True);
             var alias = packet;
@@ -567,6 +590,8 @@ namespace UniGame.StaticEcs.Network.Tests
 
             Assert.That(packet, Is.Null);
             Assert.That(alias.IsValid, Is.False);
+            Assert.That(queuedAtReceiverAlias.IsValid, Is.False);
+            Assert.That(queuedAtSenderAlias.IsValid, Is.False);
             AssertTransport(sender, TransportState.Faulted, TransportError.InvalidPacket);
             AssertTransport(receiver, TransportState.Closed, TransportError.RemoteClosed);
             AssertTerminalReceive(sender);
@@ -581,6 +606,18 @@ namespace UniGame.StaticEcs.Network.Tests
         }
         private static void AssertTransport(MemoryTransport transport, TransportState state, TransportError error) { Assert.That(transport.State, Is.EqualTo(state)); Assert.That(transport.Error, Is.EqualTo(error)); }
         private static void AssertTerminalReceive(MemoryTransport transport) { Assert.That(transport.TryReceive(out var channel, out var packet), Is.False); Assert.That(channel, Is.EqualTo(default(Channel))); Assert.That(packet, Is.Null); }
+        private static uint Crc32(ReadOnlySpan<byte> bytes)
+        {
+            var crc = uint.MaxValue;
+            for (var i = 0; i < bytes.Length; i++)
+            {
+                crc ^= bytes[i];
+                for (var bit = 0; bit < 8; bit++)
+                    crc = (crc & 1) != 0 ? 0xedb88320U ^ crc >> 1 : crc >> 1;
+            }
+            return ~crc;
+        }
+        private static void WriteUInt32(Span<byte> bytes, int offset, uint value) { bytes[offset] = (byte)value; bytes[offset + 1] = (byte)(value >> 8); bytes[offset + 2] = (byte)(value >> 16); bytes[offset + 3] = (byte)(value >> 24); }
         private static byte[] EntityBytes(uint id) => new byte[] { (byte)id, (byte)(id >> 8), (byte)(id >> 16), (byte)(id >> 24), 0, 0, 1, 0 };
         private struct TestWorld : IWorldType { }
         private struct DispatchWorld : IWorldType { }
