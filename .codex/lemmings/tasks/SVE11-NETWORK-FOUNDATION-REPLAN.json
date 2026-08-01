@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-FOUNDATION-REPLAN",
   "mode": "strict",
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "complex-worker",
   "branch": "codex/sve11-network-foundation-replan",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-foundation-replan",
@@ -46,7 +46,9 @@
       "netstandard2.1 compile against actual FFS.StaticEcs.dll: 0 warnings, 0 errors",
       "Malformed 3-byte payload for an exact 4-byte registered codec is rejected by TryEncode, direct PayloadStager and hash/CRC-correct TryDecode",
       "git diff checks passed; missing paired meta files: 0; worktree clean",
-      "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests after root manifest import"
+      "Unity separate-asmdef recompile completed with failed=false and no errors",
+      "Unity EditMode unigame.staticecs.network.tests: 16 passed, 0 failed in 0.51s",
+      "Unity EditMode EcsServiceRegistryTests regression suite: 7 passed, 0 failed in 1.01s"
     ]
   },
   "baseSha": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
@@ -71,14 +73,7 @@
       "Unity EditMode: unigame.staticecs.network.tests after manifest integration"
     ],
     "allowedOutputs": [],
-    "debt": [
-      {
-        "reason": "The package is not referenced by the root Unity manifest until integration.",
-        "owner": "orchestrator",
-        "futureGate": "Root manifest import and Unity EditMode unigame.staticecs.network.tests",
-        "blocking": false
-      }
-    ]
+    "debt": []
   },
   "review": {
     "taskId": "SVE11-NETWORK-FOUNDATION-REPLAN",
@@ -89,7 +84,7 @@
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-FOUNDATION-REPLAN.367c4c95847d486b132545a2e207abcc9ee0afe7.json"
   },
   "close": {
-    "mergeCommit": null,
-    "integrationValidationPassed": false
+    "mergeCommit": "99855b20be3ebd0e776aad4a03b3054819f596d0",
+    "integrationValidationPassed": true
   }
 }

@@ -17,17 +17,25 @@
       "resource": "Game.Packages integration branch",
       "owner": "orchestrator",
       "scope": "Only the orchestrator integrates accepted candidate commits",
-      "status": "Active"
+      "status": "Released"
     },
     {
       "resource": "sve11-network-foundation worktree",
       "owner": "SVE11-NETWORK-FOUNDATION",
       "scope": "Foundation-owned package and registry paths only",
-      "status": "Active"
+      "status": "Released"
     }
   ],
   "close": {
-    "mergeCommits": [],
-    "phaseValidation": []
+    "mergeCommits": [
+      "99855b20be3ebd0e776aad4a03b3054819f596d0"
+    ],
+    "phaseValidation": [
+      "NETWORK_FOUNDATION_TESTS=16 PASS using real Protocol, Runtime and Editor sources",
+      "netstandard2.1 compile against actual FFS.StaticEcs.dll: 0 warnings, 0 errors",
+      "Unity separate-asmdef recompile completed with failed=false and no errors",
+      "Unity EditMode unigame.staticecs.network.tests: 16 passed, 0 failed in 0.51s",
+      "Unity EditMode EcsServiceRegistryTests: 7 passed, 0 failed in 1.01s"
+    ]
   }
 }
