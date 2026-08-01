@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-CORE",
   "mode": "strict",
-  "state": "Candidate",
-  "previousState": "Active",
+  "state": "Accepted",
+  "previousState": "Candidate",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-core",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-core",
@@ -131,10 +131,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-SESSION-CORE",
     "base": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
-    "status": "ChangesRequested",
-    "cycle": 2,
+    "status": "Accepted",
+    "cycle": 3,
     "head": "24e6b1dee284ef2cf8939f3a997070231856369c",
-    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SESSION-CORE.58f416cf850030fa09df1ccbfa6e3f780d828085.json"
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SESSION-CORE.24e6b1dee284ef2cf8939f3a997070231856369c.json"
   },
   "close": null
 }

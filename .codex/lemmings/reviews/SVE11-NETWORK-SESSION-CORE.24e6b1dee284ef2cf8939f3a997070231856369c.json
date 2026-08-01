@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-SESSION-CORE",
+  "base": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
+  "head": "24e6b1dee284ef2cf8939f3a997070231856369c",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [],
+  "validation": [
+    "The full three-commit range was reviewed and the isolated worktree is clean.",
+    "The replanned repair changes only Tests/Editor/SessionTests.cs.",
+    "Tests independently cover local wire and decoded limits, Client Hello semantics and precedence, raw headers, direction and state, reserved kinds, and Disconnect schema and epoch.",
+    "git diff --check and lemmings check --all pass.",
+    "Exactly nine owned paths changed and no forbidden path changed.",
+    "All required metadata GUIDs are unique.",
+    "No Sample, SessionWorld, Capture, Apply, command build, or dispatch leakage exists.",
+    "Warnings-as-errors compilation passes; focused SessionTests pass 30/30; the complete package harness passes 103/103.",
+    "Unity EditMode remains the post-integration validation gate."
+  ]
+}
