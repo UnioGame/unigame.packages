@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-PACKAGE-V1",
+  "baselineSha": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
+  "integrationBranch": "codex/sve11-network-package",
+  "contractsFrozen": true,
+  "contracts": [
+    ".codex/lemmings/contracts/SVE11-network-foundation.md"
+  ],
+  "baselineReview": {
+    "status": "Accepted",
+    "reviewerModel": "gpt-5.6-sol:high",
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-PACKAGE-V1.baseline.json"
+  },
+  "leases": [
+    {
+      "resource": "Game.Packages integration branch",
+      "owner": "orchestrator",
+      "scope": "Only the orchestrator integrates accepted candidate commits",
+      "status": "Active"
+    }
+  ],
+  "close": {
+    "mergeCommits": [],
+    "phaseValidation": []
+  }
+}
