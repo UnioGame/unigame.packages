@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-SCHEMA-DISPATCH",
+  "mode": "strict",
+  "state": "Assigned",
+  "role": "complex-worker",
+  "branch": "codex/sve11-network-schema-dispatch",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-schema-dispatch",
+  "plan": {
+    "goal": "Add retained AOT schema invokers, schema-bound stages and typed command dispatch required by the frozen replication contract.",
+    "acceptance": [
+      "Retain sealed generic entity/record/command invokers during SchemaBuilder freeze without reflection or boxing in dispatch/tick paths.",
+      "Add StagedPayload.SchemaHash and bind every schema-validated CommandBatch or FullSnapshot stage to the validating schema hash.",
+      "Add CommandDispatcher<TWorld> and exhaustive DispatchResult behavior including event registration versus receiver distinction.",
+      "Apply unmanaged registration constraints, reject ReplicatedTag as an ordinary record and cap Links/Multi at 32768.",
+      "Preserve wire v1 and all existing public behavior; add focused dedicated-world tests and English public docs."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-replication.md",
+      "f04e4003f7aa21f48c141f5522fbdadc3c654dc0"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/Runtime/Schema.cs",
+      "unigame.staticecs.network/Runtime/EcsContracts.cs",
+      "unigame.staticecs.network/Runtime/Staging.cs",
+      "unigame.staticecs.network/Runtime/SchemaInvokers.cs",
+      "unigame.staticecs.network/Runtime/SchemaInvokers.cs.meta",
+      "unigame.staticecs.network/Runtime/CommandDispatcher.cs",
+      "unigame.staticecs.network/Runtime/CommandDispatcher.cs.meta",
+      "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs",
+      "unigame.staticecs.network/README.md"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network/Protocol/**",
+      "unigame.staticecs.network/Runtime/*.asmdef",
+      "unigame.staticecs.network/package.json",
+      "unigame.ai.lemmings/**",
+      "unigame.staticecs.unity/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": "gpt-5.6-sol:medium"
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": []
+  },
+  "baseSha": "f04e4003f7aa21f48c141f5522fbdadc3c654dc0",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "A stage validated by another schema reaches ECS/event mutation",
+        "test": "Schema mismatch dispatch test and staged schema-hash assertions"
+      },
+      {
+        "risk": "Missing event registration is confused with no receiver or rejection",
+        "test": "Dedicated-world accepted/rejected/configuration/no-receiver matrix"
+      },
+      {
+        "risk": "FFS collection or generic constraints remain wider than runtime storage",
+        "test": "32768 boundary and registration constraint/source checks"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Focused package source harness",
+      "Unity EditMode unigame.staticecs.network.tests after integration"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "review": {
+    "taskId": "SVE11-NETWORK-SCHEMA-DISPATCH",
+    "base": "f04e4003f7aa21f48c141f5522fbdadc3c654dc0",
+    "status": "Pending",
+    "cycle": 0,
+    "head": null,
+    "evidence": null
+  },
+  "close": {
+    "mergeCommit": null,
+    "integrationValidationPassed": false
+  }
+}
