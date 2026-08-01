@@ -20,17 +20,26 @@
       "resource": "Game.Packages integration branch",
       "owner": "orchestrator",
       "scope": "Only the orchestrator integrates an Accepted Session Core candidate",
-      "status": "Active"
+      "status": "Released"
     },
     {
       "resource": "sve11-network-session-core worktree",
       "owner": "SVE11-NETWORK-SESSION-CORE",
       "scope": "Only the frozen Session Core additions, SessionTests and README",
-      "status": "Active"
+      "status": "Released"
     }
   ],
   "close": {
-    "mergeCommits": [],
-    "phaseValidation": []
+    "mergeCommits": [
+      "f362a2259a504b79c433319c47727372c0896421",
+      "02f6ba0e4c8066a961750a3e67a54f806680a077",
+      "0d7479c127bdadf5f49c37fa04b188d730ad358b",
+      "e30922f0630baae914f3ee73a4511d37eedc41a5"
+    ],
+    "phaseValidation": [
+      "Independent gpt-5.6-sol:high review accepted the full frozen range and the bounded integration repair.",
+      "Unity recompile completed with zero errors.",
+      "Unity EditMode unigame.staticecs.network.tests passed 103/103 in 3.53 seconds."
+    ]
   }
 }

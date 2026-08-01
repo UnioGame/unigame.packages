@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-CORE",
   "mode": "strict",
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-core",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-core",
@@ -139,5 +139,13 @@
     "head": "68f97f40eea6512d8a6d93fd0edd3c492118c993",
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SESSION-CORE.68f97f40eea6512d8a6d93fd0edd3c492118c993.json"
   },
-  "close": null
+  "close": {
+    "mergeCommit": "e30922f0630baae914f3ee73a4511d37eedc41a5",
+    "integrationValidationPassed": true,
+    "evidence": [
+      "Accepted commits integrated as f362a2259a504b79c433319c47727372c0896421, 02f6ba0e4c8066a961750a3e67a54f806680a077, 0d7479c127bdadf5f49c37fa04b188d730ad358b and e30922f0630baae914f3ee73a4511d37eedc41a5.",
+      "Unity recompile completed with zero errors after the test-only assembly-boundary repair.",
+      "Unity EditMode assembly unigame.staticecs.network.tests passed 103/103 in 3.53 seconds."
+    ]
+  }
 }
