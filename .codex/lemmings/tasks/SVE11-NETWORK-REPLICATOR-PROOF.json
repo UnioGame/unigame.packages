@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-REPLICATOR-PROOF",
   "mode": "strict",
-  "state": "Active",
-  "previousState": "Ready",
+  "state": "Candidate",
+  "previousState": "Active",
   "role": "complex-worker",
   "branch": "codex/sve11-network-replicator-proof",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-replicator-proof",
@@ -53,15 +53,24 @@
   "models": {
     "requested": null,
     "assigned": "gpt-5.6-sol:medium",
-    "actual": null
+    "actual": "gpt-5.6-sol:medium"
   },
   "execution": {
-    "handoff": null,
-    "validationEvidence": []
+    "handoff": "The complete repaired replication range was replayed from the accepted baseline and the survivor-conflict proof now preserves an immediately preceding rich successful ledger.",
+    "validationEvidence": [
+      "Four provenance commits were replayed separately and in order with -x",
+      "Final proof commit touches only ReplicationTests.cs",
+      "Immediately preceding successful ledger contains transition replacement, disabled state, tag, values, link, ordered links, ordered multi values and verified topology",
+      "Complete fingerprint is identical across returned InvalidEntity",
+      "Warnings-as-errors compilation and focused replication tests passed 15/15 including zero-allocation Capture",
+      "Reviewed README/runtime trees remain identical to the previous repaired head",
+      "Full ownership/meta, proof range, Sample, git diff --check and lemmings check --all gates passed",
+      "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests"
+    ]
   },
   "baseSha": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
   "commits": {
-    "candidate": null,
+    "candidate": "c2ad8560740ce2b8fb3283fc86ebbb92d6fd4d4c",
     "fix": []
   },
   "validation": {
