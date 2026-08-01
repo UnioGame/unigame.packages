@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-FOUNDATION",
+  "base": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
+  "head": "58fac5c92903b1cc6997e7a1e005d33bb1eef460",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [
+    {
+      "severity": "P0",
+      "file": "unigame.staticecs.network/Runtime/Schema.cs",
+      "line": "40-59,131-134",
+      "rationale": "Command registration erases TAuthorizer, so the server cannot AOT-dispatch the frozen authorization contract."
+    },
+    {
+      "severity": "P1",
+      "file": "unigame.staticecs.network/Runtime/BuffersTransport.cs",
+      "line": "94-99",
+      "rationale": "UnreliableSequenced queues every increasing packet instead of retaining only the latest, and malformed sequence-zero input can affect the watermark."
+    },
+    {
+      "severity": "P1",
+      "file": "unigame.staticecs.network/Protocol/Payloads.cs",
+      "line": "194-196,209-215,273",
+      "rationale": "Decode allocates arrays and per-record byte buffers before complete framing and minimum-size validation, allowing malformed tiny payloads to force large GC allocation."
+    },
+    {
+      "severity": "P1",
+      "file": "unigame.staticecs.network/Protocol/WireTypes.cs",
+      "line": "210-217",
+      "rationale": "UUID writes call Guid.ToByteArray per identifier in packet and schema hot paths."
+    },
+    {
+      "severity": "P1",
+      "file": "unigame.staticecs.network/Runtime/Framing.cs",
+      "line": "27-42",
+      "rationale": "Typed values are decoded only into discard during validation; no staged typed representation survives before future ECS mutation."
+    },
+    {
+      "severity": "P1",
+      "file": "unigame.staticecs.network/Tests/Editor/ProtocolTests.cs",
+      "line": "8-45",
+      "rationale": "Frozen golden, malformed, schema matrix, latest-only unreliable, and lease misuse acceptance coverage is incomplete."
+    }
+  ],
+  "validation": [
+    "Exact base/head and merge-base verified; worktree clean; range owns only unigame.staticecs.network/**",
+    "git diff --check passed",
+    "72-byte header offsets, little-endian fields, CRC, enum limits, manifest ordering and default history caps statically verified"
+  ]
+}

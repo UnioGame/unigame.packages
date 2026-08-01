@@ -96,10 +96,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-FOUNDATION",
     "base": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
-    "status": "Pending",
-    "cycle": 0,
+    "status": "ChangesRequested",
+    "cycle": 1,
     "head": "58fac5c92903b1cc6997e7a1e005d33bb1eef460",
-    "evidence": null
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-FOUNDATION.58fac5c92903b1cc6997e7a1e005d33bb1eef460.json"
   },
   "close": {
     "mergeCommit": null,
