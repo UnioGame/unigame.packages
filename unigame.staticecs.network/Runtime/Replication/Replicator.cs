@@ -22,14 +22,14 @@ namespace UniGame.StaticEcs.Network
         /// <summary>Captures all tagged authority entities into a caller-owned decoded payload lease.</summary>
         public CaptureResult Capture(out PacketLease payload)
         {
-            payload = null;
+            payload = default;
             if (_disposed || _scope.IsDisposed || !_scope.ValidateCurrent()) return CaptureResult.ScopeInvalid;
             if (_scope.Role != ScopeRole.Authority) return CaptureResult.WrongRole;
             if (!World<TWorld>.IsTagTypeRegistered<ReplicatedTag>()) return CaptureResult.ScopeInvalid;
 
             var entities = ArrayPool<EntityGID>.Shared.Rent(ProtocolLimits.MaxEntities);
             var links = ArrayPool<EntityGID>.Shared.Rent(32768);
-            PacketLease lease = null;
+            PacketLease lease = default;
             var count = 0;
             try
             {
@@ -74,13 +74,16 @@ namespace UniGame.StaticEcs.Network
                     if (!writer.Valid) return CaptureResult.LimitExceeded;
                 }
                 lease.SetLength(writer.Position);
-                payload = lease;
-                lease = null;
+                payload = PacketLease.Transfer(ref lease);
                 return CaptureResult.Success;
             }
             finally
             {
-                if (lease != null) lease.Dispose();
+                if (lease.IsValid)
+                {
+                    lease.Dispose();
+                    lease = default;
+                }
                 ArrayPool<EntityGID>.Shared.Return(entities);
                 ArrayPool<EntityGID>.Shared.Return(links);
             }

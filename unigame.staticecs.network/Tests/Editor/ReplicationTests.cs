@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using FFS.Libraries.StaticEcs;
 using NUnit.Framework;
 
@@ -9,6 +10,12 @@ namespace UniGame.StaticEcs.Network.Tests
     {
         private const uint Chunk = 9;
         private const ushort Cluster = 3;
+
+        [SetUp]
+        public void EnterPoolTestLock() => Monitor.Enter(PoolTestGate.Sync);
+
+        [TearDown]
+        public void ExitPoolTestLock() => Monitor.Exit(PoolTestGate.Sync);
 
         [Test]
         public void CaptureIsCanonicalAndApplyReplacesCompleteReplicaState()
@@ -46,7 +53,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 Assert.That(authority.Capture(out var second), Is.EqualTo(CaptureResult.Success));
                 CollectionAssert.AreEqual(first.Span.ToArray(), second.Span.ToArray());
                 second.Dispose();
-                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, first, replicaSchema, out var staged), Is.True);
+                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, ref first, replicaSchema, out var staged), Is.True);
                 using (staged)
                 {
                     Assert.That(replica.Apply(staged), Is.EqualTo(ApplyResult.Success));
@@ -64,7 +71,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 Assert.That(replicaTarget.Read<World<ReplicaWorld>.Multi<Item>>().AsReadOnlySpan[0].Number, Is.EqualTo(2));
 
                 Assert.That(authority.Capture(out var normalize), Is.EqualTo(CaptureResult.Success));
-                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, normalize, replicaSchema, out staged), Is.True);
+                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, ref normalize, replicaSchema, out staged), Is.True);
                 using (staged) Assert.That(replica.Apply(staged), Is.EqualTo(ApplyResult.Success));
                 Assert.That(World<ReplicaWorld>.Components<World<ReplicaWorld>.Link<ParentLink>>.Instance.HasDisabled(replicaSource), Is.False);
 
@@ -75,7 +82,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 target.Delete<Value>();
                 target.Delete<World<AuthorityWorld>.Multi<Item>>();
                 Assert.That(authority.Capture(out var removal), Is.EqualTo(CaptureResult.Success));
-                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, removal, replicaSchema, out staged), Is.True);
+                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, ref removal, replicaSchema, out staged), Is.True);
                 using (staged) Assert.That(replica.Apply(staged), Is.EqualTo(ApplyResult.Success));
                 Assert.That(replicaSource.Has<Value>(), Is.False);
                 Assert.That(replicaSource.Has<World<ReplicaWorld>.Link<ParentLink>>(), Is.False);
@@ -87,7 +94,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 var sourceGid = source.GID;
                 source.Destroy();
                 Assert.That(authority.Capture(out var despawn), Is.EqualTo(CaptureResult.Success));
-                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, despawn, replicaSchema, out staged), Is.True);
+                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, ref despawn, replicaSchema, out staged), Is.True);
                 using (staged) Assert.That(replica.Apply(staged), Is.EqualTo(ApplyResult.Success));
                 Assert.That(sourceGid.TryUnpack<ReplicaWorld>(out _), Is.False);
                 Assert.That(target.GID.TryUnpack<ReplicaWorld>(out _), Is.True);
@@ -145,6 +152,61 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
+        public void WarmedRepresentativeCaptureAllocatesNoManagedMemory()
+        {
+            const int iterations = 128;
+            CreateWorld<AllocationWorld>(ChunkOwnerType.Self);
+            try
+            {
+                var target = World<AllocationWorld>.NewEntityInChunk<NetEntity>(Chunk);
+                target.Set<ReplicatedTag>();
+                target.Set(new Value { Number = 17 });
+                target.Set<StateTag>();
+                ref var values = ref target.Add<World<AllocationWorld>.Multi<Item>>();
+                values.Add(new Item { Number = 2 });
+                values.Add(new Item { Number = 1 });
+
+                var source = World<AllocationWorld>.NewEntityInChunk<NetEntity>(Chunk);
+                source.Set<ReplicatedTag>();
+                source.Set(new Value { Number = 42 });
+                source.Set(new World<AllocationWorld>.Link<ParentLink>(target));
+                ref var links = ref source.Add<World<AllocationWorld>.Links<TargetLinks>>();
+                links.Add(target);
+
+                using var scope = new ReplicaScope<AllocationWorld>(ScopeRole.Authority, Mapping());
+                using var replicator = new Replicator<AllocationWorld>(Schema<AllocationWorld>(), scope);
+                Assert.That(replicator.Capture(out var warm), Is.EqualTo(CaptureResult.Success));
+                Assert.That(warm.IsValid, Is.True);
+                Assert.That(warm.Length, Is.GreaterThan(0));
+                warm.Dispose();
+
+                var resultTotal = 0;
+                var validTotal = 0;
+                var lengthTotal = 0;
+                var before = GC.GetAllocatedBytesForCurrentThread();
+                for (var i = 0; i < iterations; i++)
+                {
+                    var result = replicator.Capture(out var payload);
+                    resultTotal += (int)result;
+                    if (!payload.IsValid) continue;
+                    validTotal++;
+                    lengthTotal += payload.Length;
+                    payload.Dispose();
+                }
+                var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+                Assert.That(resultTotal, Is.Zero);
+                Assert.That(validTotal, Is.EqualTo(iterations));
+                Assert.That(lengthTotal, Is.GreaterThan(iterations));
+                Assert.That(allocated, Is.Zero);
+            }
+            finally
+            {
+                World<AllocationWorld>.Destroy();
+            }
+        }
+
+        [Test]
         public void CaptureRejectsRelationOutsideSameSnapshotWithoutLeakingLease()
         {
             CreateWorld<AuthorityWorld>(ChunkOwnerType.Self);
@@ -159,7 +221,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 source.Set(new World<AuthorityWorld>.Link<ParentLink>(target));
 
                 Assert.That(replicator.Capture(out var payload), Is.EqualTo(CaptureResult.MissingTarget));
-                Assert.That(payload, Is.Null);
+                Assert.That(payload.IsValid, Is.False);
             }
             finally
             {
@@ -184,7 +246,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 World<AuthorityWorld>.Components<World<AuthorityWorld>.Link<ParentLink>>.Instance.Disable(source);
 
                 Assert.That(replicator.Capture(out var payload), Is.EqualTo(CaptureResult.DisabledUnsupported));
-                Assert.That(payload, Is.Null);
+                Assert.That(payload.IsValid, Is.False);
 
                 World<AuthorityWorld>.Components<World<AuthorityWorld>.Link<ParentLink>>.Instance.Enable(source);
                 source.Delete<World<AuthorityWorld>.Link<ParentLink>>();
@@ -192,14 +254,14 @@ namespace UniGame.StaticEcs.Network.Tests
                 links.Add(target);
                 World<AuthorityWorld>.Components<World<AuthorityWorld>.Links<TargetLinks>>.Instance.Disable(source);
                 Assert.That(replicator.Capture(out payload), Is.EqualTo(CaptureResult.DisabledUnsupported));
-                Assert.That(payload, Is.Null);
+                Assert.That(payload.IsValid, Is.False);
 
                 source.Delete<World<AuthorityWorld>.Links<TargetLinks>>();
                 ref var values = ref source.Add<World<AuthorityWorld>.Multi<Item>>();
                 values.Add(new Item { Number = 1 });
                 World<AuthorityWorld>.Components<World<AuthorityWorld>.Multi<Item>>.Instance.Disable(source);
                 Assert.That(replicator.Capture(out payload), Is.EqualTo(CaptureResult.DisabledUnsupported));
-                Assert.That(payload, Is.Null);
+                Assert.That(payload.IsValid, Is.False);
             }
             finally
             {
@@ -241,7 +303,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 var source = World<AuthorityWorld>.NewEntityInChunk<NetEntity>(Chunk);
                 source.Set<ReplicatedTag>();
                 Assert.That(authority.Capture(out var payload), Is.EqualTo(CaptureResult.Success));
-                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, payload, Schema<ReplicaWorld>(), out var staged), Is.True);
+                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, ref payload, Schema<ReplicaWorld>(), out var staged), Is.True);
                 var foreignGid = new EntityGID((Chunk << Const.ENTITIES_IN_CHUNK_SHIFT) + 100, 1, Cluster);
                 var foreign = World<ReplicaWorld>.NewEntityByGID<NetEntity>(foreignGid);
                 foreign.Set(new Value { Number = 99 });
@@ -413,7 +475,7 @@ namespace UniGame.StaticEcs.Network.Tests
 
                 var ackLease = PacketLease.Rent(1);
                 ackLease.SetLength(0);
-                Assert.That(PayloadStager.TryStage(PacketKind.Ack, ackLease, null, out var ack), Is.True);
+                Assert.That(PayloadStager.TryStage(PacketKind.Ack, ref ackLease, null, out var ack), Is.True);
                 using (ack) AssertApplyFailure(replica, ack, ApplyResult.WrongPayload);
 
                 using var replicaSnapshot = Stage(replicaSchema, Snapshot());
@@ -510,10 +572,21 @@ namespace UniGame.StaticEcs.Network.Tests
             var bytes = new byte[1024];
             Assert.That(PayloadCodec.TryWrite(snapshot, bytes, out var length), Is.True);
             var lease = PacketLease.Rent(length);
-            lease.SetLength(length);
-            bytes.AsSpan(0, length).CopyTo(lease.Span);
-            Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, lease, schema, out var staged), Is.True);
-            return staged;
+            try
+            {
+                lease.SetLength(length);
+                bytes.AsSpan(0, length).CopyTo(lease.Span);
+                Assert.That(PayloadStager.TryStage(PacketKind.FullSnapshot, ref lease, schema, out var staged), Is.True);
+                return staged;
+            }
+            finally
+            {
+                if (lease.IsValid)
+                {
+                    lease.Dispose();
+                    lease = default;
+                }
+            }
         }
         private static byte[] EntityBytes(EntityGID entity)
         {
@@ -549,6 +622,7 @@ namespace UniGame.StaticEcs.Network.Tests
 
         private struct AuthorityWorld : IWorldType { }
         private struct AlternateAuthorityWorld : IWorldType { }
+        private struct AllocationWorld : IWorldType { }
         private struct ReplicaWorld : IWorldType { }
         private struct NetEntity : IEntityType { public byte Id() => 11; }
         private struct OtherEntity : IEntityType { public byte Id() => 12; }
