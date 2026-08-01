@@ -11,6 +11,7 @@ Transport-neutral protocol and replication foundations for deterministic Static 
 - Dispatches commands through retained codecs and authorizers, then emits typed accepted or rejected Static ECS events.
 - Captures deterministic full snapshots from tagged authority entities and applies them through retained AOT-safe invokers to an exact replica ledger.
 - Preflights the complete snapshot, mapped topology, physical occupants, segment kinds, schema records, flags, codecs, and relation targets before any ECS mutation.
+- Negotiates schema, tick rate, payload limits, epoch, peer identity, and canonical chunk topology through a deterministic stepped session handshake.
 
 ## Usage
 
@@ -69,6 +70,25 @@ if (result == EnqueueResult.Queued && outbox.TryBuild(out var commands, out var 
 
 When a transport also implements `ISteppedTransport`, call `BeginStep` once with the deterministic logical step index before receiving or sending session packets. `MemoryTransport` implements this barrier as a no-op.
 
+`Session<TWorld>` owns its transport and the negotiated replication collaborators. A client sends `Hello`, the server replies with `Hello` and then `HelloAck`, and the client completes admission with `Ack`. Advance both endpoints with strictly increasing logical step indices until they become established or terminal.
+
+```csharp
+var clientConfig = SessionConfig.Client(
+    nonce: 0x5E5510UL,
+    minTickRate: 20,
+    maxTickRate: 60);
+
+using var client = new Session<ClientWorld>(clientConfig, schema, transport);
+var work = client.Step(stepIndex);
+if (client.State == SessionState.Established)
+{
+    var epoch = client.Epoch;
+    var trustedPeer = client.PeerId;
+}
+```
+
+Servers use `SessionConfig.Server` with a non-zero epoch, trusted peer id, exact tick rate, and canonical authority chunk map. Rejected admission enters `Closing` until the rejection packet is accepted by the transport; dispose or continue stepping to observe the final endpoint state. `Close()` requests an orderly disconnect. A session validates its scope again at send, receive, and established-step seams, so chunk ownership changes become terminal topology failures before replication work proceeds.
+
 Register the negotiated chunks before creating a scope. The wire map always uses role `1` (`AuthoritySelf`); the local scope selects whether those chunks must be `Self` or `Other` owned.
 
 ```csharp
@@ -99,6 +119,11 @@ On a replica world, stage the decoded `FullSnapshot` with the equivalent replica
 ## Configuration
 
 - Runtime limits may lower, but never raise, the constants in `ProtocolLimits`.
+- Session wire and decoded limits are negotiated independently. Packet framing is checked against local configured limits before payload decode, and the accepted limits cannot exceed either endpoint's advertisement.
+- Session transports must be connected, error-free, and implement `ISteppedTransport`; a successfully constructed session owns and disposes the transport.
+- Session step indices are strictly increasing. Each step begins the transport exactly once, receives at most one packet, and sends at most one packet. Failed sends retry the same semantic control packet and sequence.
+- Only control packets are accepted during the handshake. Established sessions reserve gameplay packet kinds for later orchestration and do not capture snapshots, apply replicas, or dispatch commands automatically.
+- The handshake supplies deterministic negotiation only. It does not authenticate peers, provide confidentiality, or prevent replay; use an authenticated integrity-protected transport across an untrusted boundary and do not reuse live or restarted server nonce/epoch values.
 - Packet ownership handoffs must be serialized; the handle does not permit concurrent mutation through borrowed aliases.
 - Version one accepts only `NoOpTransform` with transform id zero.
 - Schema values, markers, and commands must be unmanaged. Links and multi-value registrations are capped at 32,768 elements.
