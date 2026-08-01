@@ -13,6 +13,23 @@
     "status": "Accepted",
     "reviewerModel": "gpt-5.6-sol:high",
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-REPLICATION-REPLAN-V1.baseline.json"
+  },
+  "leases": [
+    {
+      "resource": "Game.Packages integration branch",
+      "owner": "orchestrator",
+      "scope": "Only the orchestrator integrates an Accepted replication candidate",
+      "status": "Active"
+    },
+    {
+      "resource": "sve11-network-replicator-replan worktree",
+      "owner": "SVE11-NETWORK-REPLICATOR-REPLAN",
+      "scope": "Only task-owned replication schema, runtime, test and README paths",
+      "status": "Active"
+    }
+  ],
+  "close": {
+    "mergeCommits": [],
+    "phaseValidation": []
   }
 }
-

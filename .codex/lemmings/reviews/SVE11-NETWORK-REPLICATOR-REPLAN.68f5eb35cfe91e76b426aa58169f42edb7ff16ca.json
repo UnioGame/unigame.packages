@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-REPLICATOR-REPLAN",
+  "base": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
+  "head": "68f5eb35cfe91e76b426aa58169f42edb7ff16ca",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [
+    {
+      "priority": "P1",
+      "file": ".codex/lemmings/phases/SVE11-NETWORK-REPLICATION-REPLAN-V1.json",
+      "line": 16,
+      "message": "Record the integration-branch and unique writer-worktree leases and initialize close evidence."
+    },
+    {
+      "priority": "P1",
+      "file": "unigame.staticecs.network/Tests/Editor/ReplicationTests.cs",
+      "line": 301,
+      "message": "Prove default failed output and cleanup for WrongRole, ScopeInvalid, codec-false and codec-throw Capture paths."
+    },
+    {
+      "priority": "P1",
+      "file": "unigame.staticecs.network/Tests/Editor/ReplicationTests.cs",
+      "line": 606,
+      "message": "Fingerprint rich seeded replica state including disabled flags, relation targets, collection order and topology across preflight failures."
+    },
+    {
+      "priority": "P1",
+      "file": "unigame.staticecs.network/Tests/Editor/ReplicationTests.cs",
+      "line": 493,
+      "message": "Add a real Static ECS lifecycle hook exception test and retain the explicit no-rollback expectation."
+    },
+    {
+      "priority": "P2",
+      "file": "unigame.staticecs.network/README.md",
+      "line": 59,
+      "message": "Dispose or transfer the successful Capture lease and document pre-initialization registration duties."
+    },
+    {
+      "priority": "P2",
+      "file": ".codex/lemmings/tasks/SVE11-NETWORK-REPLICATOR-REPLAN.json",
+      "line": 6,
+      "message": "A completed candidate execution must preserve the Active to Candidate lifecycle transition."
+    }
+  ],
+  "validation": [
+    "Exact clean three-commit range, -x provenance, ownership, metadata and absence of Sample identifiers were verified.",
+    "Runtime capture ordering, scope filtering, complete preflight, outgoing destruction, survivor validation and phased apply conform to the frozen implementation contract.",
+    "Post-lease Capture transfer, consuming staging and representative zero-allocation test mechanics conform to the compatibility addendum.",
+    "Public names and XML summaries are short and complete; no Unity, Main, reflection-driven pool discovery, dictionary-per-tick or boxing dependency was added.",
+    "git diff --check and lemmings check --all passed; focused 13/13 remains task evidence and Unity EditMode is deferred."
+  ]
+}
+
