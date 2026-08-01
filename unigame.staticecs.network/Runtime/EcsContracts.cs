@@ -16,7 +16,7 @@ namespace UniGame.StaticEcs.Network
     }
 
     /// <summary>Authorizes one typed command using trusted endpoint context.</summary>
-    public interface ICommandAuthorizer<TWorld, TCommand> where TWorld : struct, IWorldType where TCommand : struct
+    public interface ICommandAuthorizer<TWorld, TCommand> where TWorld : struct, IWorldType where TCommand : unmanaged
     {
         /// <summary>Returns whether the command may enter ECS staging.</summary>
         bool Authorize(in CommandContext context, in TCommand command);
@@ -31,7 +31,7 @@ namespace UniGame.StaticEcs.Network
 
     /// <summary>Authorizes commands only when the trusted peer owns the target entity.</summary>
     public readonly struct OwnerAuthorizer<TWorld, TCommand> : ICommandAuthorizer<TWorld, TCommand>
-        where TWorld : struct, IWorldType where TCommand : struct, ITargetCommand
+        where TWorld : struct, IWorldType where TCommand : unmanaged, ITargetCommand
     {
         /// <inheritdoc />
         public bool Authorize(in CommandContext context, in TCommand command)
@@ -42,7 +42,7 @@ namespace UniGame.StaticEcs.Network
     }
 
     /// <summary>Requests transmission of one typed local command.</summary>
-    public struct SendCommandEvent<T> : IEvent where T : struct
+    public struct SendCommandEvent<T> : IEvent where T : unmanaged
     {
         /// <summary>Gets or sets the command.</summary>
         public T Command;
@@ -51,7 +51,7 @@ namespace UniGame.StaticEcs.Network
     }
 
     /// <summary>Reports one accepted typed command.</summary>
-    public struct CommandAcceptedEvent<T> : IEvent where T : struct
+    public struct CommandAcceptedEvent<T> : IEvent where T : unmanaged
     {
         /// <summary>Gets or sets the accepted command.</summary>
         public T Command;
@@ -60,7 +60,7 @@ namespace UniGame.StaticEcs.Network
     }
 
     /// <summary>Reports one rejected typed command.</summary>
-    public struct CommandRejectedEvent<T> : IEvent where T : struct
+    public struct CommandRejectedEvent<T> : IEvent where T : unmanaged
     {
         /// <summary>Gets or sets the rejected command.</summary>
         public T Command;

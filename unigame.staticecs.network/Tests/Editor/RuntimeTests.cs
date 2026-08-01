@@ -17,6 +17,29 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
+        public void SchemaRetainsEveryTypedInvokerAndEnforcesCollectionStorageLimits()
+        {
+            var schema = new SchemaBuilder<TestWorld>()
+                .EntityKind<TestEntityType>(Id(20))
+                .Component<TestComponent, IntCodec>(Id(1), 1, Codec(1), 4)
+                .Tag<TestTag>(Id(2), 1)
+                .Link<TestLink>(Id(3), 1)
+                .Links<TestLinks>(Id(4), 1, 32768)
+                .Multi<TestMulti, MultiIntCodec>(Id(5), 1, Codec(5), 32768, 4)
+                .Command<TestCommand, TestCommandCodec, TestAuthorizer>(Id(10), 1, Codec(10), 4)
+                .Freeze();
+
+            foreach (var entry in schema.Entries)
+            {
+                Assert.That(entry.Invoker, Is.Not.Null);
+                Assert.That(entry.Invoker.RuntimeType, Is.EqualTo(entry.RuntimeType));
+            }
+            Assert.Throws<ArgumentOutOfRangeException>(() => new SchemaBuilder<TestWorld>().Links<TestLinks>(Id(4), 1, 32769));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new SchemaBuilder<TestWorld>().Multi<TestMulti, MultiIntCodec>(Id(5), 1, Codec(5), 32769, 4));
+            Assert.Throws<InvalidOperationException>(() => new SchemaBuilder<TestWorld>().Tag<ReplicatedTag>(Id(6), 1));
+        }
+
+        [Test]
         public void CodecReportsExactConsumptionAndBounds()
         {
             var codec = new IntCodec(); var bytes = new byte[4]; var value = 42;
@@ -57,9 +80,133 @@ namespace UniGame.StaticEcs.Network.Tests
             var header = Header(PacketKind.CommandBatch, PacketFlags.ReliableOrdered, 1, schema.Hash);
             Assert.That(PacketFraming.TryEncode(header, bytes.AsSpan(0, length), new NoOpTransform(), schema, out var packet), Is.True);
             Assert.That(PacketFraming.TryDecode(packet, new NoOpTransform(), schema, out _, out var staged), Is.True);
+            Assert.That(staged.SchemaHash, Is.EqualTo(schema.Hash));
             var trusted = new CommandContext(7, 1, 4); Assert.That(schema.TryAuthorizeCommand(staged, 0, in trusted, out TestCommand command), Is.True); Assert.That(command.Value, Is.EqualTo(42));
             var untrusted = new CommandContext(8, 1, 4); Assert.That(schema.TryAuthorizeCommand(staged, 0, in untrusted, out command), Is.False);
             staged.Dispose(); packet.Dispose();
+        }
+
+        [Test]
+        public void SchemaLessStageRetainsEmptySchemaIdentity()
+        {
+            var payload = PacketLease.Rent(1);
+            payload.SetLength(0);
+            Assert.That(PayloadStager.TryStage(PacketKind.Ack, payload, null, out var staged), Is.True);
+            Assert.That(staged.SchemaHash, Is.EqualTo(TypeId.Empty));
+            staged.Dispose();
+        }
+
+        [Test]
+        public void CommandDispatcherEmitsAcceptedEventWithTrustedContext()
+        {
+            var schema = DispatchSchema();
+            World<DispatchWorld>.Create(WorldConfig.Default());
+            World<DispatchWorld>.Types().Event<CommandAcceptedEvent<DispatchCommand>>().Event<CommandRejectedEvent<DispatchCommand>>();
+            World<DispatchWorld>.Initialize();
+            var receiver = World<DispatchWorld>.RegisterEventReceiver<CommandAcceptedEvent<DispatchCommand>>();
+            try
+            {
+                using var staged = StageDispatchCommand(schema, 11, 19, 42);
+                Assert.That(new CommandDispatcher<DispatchWorld>(schema).Dispatch(staged, 0, 7), Is.EqualTo(DispatchResult.Accepted));
+                var count = 0;
+                foreach (var item in receiver)
+                {
+                    count++;
+                    Assert.That(item.Value.Command.Value, Is.EqualTo(42));
+                    Assert.That(item.Value.Context.PeerId, Is.EqualTo(7));
+                    Assert.That(item.Value.Context.Sequence, Is.EqualTo(11));
+                    Assert.That(item.Value.Context.ClientTick, Is.EqualTo(19));
+                }
+                Assert.That(count, Is.EqualTo(1));
+            }
+            finally
+            {
+                World<DispatchWorld>.DeleteEventReceiver(ref receiver);
+                World<DispatchWorld>.Destroy();
+            }
+        }
+
+        [Test]
+        public void CommandDispatcherEmitsRejectedEvent()
+        {
+            var schema = DispatchSchema();
+            World<DispatchWorld>.Create(WorldConfig.Default());
+            World<DispatchWorld>.Types().Event<CommandAcceptedEvent<DispatchCommand>>().Event<CommandRejectedEvent<DispatchCommand>>();
+            World<DispatchWorld>.Initialize();
+            var receiver = World<DispatchWorld>.RegisterEventReceiver<CommandRejectedEvent<DispatchCommand>>();
+            try
+            {
+                using var staged = StageDispatchCommand(schema, 12, 20, 42);
+                Assert.That(new CommandDispatcher<DispatchWorld>(schema).Dispatch(staged, 0, 8), Is.EqualTo(DispatchResult.Rejected));
+                var count = 0;
+                foreach (var item in receiver)
+                {
+                    count++;
+                    Assert.That(item.Value.Context.PeerId, Is.EqualTo(8));
+                }
+                Assert.That(count, Is.EqualTo(1));
+            }
+            finally
+            {
+                World<DispatchWorld>.DeleteEventReceiver(ref receiver);
+                World<DispatchWorld>.Destroy();
+            }
+        }
+
+        [Test]
+        public void CommandDispatcherDistinguishesConfigurationAndReceiverFailures()
+        {
+            var schema = DispatchSchema();
+            using var staged = StageDispatchCommand(schema, 1, 2, 42);
+
+            World<DispatchWorld>.Create(WorldConfig.Default());
+            World<DispatchWorld>.Types().Event<CommandAcceptedEvent<DispatchCommand>>();
+            World<DispatchWorld>.Initialize();
+            try
+            {
+                Assert.That(new CommandDispatcher<DispatchWorld>(schema).Dispatch(staged, 0, 7), Is.EqualTo(DispatchResult.ConfigurationError));
+            }
+            finally
+            {
+                World<DispatchWorld>.Destroy();
+            }
+
+            World<DispatchWorld>.Create(WorldConfig.Default());
+            World<DispatchWorld>.Types().Event<CommandAcceptedEvent<DispatchCommand>>().Event<CommandRejectedEvent<DispatchCommand>>();
+            World<DispatchWorld>.Initialize();
+            try
+            {
+                Assert.That(new CommandDispatcher<DispatchWorld>(schema).Dispatch(staged, 0, 7), Is.EqualTo(DispatchResult.NoReceiver));
+            }
+            finally
+            {
+                World<DispatchWorld>.Destroy();
+            }
+        }
+
+        [Test]
+        public void CommandDispatcherRejectsWrongPayloadSchemaAndIndexBeforeMutation()
+        {
+            var schema = DispatchSchema();
+            var dispatcher = new CommandDispatcher<DispatchWorld>(schema);
+            using var staged = StageDispatchCommand(schema, 1, 2, 42);
+            Assert.That(dispatcher.Dispatch(staged, -1, 7), Is.EqualTo(DispatchResult.InvalidCommand));
+            Assert.That(dispatcher.Dispatch(staged, 1, 7), Is.EqualTo(DispatchResult.InvalidCommand));
+
+            var other = new SchemaBuilder<DispatchWorld>()
+                .Command<DispatchCommand, DispatchCommandCodec, DispatchAuthorizer>(Id(31), 1, Codec(30), 4)
+                .Freeze();
+            Assert.That(new CommandDispatcher<DispatchWorld>(other).Dispatch(staged, 0, 7), Is.EqualTo(DispatchResult.SchemaMismatch));
+
+            var ackLease = PacketLease.Rent(1);
+            ackLease.SetLength(0);
+            Assert.That(PayloadStager.TryStage(PacketKind.Ack, ackLease, null, out var ack), Is.True);
+            Assert.That(dispatcher.Dispatch(ack, 0, 7), Is.EqualTo(DispatchResult.WrongPayload));
+            ack.Dispose();
+
+            var disposed = StageDispatchCommand(schema, 1, 2, 42);
+            disposed.Dispose();
+            Assert.That(dispatcher.Dispatch(disposed, 0, 7), Is.EqualTo(DispatchResult.InvalidCommand));
         }
 
         [Test]
@@ -116,7 +263,7 @@ namespace UniGame.StaticEcs.Network.Tests
             } } } };
             var bytes = new byte[512]; Assert.That(PayloadCodec.TryWrite(snapshot, bytes, out var length), Is.True); var header = Header(PacketKind.FullSnapshot, 0, 2, schema.Hash);
             Assert.That(PacketFraming.TryEncode(header, bytes.AsSpan(0, length), new NoOpTransform(), schema, out var packet), Is.True);
-            Assert.That(PacketFraming.TryDecode(packet, new NoOpTransform(), schema, out _, out var staged), Is.True); Assert.That(staged.Entities.Length, Is.EqualTo(1)); Assert.That(staged.Records.Length, Is.EqualTo(5)); staged.Dispose();
+            Assert.That(PacketFraming.TryDecode(packet, new NoOpTransform(), schema, out _, out var staged), Is.True); Assert.That(staged.SchemaHash, Is.EqualTo(schema.Hash)); Assert.That(staged.Entities.Length, Is.EqualTo(1)); Assert.That(staged.Records.Length, Is.EqualTo(5)); staged.Dispose();
             var wrongSchema = new SchemaBuilder<TestWorld>().EntityKind<TestEntityType>(Id(20)).Freeze(); Assert.That(PacketFraming.TryDecode(packet, new NoOpTransform(), wrongSchema, out _, out _), Is.False);
             packet.Span[PacketHeader.Size] ^= 1; Assert.That(PacketFraming.TryDecode(packet, new NoOpTransform(), schema, out _, out _), Is.False); packet.Dispose();
             snapshot.Entities[0].Records[0] = new SnapshotRecord { TypeId = Id(1), Kind = RecordKind.Component, Version = 1, ElementCount = 1, Payload = new byte[3] };
@@ -144,12 +291,26 @@ namespace UniGame.StaticEcs.Network.Tests
 
         private static TickRecord Record(uint tick, int bytes) { var lease = PacketLease.Rent(bytes); lease.SetLength(bytes); return new TickRecord(tick, lease, null, null, tick, tick, tick, 0, 0, Array.Empty<PacketLease>()); }
         private static PacketLease Lease(byte value) { var lease = PacketLease.Rent(1); lease.SetLength(1); lease.Span[0] = value; return lease; }
+        private static Schema DispatchSchema() => new SchemaBuilder<DispatchWorld>()
+            .Command<DispatchCommand, DispatchCommandCodec, DispatchAuthorizer>(Id(30), 1, Codec(30), 4)
+            .Freeze();
+        private static StagedPayload StageDispatchCommand(Schema schema, uint sequence, uint clientTick, int value)
+        {
+            var bytes = new byte[64];
+            var payload = new CommandBatchPayload { Commands = new[] { new CommandRecord { TypeId = Id(30), Version = 1, Sequence = sequence, ClientTick = clientTick, Payload = BitConverter.GetBytes(value) } } };
+            Assert.That(PayloadCodec.TryWrite(payload, bytes, out var length), Is.True);
+            var lease = PacketLease.Rent(length); lease.SetLength(length); bytes.AsSpan(0, length).CopyTo(lease.Span);
+            Assert.That(PayloadStager.TryStage(PacketKind.CommandBatch, lease, schema, out var staged), Is.True);
+            Assert.That(staged.SchemaHash, Is.EqualTo(schema.Hash));
+            return staged;
+        }
         private static TypeId Id(int value) => new(new Guid(value, 0, 0, new byte[8]));
         private static CodecId Codec(int value) => new(new Guid(value, 0, 0, new byte[8]));
         private static PacketHeader Header(PacketKind kind, PacketFlags flags, uint sequence, TypeId schema) => new() { Kind = kind, Flags = flags, PacketSequence = sequence, BaselineTick = PacketHeader.NoneTick, SchemaHash = schema };
         private static PacketLease HeaderPacket(PacketKind kind, PacketFlags flags, uint sequence) { var lease = PacketLease.Rent(PacketHeader.Size); lease.SetLength(PacketHeader.Size); Header(kind, flags, sequence, TypeId.Empty).TryWrite(lease.Span); return lease; }
         private static byte[] EntityBytes(uint id) => new byte[] { (byte)id, (byte)(id >> 8), (byte)(id >> 16), (byte)(id >> 24), 0, 0, 1, 0 };
         private struct TestWorld : IWorldType { }
+        private struct DispatchWorld : IWorldType { }
         private struct TestEntityType : IEntityType { public byte Id() => 1; }
         private struct TestTag : ITag { }
         private struct TestLink : ILinkType { }
@@ -157,8 +318,11 @@ namespace UniGame.StaticEcs.Network.Tests
         private struct TestMulti : IMultiComponent { public int Value; }
         private struct TestComponent : IComponent { public int Value; }
         private struct TestCommand { public int Value; }
+        private struct DispatchCommand { public int Value; }
         private struct TestAuthorizer : ICommandAuthorizer<TestWorld, TestCommand> { public bool Authorize(in CommandContext context, in TestCommand command) => context.PeerId == 7 && command.Value == 42; }
+        private struct DispatchAuthorizer : ICommandAuthorizer<DispatchWorld, DispatchCommand> { public bool Authorize(in CommandContext context, in DispatchCommand command) => context.PeerId == 7 && command.Value == 42; }
         private struct TestCommandCodec : ICodec<TestCommand> { public bool TryWrite(in TestCommand value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out TestCommand value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new TestCommand { Value = raw }; return ok; } }
+        private struct DispatchCommandCodec : ICodec<DispatchCommand> { public bool TryWrite(in DispatchCommand value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out DispatchCommand value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new DispatchCommand { Value = raw }; return ok; } }
         private struct MultiIntCodec : ICodec<TestMulti> { public bool TryWrite(in TestMulti value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out TestMulti value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new TestMulti { Value = raw }; return ok; } }
         private struct IntCodec : ICodec<TestComponent>, ICodec<int>
         {

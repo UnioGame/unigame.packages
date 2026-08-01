@@ -5,8 +5,10 @@ Transport-neutral protocol and replication foundations for deterministic Static 
 ## Capabilities
 
 - Defines bounded version-one packet framing, canonical payload codecs, stable RFC UUID identifiers, CRC32, xxHash64, and schema hashing.
-- Provides AOT-safe typed schema registration, pooled packet ownership, transport and transform contracts, command markers, and bounded tick history.
+- Provides AOT-safe typed schema registration with retained entity, record, and command invokers, pooled packet ownership, transport and transform contracts, command markers, and bounded tick history.
 - Rejects unknown flags and enum values, unsupported transforms, malformed lengths, invalid hashes, reserved fields, and non-canonical ordering before ECS mutation.
+- Binds schema-validated command and snapshot stages to the exact schema identity that accepted them.
+- Dispatches commands through retained codecs and authorizers, then emits typed accepted or rejected Static ECS events.
 
 ## Usage
 
@@ -21,11 +23,15 @@ var schema = new SchemaBuilder<ServerWorld>()
     .Freeze();
 ```
 
-Packet payloads are written with `PayloadCodec`, framed with `PacketFraming`, and passed as owned `PacketLease` instances through an `ITransport`. Successful decode returns a disposable `StagedPayload`; consume its pooled typed indexes and canonical payload slices before disposing it. Commands are decoded and authorized through `Schema.TryAuthorizeCommand` using a trusted endpoint `CommandContext`.
+Packet payloads are written with `PayloadCodec`, framed with `PacketFraming`, and passed as owned `PacketLease` instances through an `ITransport`. Successful decode returns a disposable `StagedPayload`; consume its pooled typed indexes and canonical payload slices before disposing it. Schema-bound stages expose the validating `SchemaHash`.
+
+Create a `CommandDispatcher<TWorld>` from the same frozen schema and pass it only staged command batches. The dispatcher derives sequence and client tick from the stage, accepts the trusted peer id from the endpoint, and returns an exhaustive `DispatchResult` without transferring stage ownership.
 
 ## Configuration
 
 - Runtime limits may lower, but never raise, the constants in `ProtocolLimits`.
 - Version one accepts only `NoOpTransform` with transform id zero.
-- Register closed generic command events in the Unity-facing consumer assembly.
+- Schema values, markers, and commands must be unmanaged. Links and multi-value registrations are capped at 32,768 elements.
+- `ReplicatedTag` is control state and cannot be registered as an ordinary schema record.
+- Explicitly register both `CommandAcceptedEvent<T>` and `CommandRejectedEvent<T>` closed generic event types before initializing the world. A missing type returns `ConfigurationError`; a registered result event without a receiver returns `NoReceiver`.
 - See the repository [Static ECS knowledge base](../../../docs/knowledge/static-ecs/) for world and marker lifecycle.

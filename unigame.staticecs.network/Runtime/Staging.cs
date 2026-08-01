@@ -87,6 +87,8 @@ namespace UniGame.StaticEcs.Network
         internal StagedPayload(PacketKind kind, PacketLease payload) { Kind = kind; _payload = payload; }
         /// <summary>Gets the staged payload kind.</summary>
         public PacketKind Kind { get; }
+        /// <summary>Gets the exact schema hash that validated this stage, or an empty identifier for schema-less payloads.</summary>
+        public TypeId SchemaHash { get; private set; }
         /// <summary>Gets a staged Hello value when <see cref="Kind"/> is Hello.</summary>
         public HelloPayload Hello { get; internal set; }
         /// <summary>Gets staged HelloAck scalars when <see cref="Kind"/> is HelloAck.</summary>
@@ -123,6 +125,8 @@ namespace UniGame.StaticEcs.Network
         internal void SetChunks(ChunkMapping[] values, int count) { _chunks = values; _chunkCount = count; }
         internal void SetCommands(StagedCommand[] values, int count) { _commands = values; _commandCount = count; }
         internal void SetSnapshot(StagedEntity[] entities, int entityCount, StagedRecord[] records, int recordCount) { _entities = entities; _entityCount = entityCount; _records = records; _recordCount = recordCount; }
+        internal void BindSchema(TypeId schemaHash) => SchemaHash = schemaHash;
+        internal bool IsActive => _payload != null;
         private void EnsureActive() { if (_payload == null) throw new ObjectDisposedException(nameof(StagedPayload)); }
     }
 
@@ -153,6 +157,7 @@ namespace UniGame.StaticEcs.Network
                     valid = PayloadCodec.TryReadDisconnect(source, out var disconnect); result.Disconnect = disconnect; break;
             }
             if (!valid) { result.Dispose(); return false; }
+            if (kind == PacketKind.CommandBatch || kind == PacketKind.FullSnapshot) result.BindSchema(schema.Hash);
             staged = result; return true;
         }
 
