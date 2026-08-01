@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SCHEMA-DISPATCH",
   "mode": "strict",
-  "state": "Candidate",
-  "previousState": "Assigned",
+  "state": "ChangesRequested",
+  "previousState": "Candidate",
   "role": "complex-worker",
   "branch": "codex/sve11-network-schema-dispatch",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-schema-dispatch",
@@ -89,10 +89,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-SCHEMA-DISPATCH",
     "base": "f04e4003f7aa21f48c141f5522fbdadc3c654dc0",
-    "status": "Pending",
-    "cycle": 0,
+    "status": "ChangesRequested",
+    "cycle": 1,
     "head": "1e2eb891c9315ae604ce1841d47a73cdbf7d664a",
-    "evidence": null
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SCHEMA-DISPATCH.1e2eb891c9315ae604ce1841d47a73cdbf7d664a.json"
   },
   "close": {
     "mergeCommit": null,

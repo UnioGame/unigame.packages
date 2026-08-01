@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-SCHEMA-DISPATCH",
+  "base": "f04e4003f7aa21f48c141f5522fbdadc3c654dc0",
+  "head": "1e2eb891c9315ae604ce1841d47a73cdbf7d664a",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [
+    {
+      "priority": "P1",
+      "file": "unigame.staticecs.network/Runtime/Schema.cs",
+      "line": 69,
+      "message": "Schema drops its owning TWorld, so CommandDispatcher<WorldB> can accept WorldA invokers and route authorization/events into the wrong world. Retain an internal world discriminator, reject generic consumer mismatches at construction, and add a two-world no-activity regression without changing the wire hash."
+    }
+  ],
+  "validation": [
+    "Exact range, merge base, ownership, clean worktree and diff checks verified.",
+    "All other frozen schema, staging, command result, constraint, XML and README clauses passed review.",
+    "Worker build and ten focused tests accepted; Unity EditMode remains deferred."
+  ]
+}
