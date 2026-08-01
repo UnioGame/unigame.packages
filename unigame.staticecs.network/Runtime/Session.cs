@@ -18,9 +18,7 @@ namespace UniGame.StaticEcs.Network
         private SessionError _error;
         private ConnectResult? _result;
         private DisconnectReason? _reason;
-        private TypeId _clientSchema;
         private TypeId _serverSchema;
-        private HelloPayload _clientHello;
         private HelloPayload _serverHello;
         private ConnectResult _admissionResult;
         private uint _epoch;
@@ -227,7 +225,7 @@ namespace UniGame.StaticEcs.Network
             StagedPayload staged = null;
             try
             {
-                if (!PacketFraming.TryDecode(in packet, new NoOpTransform(), out var decodedHeader, out staged) ||
+                if (!PacketFraming.TryDecode(in packet, SessionProtocol.ControlTransform, out var decodedHeader, out staged) ||
                     !HeaderEquals(in header, in decodedHeader))
                 {
                     Fault(SessionError.Protocol, DisconnectReason.ProtocolViolation);
@@ -287,8 +285,6 @@ namespace UniGame.StaticEcs.Network
             if (hello.Nonce == 0 || hello.MinTickRate == 0 || hello.MaxTickRate == 0 || hello.MinTickRate > hello.MaxTickRate)
                 return ProtocolFailure();
 
-            _clientSchema = header.SchemaHash;
-            _clientHello = hello;
             var acceptedLength = checked((uint)(20 + _config.Chunks.Length * 8));
             if (header.SchemaHash != _schema.Hash) _admissionResult = ConnectResult.SchemaMismatch;
             else if (_config.MinTickRate < hello.MinTickRate || _config.MinTickRate > hello.MaxTickRate)
@@ -488,7 +484,7 @@ namespace UniGame.StaticEcs.Network
                         accepted ? _config.Chunks : Array.Empty<ChunkMapping>());
                     return true;
                 case SessionStage.SendFinalAck:
-                    if (!ValidateScope()) return false;
+                    if (!ValidateScope(ConnectResult.ChunkMapRejected)) return false;
                     pending = PendingControl.AckPacket(_epoch, _serverSchema);
                     return true;
                 case SessionStage.RequestedClose:
@@ -565,15 +561,23 @@ namespace UniGame.StaticEcs.Network
             }
         }
 
-        private bool ValidateScope()
+        private bool ValidateScope(ConnectResult? admissionFailure = null)
         {
             if (_scope != null && _replicator != null &&
                 World<TWorld>.Status == WorldStatus.Initialized &&
                 World<TWorld>.IsTagTypeRegistered<ReplicatedTag>() &&
                 _scope.ValidateCurrent())
                 return true;
-            Fault(SessionError.Topology, null);
+            Fault(SessionError.Topology, null, admissionFailure);
             return false;
+        }
+
+        internal void SetReliableTransmitHighWaterForTests(uint highWater)
+        {
+            if (_hasStep || _state != SessionState.Handshaking || _sequences.ReliableTransmit != 0 ||
+                _sequences.ReliableReceive != 0)
+                throw new InvalidOperationException("The transmit high-water test seam requires a fresh session.");
+            _sequences.ReliableTransmit = highWater;
         }
 
         private void MapTransportTerminal()

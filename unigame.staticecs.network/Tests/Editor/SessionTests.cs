@@ -328,7 +328,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 World<ClientWorld>.ChangeChunkOwner(Chunk, ChunkOwnerType.Self);
                 Assert.That(retryClient.Step(3), Is.EqualTo(StepResult.StateChanged));
                 AssertTopologyFault(retryClient);
-                Assert.That(retryClient.Result, Is.Null);
+                Assert.That(retryClient.Result, Is.EqualTo(ConnectResult.ChunkMapRejected));
                 Assert.That(retryClient.HasScope, Is.False);
             }
             finally
@@ -532,6 +532,249 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
+        public void SessionTransmitExhaustionRunsAfterBeginWithoutEncodeRentOrSend()
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other);
+            var transport = TestTransport.Unpaired();
+            using var session = new Session<ClientWorld>(ClientConfig(), Schema<ClientWorld>(), transport);
+            var held = new List<PacketLease>();
+            try
+            {
+                session.SetReliableTransmitHighWaterForTests(uint.MaxValue);
+                while (PacketLease.PooledStateCountForTests > 0) held.Add(PacketLease.Rent(1));
+                var allocations = PacketLease.StateAllocationCountForTests;
+
+                Assert.That(session.Step(0), Is.EqualTo(StepResult.StateChanged));
+                Assert.That(transport.BeginSteps, Is.EqualTo(new ulong[] { 0 }));
+                Assert.That(transport.SendAttempts, Is.Empty);
+                Assert.That(PacketLease.StateAllocationCountForTests, Is.EqualTo(allocations));
+                Assert.That(session.State, Is.EqualTo(SessionState.Faulted));
+                Assert.That(session.Error, Is.EqualTo(SessionError.Sequence));
+                Assert.That(session.Reason, Is.EqualTo(DisconnectReason.SequenceExhausted));
+                Assert.Throws<InvalidOperationException>(() => session.SetReliableTransmitHighWaterForTests(0));
+            }
+            finally
+            {
+                for (var i = 0; i < held.Count; i++) held[i].Dispose();
+                DestroyWorld<ClientWorld>();
+            }
+        }
+
+        [Test]
+        public void CachedControlTransformAndWarmedEncodingDoNotAllocatePerPacket()
+        {
+            var transform = SessionProtocol.ControlTransform;
+            Assert.That(transform, Is.SameAs(SessionProtocol.ControlTransform));
+            var hello = new HelloPayload
+            {
+                Nonce = 21,
+                MinTickRate = 20,
+                MaxTickRate = 40,
+                MaxWireBytes = ProtocolLimits.MaxWirePayloadBytes,
+                MaxDecodedBytes = ProtocolLimits.MaxDecodedPayloadBytes
+            };
+            var pending = PendingControl.HelloPacket(TypeId.Empty, in hello);
+            for (var i = 0; i < 32; i++)
+            {
+                Assert.That(SessionProtocol.TryEncode(in pending, 1, out var warm), Is.True);
+                warm.Dispose();
+            }
+
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < 256; i++)
+            {
+                if (!SessionProtocol.TryEncode(in pending, 1, out var packet)) Assert.Fail();
+                packet.Dispose();
+            }
+            var after = GC.GetAllocatedBytesForCurrentThread();
+            Assert.That(after, Is.EqualTo(before));
+        }
+
+        [Test]
+        public void MemoryTransportCapacityOneProvesAcceptedPumpAndRejectedDeliveryBarrier()
+        {
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self);
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other);
+            MemoryTransport.CreatePair(1, out var clientTransport, out var serverTransport);
+            using (var client = new Session<ClientWorld>(ClientConfig(), Schema<ClientWorld>(), clientTransport))
+            using (var server = new Session<ServerWorld>(ServerConfig(), Schema<ServerWorld>(), serverTransport))
+            {
+                PumpEstablished(client, server);
+            }
+            DestroyWorld<ServerWorld>();
+            DestroyWorld<ClientWorld>();
+
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self);
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other);
+            MemoryTransport.CreatePair(1, out clientTransport, out serverTransport);
+            var rejectedClient = new Session<ClientWorld>(ClientConfig(), DifferentSchema<ClientWorld>(), clientTransport);
+            using var rejectedServer = new Session<ServerWorld>(ServerConfig(), Schema<ServerWorld>(), serverTransport);
+            try
+            {
+                rejectedClient.Step(0); rejectedServer.Step(0);
+                rejectedClient.Step(1); rejectedServer.Step(1);
+                Assert.That(rejectedServer.State, Is.EqualTo(SessionState.Closing));
+                Assert.That(rejectedServer.Result, Is.Null);
+                Assert.That(rejectedClient.Step(2), Is.EqualTo(StepResult.Received | StepResult.StateChanged));
+                Assert.That(rejectedClient.State, Is.EqualTo(SessionState.Closed));
+                Assert.That(rejectedClient.Result, Is.EqualTo(ConnectResult.SchemaMismatch));
+                rejectedClient.Dispose();
+                Assert.That(rejectedServer.Step(2), Is.EqualTo(StepResult.StateChanged));
+                Assert.That(rejectedServer.State, Is.EqualTo(SessionState.Closed));
+                Assert.That(rejectedServer.Result, Is.EqualTo(ConnectResult.SchemaMismatch));
+                Assert.That(rejectedServer.Error, Is.EqualTo(SessionError.None));
+                Assert.That(rejectedServer.Reason, Is.Null);
+            }
+            finally
+            {
+                rejectedClient.Dispose();
+                DestroyWorld<ServerWorld>();
+                DestroyWorld<ClientWorld>();
+            }
+        }
+
+        [Test]
+        public void TransportThrowsAfterOwnershipTransferOrInboundAssignmentAreCleanedExactly()
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other);
+            TestTransport.CreatePair(2, out var clientTransport, out var peer);
+            using (var client = new Session<ClientWorld>(ClientConfig(), Schema<ClientWorld>(), clientTransport))
+            {
+                clientTransport.TransferThenThrowSendNext = true;
+                Assert.Throws<TransportTestException>(() => client.Step(0));
+                Assert.That(clientTransport.LastSendAlias.IsValid, Is.False);
+                Assert.Throws<ArgumentOutOfRangeException>(() => client.Step(0));
+                Assert.That(client.Step(1), Is.EqualTo(StepResult.Sent));
+                CollectionAssert.AreEqual(clientTransport.SendAttempts[0].Bytes, clientTransport.SendAttempts[1].Bytes);
+
+                var hello = HelloPacket(1, Schema<ClientWorld>().Hash, 0, ServerHello());
+                clientTransport.Inject(Channel.ReliableOrdered, ref hello);
+                clientTransport.AssignThenThrowReceiveNext = true;
+                Assert.Throws<TransportTestException>(() => client.Step(2));
+                Assert.That(clientTransport.LastReceiveAlias.IsValid, Is.False);
+                Assert.Throws<ArgumentOutOfRangeException>(() => client.Step(2));
+            }
+            peer.Dispose();
+            DestroyWorld<ClientWorld>();
+
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self);
+            TestTransport.CreatePair(2, out var serverTransport, out peer);
+            using (var server = new Session<ServerWorld>(ServerConfig(), Schema<ServerWorld>(), serverTransport))
+            {
+                var hello = HelloPacket(1, Schema<ServerWorld>().Hash, 0, ClientHello());
+                serverTransport.Inject(Channel.ReliableOrdered, ref hello);
+                serverTransport.ThrowSendNext = true;
+                Assert.Throws<TransportTestException>(() => server.Step(0));
+                Assert.That(serverTransport.LastSendAlias.IsValid, Is.False);
+                Assert.That(server.State, Is.EqualTo(SessionState.Handshaking));
+                Assert.That(server.Result, Is.Null);
+                Assert.Throws<ArgumentOutOfRangeException>(() => server.Step(0));
+                Assert.That(server.Step(1), Is.EqualTo(StepResult.Sent));
+                CollectionAssert.AreEqual(serverTransport.SendAttempts[0].Bytes, serverTransport.SendAttempts[1].Bytes);
+                AssertPacket(serverTransport.SendAttempts[1], PacketKind.Hello, 1, 0);
+            }
+            peer.Dispose();
+            DestroyWorld<ServerWorld>();
+        }
+
+        [Test]
+        public void ServerHelloSemanticMatrixIsPhaseExact()
+        {
+            var hello = ServerHello();
+            hello.Nonce = 0;
+            AssertServerHelloFailure(hello, SessionError.Protocol, DisconnectReason.ProtocolViolation);
+            hello = ServerHello(); hello.MinTickRate = 0; hello.MaxTickRate = 0;
+            AssertServerHelloFailure(hello, SessionError.Protocol, DisconnectReason.ProtocolViolation);
+            hello = ServerHello(); hello.MaxTickRate = 31;
+            AssertServerHelloFailure(hello, SessionError.Protocol, DisconnectReason.ProtocolViolation);
+            hello = ServerHello(); hello.MaxWireBytes = 23;
+            AssertServerHelloFailure(hello, SessionError.Limits, DisconnectReason.LimitsExceeded);
+            hello = ServerHello(); hello.MaxDecodedBytes = 23;
+            AssertServerHelloFailure(hello, SessionError.Limits, DisconnectReason.LimitsExceeded);
+            hello = ServerHello(); hello.Capabilities = 1;
+            AssertServerHelloFailure(hello, SessionError.Limits, DisconnectReason.LimitsExceeded);
+
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other);
+            TestTransport.CreatePair(2, out var transport, out var peer);
+            using var client = new Session<ClientWorld>(ClientConfig(), Schema<ClientWorld>(), transport);
+            try
+            {
+                client.Step(0);
+                hello = ServerHello(); hello.MinTickRate = 50; hello.MaxTickRate = 50;
+                var packet = HelloPacket(1, Schema<ClientWorld>().Hash, 0, hello);
+                transport.Inject(Channel.ReliableOrdered, ref packet);
+                Assert.That(client.Step(1), Is.EqualTo(StepResult.Received));
+                Assert.That(client.State, Is.EqualTo(SessionState.Handshaking));
+                Assert.That(client.Result, Is.Null);
+                var rejected = HelloAckPacket(2, Schema<ClientWorld>().Hash, 0,
+                    ConnectResult.TickRateUnsupported, 0, 0, 33, Array.Empty<ChunkMapping>());
+                transport.Inject(Channel.ReliableOrdered, ref rejected);
+                Assert.That(client.Step(2), Is.EqualTo(StepResult.Received | StepResult.StateChanged));
+                Assert.That(client.State, Is.EqualTo(SessionState.Closed));
+                Assert.That(client.Result, Is.EqualTo(ConnectResult.TickRateUnsupported));
+            }
+            finally
+            {
+                peer.Dispose();
+                DestroyWorld<ClientWorld>();
+            }
+        }
+
+        [Test]
+        public void HelloAckSemanticMatrixBindsStoredSchemaNonceScalarsMapAndPrecedence()
+        {
+            var local = Schema<ClientWorld>().Hash;
+            var different = DifferentSchema<ClientWorld>().Hash;
+            AssertHelloAckFailure(local, ServerHello(), different, 7, ConnectResult.Accepted, 30, 9, 33,
+                Mapping(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+            AssertHelloAckFailure(local, ServerHello(), local, 7, ConnectResult.Accepted, 30, 9, 34,
+                Mapping(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+            AssertHelloAckFailure(local, ServerHello(), local, 0, ConnectResult.Accepted, 30, 9, 33,
+                Mapping(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+            AssertHelloAckFailure(local, ServerHello(), local, 7, ConnectResult.Accepted, 0, 9, 33,
+                Mapping(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+            AssertHelloAckFailure(local, ServerHello(), local, 7, ConnectResult.Accepted, 31, 9, 33,
+                Mapping(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+            AssertHelloAckFailure(local, ServerHello(), local, 7, ConnectResult.Accepted, 30, 0, 33,
+                Mapping(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+            AssertHelloAckFailure(local, ServerHello(), local, 7, ConnectResult.Accepted, 30, 9, 33,
+                Array.Empty<ChunkMapping>(), SessionError.Protocol, DisconnectReason.ProtocolViolation,
+                ConnectResult.ChunkMapRejected);
+            AssertHelloAckFailure(local, ServerHello(), local, 7, ConnectResult.Accepted, 30, 9, 33,
+                new[] { Map(Chunk, Cluster), Map(Chunk, Cluster) },
+                SessionError.Protocol, DisconnectReason.ProtocolViolation, ConnectResult.ChunkMapRejected);
+            AssertHelloAckFailure(local, ServerHello(), local, 7, ConnectResult.LimitsRejected, 0, 0, 33,
+                Array.Empty<ChunkMapping>(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+            AssertHelloAckFailure(local, ServerHello(), local, 0, ConnectResult.LimitsRejected, 30, 0, 33,
+                Array.Empty<ChunkMapping>(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+            AssertHelloAckFailure(local, ServerHello(), local, 0, ConnectResult.LimitsRejected, 0, 9, 33,
+                Array.Empty<ChunkMapping>(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+            AssertHelloAckFailure(local, ServerHello(), local, 0, ConnectResult.LimitsRejected, 0, 0, 33,
+                Mapping(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+            AssertHelloAckFailure(local, ServerHello(), local, 0, ConnectResult.LimitsRejected, 0, 0, 34,
+                Array.Empty<ChunkMapping>(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+            AssertHelloAckFailure(local, ServerHello(), local, 0, ConnectResult.ProtocolVersionMismatch, 0, 0, 33,
+                Array.Empty<ChunkMapping>(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+
+            var outside = ServerHello(); outside.MinTickRate = 50; outside.MaxTickRate = 50;
+            AssertHelloAckFailure(different, outside, different, 0, ConnectResult.TickRateUnsupported, 0, 0, 33,
+                Array.Empty<ChunkMapping>(), SessionError.Protocol, DisconnectReason.ProtocolViolation, null);
+            AssertHelloAckFailure(different, ServerHello(), different, 7, ConnectResult.Accepted, 30, 9, 33,
+                Mapping(), SessionError.Schema, DisconnectReason.SchemaMismatch, ConnectResult.SchemaMismatch);
+        }
+
+        [Test]
+        public void FinalAckSemanticMatrixClassifiesSchemaEpochAndPayloadIndependently()
+        {
+            AssertFinalAckFailure(DifferentSchema<ServerWorld>().Hash, 7, Array.Empty<byte>(),
+                SessionError.Schema, DisconnectReason.SchemaMismatch);
+            AssertFinalAckFailure(Schema<ServerWorld>().Hash, 8, Array.Empty<byte>(),
+                SessionError.Epoch, DisconnectReason.UnexpectedEpoch);
+            AssertFinalAckFailure(Schema<ServerWorld>().Hash, 7, new byte[] { 1 },
+                SessionError.Protocol, DisconnectReason.ProtocolViolation);
+        }
+
+        [Test]
         public void HeaderChannelSequenceAndPhaseMutationsFaultWithoutReply()
         {
             AssertClientHelloMutation(Channel.UnreliableSequenced, 1, 0, PacketHeader.NoneTick,
@@ -671,10 +914,16 @@ namespace UniGame.StaticEcs.Network.Tests
                 SessionState.Closed, SessionError.None, DisconnectReason.ServerShutdown);
             AssertReceivedDisconnect(SessionRole.Server, DisconnectReason.ServerShutdown,
                 SessionState.Faulted, SessionError.Protocol, DisconnectReason.ProtocolViolation);
+            AssertReceivedDisconnect(SessionRole.Client, DisconnectReason.ProtocolViolation,
+                SessionState.Faulted, SessionError.Protocol, DisconnectReason.ProtocolViolation);
             AssertReceivedDisconnect(SessionRole.Client, DisconnectReason.SchemaMismatch,
                 SessionState.Faulted, SessionError.Schema, DisconnectReason.SchemaMismatch);
+            AssertReceivedDisconnect(SessionRole.Client, DisconnectReason.LimitsExceeded,
+                SessionState.Faulted, SessionError.Limits, DisconnectReason.LimitsExceeded);
             AssertReceivedDisconnect(SessionRole.Client, DisconnectReason.UnexpectedEpoch,
                 SessionState.Faulted, SessionError.Epoch, DisconnectReason.UnexpectedEpoch);
+            AssertReceivedDisconnect(SessionRole.Client, DisconnectReason.SequenceExhausted,
+                SessionState.Faulted, SessionError.Sequence, DisconnectReason.SequenceExhausted);
             AssertReceivedDisconnect(SessionRole.Client, DisconnectReason.TransportClosed,
                 SessionState.Faulted, SessionError.Transport, DisconnectReason.TransportClosed);
 
@@ -749,6 +998,105 @@ namespace UniGame.StaticEcs.Network.Tests
             {
                 DestroyWorld<ServerWorld>();
                 DestroyWorld<ClientWorld>();
+            }
+        }
+
+        private static void AssertServerHelloFailure(
+            HelloPayload hello,
+            SessionError expectedError,
+            DisconnectReason expectedReason)
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other);
+            TestTransport.CreatePair(2, out var transport, out var peer);
+            using var client = new Session<ClientWorld>(ClientConfig(), Schema<ClientWorld>(), transport);
+            try
+            {
+                client.Step(0);
+                var packet = HelloPacket(1, Schema<ClientWorld>().Hash, 0, hello);
+                transport.Inject(Channel.ReliableOrdered, ref packet);
+                Assert.That(client.Step(1), Is.EqualTo(StepResult.Received | StepResult.StateChanged));
+                Assert.That(client.State, Is.EqualTo(SessionState.Faulted));
+                Assert.That(client.Error, Is.EqualTo(expectedError));
+                Assert.That(client.Reason, Is.EqualTo(expectedReason));
+                Assert.That(client.Result, Is.Null);
+            }
+            finally
+            {
+                peer.Dispose();
+                DestroyWorld<ClientWorld>();
+            }
+        }
+
+        private static void AssertHelloAckFailure(
+            TypeId serverHelloSchema,
+            HelloPayload serverHello,
+            TypeId ackSchema,
+            uint epoch,
+            ConnectResult result,
+            ushort tick,
+            uint peerId,
+            ulong nonce,
+            ChunkMapping[] chunks,
+            SessionError expectedError,
+            DisconnectReason expectedReason,
+            ConnectResult? expectedResult)
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other);
+            TestTransport.CreatePair(2, out var transport, out var peer);
+            using var client = new Session<ClientWorld>(ClientConfig(), Schema<ClientWorld>(), transport);
+            try
+            {
+                client.Step(0);
+                var hello = HelloPacket(1, serverHelloSchema, 0, serverHello);
+                transport.Inject(Channel.ReliableOrdered, ref hello);
+                Assert.That(client.Step(1), Is.EqualTo(StepResult.Received));
+                var ack = HelloAckPacket(2, ackSchema, epoch, result, tick, peerId, nonce, chunks);
+                transport.Inject(Channel.ReliableOrdered, ref ack);
+                Assert.That(client.Step(2), Is.EqualTo(StepResult.Received | StepResult.StateChanged));
+                Assert.That(client.State, Is.EqualTo(SessionState.Faulted));
+                Assert.That(client.Error, Is.EqualTo(expectedError));
+                Assert.That(client.Reason, Is.EqualTo(expectedReason));
+                Assert.That(client.Result, Is.EqualTo(expectedResult));
+                Assert.That(client.HasScope, Is.False);
+                Assert.That(client.HasReplicator, Is.False);
+            }
+            finally
+            {
+                peer.Dispose();
+                DestroyWorld<ClientWorld>();
+            }
+        }
+
+        private static void AssertFinalAckFailure(
+            TypeId schema,
+            uint epoch,
+            byte[] payload,
+            SessionError expectedError,
+            DisconnectReason expectedReason)
+        {
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self);
+            TestTransport.CreatePair(4, out var transport, out var peer);
+            using var server = new Session<ServerWorld>(ServerConfig(), Schema<ServerWorld>(), transport);
+            try
+            {
+                var hello = HelloPacket(1, Schema<ServerWorld>().Hash, 0, ClientHello());
+                transport.Inject(Channel.ReliableOrdered, ref hello);
+                Assert.That(server.Step(0), Is.EqualTo(StepResult.Received | StepResult.Sent));
+                Assert.That(server.Step(1), Is.EqualTo(StepResult.Sent));
+                var ack = RawControlPacket(PacketKind.Ack, 2, epoch, schema, payload);
+                transport.Inject(Channel.ReliableOrdered, ref ack);
+                Assert.That(server.Step(2), Is.EqualTo(StepResult.Received | StepResult.StateChanged));
+                Assert.That(server.State, Is.EqualTo(SessionState.Faulted));
+                Assert.That(server.Error, Is.EqualTo(expectedError));
+                Assert.That(server.Reason, Is.EqualTo(expectedReason));
+                Assert.That(server.Result, Is.Null);
+                Assert.That(server.HasScope, Is.False);
+                Assert.That(server.HasReplicator, Is.False);
+            }
+            finally
+            {
+                peer.Dispose();
+                DestroyWorld<ServerWorld>();
             }
         }
 
@@ -998,6 +1346,24 @@ namespace UniGame.StaticEcs.Network.Tests
 
         private static SessionConfig ClientConfig() => SessionConfig.Client(21, 20, 40);
         private static SessionConfig ServerConfig() => SessionConfig.Server(7, 9, 33, 30, Mapping());
+        private static HelloPayload ClientHello() => new()
+        {
+            Nonce = 21,
+            MinTickRate = 20,
+            MaxTickRate = 40,
+            MaxWireBytes = ProtocolLimits.MaxWirePayloadBytes,
+            MaxDecodedBytes = ProtocolLimits.MaxDecodedPayloadBytes,
+            Capabilities = 0
+        };
+        private static HelloPayload ServerHello() => new()
+        {
+            Nonce = 33,
+            MinTickRate = 30,
+            MaxTickRate = 30,
+            MaxWireBytes = ProtocolLimits.MaxWirePayloadBytes,
+            MaxDecodedBytes = ProtocolLimits.MaxDecodedPayloadBytes,
+            Capabilities = 0
+        };
         private static ChunkMapping[] Mapping() => new[] { Map(Chunk, Cluster) };
         private static ChunkMapping Map(uint chunk, ushort cluster) => new() { Chunk = chunk, Cluster = cluster, Role = 1 };
         private static Schema Schema<TWorld>() where TWorld : struct, IWorldType => new SchemaBuilder<TWorld>().Freeze();
@@ -1082,6 +1448,10 @@ namespace UniGame.StaticEcs.Network.Tests
             internal bool ThrowBeginNext;
             internal bool ThrowReceiveNext;
             internal bool ThrowSendNext;
+            internal bool TransferThenThrowSendNext;
+            internal bool AssignThenThrowReceiveNext;
+            internal PacketLease LastSendAlias;
+            internal PacketLease LastReceiveAlias;
             internal int DisposeCount;
 
             public TransportState State { get; private set; }
@@ -1109,6 +1479,15 @@ namespace UniGame.StaticEcs.Network.Tests
             public bool TrySend(Channel channel, ref PacketLease packet)
             {
                 SendAttempts.Add(new SendAttempt(channel, packet.Span.ToArray(), _currentStep));
+                LastSendAlias = packet;
+                if (TransferThenThrowSendNext)
+                {
+                    TransferThenThrowSendNext = false;
+                    var transferred = PacketLease.Transfer(ref packet);
+                    LastSendAlias = transferred;
+                    transferred.Dispose();
+                    throw new TransportTestException();
+                }
                 if (ThrowSendNext)
                 {
                     ThrowSendNext = false;
@@ -1150,6 +1529,12 @@ namespace UniGame.StaticEcs.Network.Tests
                 var item = _incoming.Dequeue();
                 channel = item.Channel;
                 packet = item.Take();
+                LastReceiveAlias = packet;
+                if (AssignThenThrowReceiveNext)
+                {
+                    AssignThenThrowReceiveNext = false;
+                    throw new TransportTestException();
+                }
                 return true;
             }
 

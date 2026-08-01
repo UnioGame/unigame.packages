@@ -119,6 +119,8 @@ namespace UniGame.StaticEcs.Network
 
     internal static class SessionProtocol
     {
+        internal static readonly IPayloadTransform ControlTransform = new NoOpTransform();
+
         internal static HeaderReadResult ReadHeader(
             in PacketLease packet,
             uint maxWireBytes,
@@ -183,7 +185,7 @@ namespace UniGame.StaticEcs.Network
                     SchemaHash = control.SchemaHash,
                     AcknowledgedCommandSequence = 0
                 };
-                return PacketFraming.TryEncode(header, payload, new NoOpTransform(), out packet);
+                return PacketFraming.TryEncode(header, payload, ControlTransform, out packet);
             }
             finally
             {

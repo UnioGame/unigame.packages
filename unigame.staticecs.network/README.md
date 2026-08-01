@@ -87,7 +87,7 @@ if (client.State == SessionState.Established)
 }
 ```
 
-Servers use `SessionConfig.Server` with a non-zero epoch, trusted peer id, exact tick rate, and canonical authority chunk map. Rejected admission enters `Closing` until the rejection packet is accepted by the transport; dispose or continue stepping to observe the final endpoint state. `Close()` requests an orderly disconnect. A session validates its scope again at send, receive, and established-step seams, so chunk ownership changes become terminal topology failures before replication work proceeds.
+Servers use `SessionConfig.Server` with a non-zero epoch, trusted peer id, exact tick rate, and canonical authority chunk map. A rejecting server remains `Handshaking` while a false send retries the same `HelloAck`. After the rejection is queued it enters `Closing` with a null public result. The client must consume and publish that result, then dispose its session; a later server step observes `RemoteClosed`, publishes the same result, and closes. Do not dispose the rejecting server immediately after enqueue because `MemoryTransport` would drain the queued rejection. `Close()` requests an orderly disconnect. A session validates its scope again at send, receive, and established-step seams, so chunk ownership changes become terminal topology failures before replication work proceeds.
 
 Register the negotiated chunks before creating a scope. The wire map always uses role `1` (`AuthoritySelf`); the local scope selects whether those chunks must be `Self` or `Other` owned.
 
@@ -123,7 +123,7 @@ On a replica world, stage the decoded `FullSnapshot` with the equivalent replica
 - Session transports must be connected, error-free, and implement `ISteppedTransport`; a successfully constructed session owns and disposes the transport.
 - Session step indices are strictly increasing. Each step begins the transport exactly once, receives at most one packet, and sends at most one packet. Failed sends retry the same semantic control packet and sequence.
 - Only control packets are accepted during the handshake. Established sessions reserve gameplay packet kinds for later orchestration and do not capture snapshots, apply replicas, or dispatch commands automatically.
-- The handshake supplies deterministic negotiation only. It does not authenticate peers, provide confidentiality, or prevent replay; use an authenticated integrity-protected transport across an untrusted boundary and do not reuse live or restarted server nonce/epoch values.
+- Version one supplies deterministic framing, not security. Nonces, epoch, CRC32, and xxHash do not authenticate peers, provide confidentiality, or prevent replay, and the client nonce is not echoed by the wire layout. Use a dedicated authenticated and integrity-protected transport across an untrusted boundary, and generate non-zero server nonce and epoch values that are not reused across live or restarted sessions.
 - Packet ownership handoffs must be serialized; the handle does not permit concurrent mutation through borrowed aliases.
 - Version one accepts only `NoOpTransform` with transform id zero.
 - Schema values, markers, and commands must be unmanaged. Links and multi-value registrations are capped at 32,768 elements.
