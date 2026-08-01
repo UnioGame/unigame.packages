@@ -2,7 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-PACKAGE-ASMDEF",
   "mode": "strict",
-  "state": "Assigned",
+  "state": "Accepted",
+  "previousState": "Candidate",
   "role": "focused-worker",
   "branch": "codex/sve11-network-package-asmdef",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-package-asmdef",
@@ -38,12 +39,16 @@
     "actual": "gpt-5.6-sol:medium"
   },
   "execution": {
-    "handoff": null,
-    "validationEvidence": []
+    "handoff": "Protocol grants its internal helpers only to the separate Runtime asmdef without widening the public API.",
+    "validationEvidence": [
+      "Exact two-file ownership and friend-name audit passed",
+      "git diff --check and lemmings check --all passed",
+      "Deferred integration gate: real Unity recompile and focused EditMode tests"
+    ]
   },
   "baseSha": "99855b20be3ebd0e776aad4a03b3054819f596d0",
   "commits": {
-    "candidate": null,
+    "candidate": "4a5d077797f731b292b4e01de9d625d331bc8f6b",
     "fix": []
   },
   "validation": {
@@ -68,10 +73,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-PACKAGE-ASMDEF",
     "base": "99855b20be3ebd0e776aad4a03b3054819f596d0",
-    "status": "Pending",
-    "cycle": 0,
-    "head": null,
-    "evidence": null
+    "status": "Accepted",
+    "cycle": 1,
+    "head": "4a5d077797f731b292b4e01de9d625d331bc8f6b",
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-PACKAGE-ASMDEF.4a5d077797f731b292b4e01de9d625d331bc8f6b.json"
   },
   "close": {
     "mergeCommit": null,
