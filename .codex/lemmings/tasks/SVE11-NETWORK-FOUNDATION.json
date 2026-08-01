@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-FOUNDATION",
   "mode": "strict",
-  "state": "Ready",
-  "previousState": "Planned",
+  "state": "Candidate",
+  "previousState": "Active",
   "role": "complex-worker",
-  "branch": "codex/sve11-network-foundation",
+  "branch": "codex/sve11-network-foundation-candidate",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-foundation",
   "plan": {
     "goal": "Implement the accepted SVE11 network foundation contract as a reusable Unity-free Static ECS package.",
@@ -37,15 +37,21 @@
   "models": {
     "requested": null,
     "assigned": "gpt-5.6-sol:medium",
-    "actual": null
+    "actual": "gpt-5.6-sol:medium"
   },
   "execution": {
-    "handoff": null,
-    "validationEvidence": []
+    "handoff": "Candidate implements the frozen Unity-free protocol, schema, codec, transport ownership, command contracts and bounded tick history package.",
+    "validationEvidence": [
+      "Local netstandard2.1 harness compiled real Protocol, Runtime and Editor test sources against GameClient/Library/ScriptAssemblies/FFS.StaticEcs.dll: 0 warnings, 0 errors",
+      "NETWORK_FOUNDATION_TESTS=8 PASS",
+      "git diff --check 0231d545a3065a54e9d2d6d68a5ed3378d933966..58fac5c92903b1cc6997e7a1e005d33bb1eef460: passed",
+      "Missing paired Unity meta files: 0; forbidden dependency scan: clean",
+      "Deferred integration gate: import package through root manifest and run unigame.staticecs.network.tests in Unity EditMode"
+    ]
   },
-  "baseSha": "49647b26da3dac267d4909c866623bd638e2cbe6",
+  "baseSha": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
   "commits": {
-    "candidate": null,
+    "candidate": "58fac5c92903b1cc6997e7a1e005d33bb1eef460",
     "fix": []
   },
   "validation": {
@@ -89,10 +95,10 @@
   },
   "review": {
     "taskId": "SVE11-NETWORK-FOUNDATION",
-    "base": null,
+    "base": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
     "status": "Pending",
     "cycle": 0,
-    "head": null,
+    "head": "58fac5c92903b1cc6997e7a1e005d33bb1eef460",
     "evidence": null
   },
   "close": {
