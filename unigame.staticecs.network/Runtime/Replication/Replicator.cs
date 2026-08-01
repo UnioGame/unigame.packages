@@ -151,19 +151,17 @@ namespace UniGame.StaticEcs.Network
                 if (existingCount != currentLedger.Length) return ApplyResult.EntityConflict;
                 SortExisting(existing.AsSpan(0, existingCount));
 
+                // Incoming entities already proved one kind per physical segment. Exact-GID survivors must retain
+                // that incoming kind; every different-generation or absent ledger entity is outgoing and ignored here.
                 for (var i = 0; i < stagedEntities.Length; i++)
                 {
-                    if (!SegmentCompatible(existing.AsSpan(0, existingCount), gids[i].Id, kinds[i])) return ApplyResult.InvalidEntity;
                     var occupant = FindExisting(existing.AsSpan(0, existingCount), gids[i].Id);
                     if (occupant >= 0 && existing[occupant].Gid == gids[i] && existing[occupant].Kind != kinds[i]) return ApplyResult.EntityConflict;
                 }
 
                 // No mutation occurs above this boundary.
-                for (var i = 0; i < stagedEntities.Length; i++)
-                {
-                    var occupant = FindExisting(existing.AsSpan(0, existingCount), gids[i].Id);
-                    if (occupant >= 0 && existing[occupant].Gid != gids[i] && existing[occupant].Gid.TryUnpack<TWorld>(out var oldEntity)) oldEntity.Destroy();
-                }
+                for (var i = 0; i < currentLedger.Length; i++)
+                    if (!ReplicationSort.Contains(gids, in currentLedger[i]) && currentLedger[i].TryUnpack<TWorld>(out var outgoing)) outgoing.Destroy();
 
                 for (var i = 0; i < stagedEntities.Length; i++)
                 {
@@ -194,9 +192,6 @@ namespace UniGame.StaticEcs.Network
                     if (stagedEntities[i].Flags == EntityFlags.Disabled) entity.Disable(); else entity.Enable();
                 }
 
-                var ledger = _scope.Ledger;
-                for (var i = 0; i < ledger.Length; i++)
-                    if (!ReplicationSort.Contains(gids, in ledger[i]) && ledger[i].TryUnpack<TWorld>(out var entity)) entity.Destroy();
                 _scope.ReplaceLedger(gids);
                 return ApplyResult.Success;
             }
@@ -248,21 +243,6 @@ namespace UniGame.StaticEcs.Network
                 if (values[middle].Gid.Id < id) low = middle + 1; else high = middle - 1;
             }
             return -1;
-        }
-
-        private static bool SegmentCompatible(ReadOnlySpan<ExistingEntity> values, uint id, byte kind)
-        {
-            var firstId = id & ~((1U << Const.ENTITIES_IN_SEGMENT_SHIFT) - 1U);
-            var lastId = firstId + (1U << Const.ENTITIES_IN_SEGMENT_SHIFT);
-            var low = 0;
-            var high = values.Length;
-            while (low < high)
-            {
-                var middle = low + ((high - low) >> 1);
-                if (values[middle].Gid.Id < firstId) low = middle + 1; else high = middle;
-            }
-            for (var i = low; i < values.Length && values[i].Gid.Id < lastId; i++) if (values[i].Kind != kind) return false;
-            return true;
         }
 
         private static void SortExisting(Span<ExistingEntity> values)

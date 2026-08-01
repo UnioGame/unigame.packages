@@ -73,7 +73,7 @@ On a replica world, stage the decoded `FullSnapshot` with the equivalent replica
 - `ReplicatedTag` is control state and cannot be registered as an ordinary schema record.
 - Authority capture includes only `ReplicatedTag` entities in the exact mapped chunks. Every relation target must appear in the same snapshot.
 - Replica chunks must be empty when `ReplicaScope<TWorld>` is created. Scope construction and replication never register, free, load, unload, or remap chunks.
-- Version one preserves disabled entities and ordinary disableable components. Disabled tags, links, link sets, and multi-components are rejected as `DisabledUnsupported`.
+- Version one preserves disabled entities and ordinary disableable components. FFS tag storage does not represent a disabled tag state; disabled links, link sets, and multi-components are rejected as `DisabledUnsupported`.
 - Apply validates the full snapshot before mutation. Typed lifecycle hooks and user codecs run directly; exceptions propagate, and no rollback guarantee is made after mutation starts.
 - Explicitly register both `CommandAcceptedEvent<T>` and `CommandRejectedEvent<T>` closed generic event types before initializing the world. A missing type returns `ConfigurationError`; a registered result event without a receiver returns `NoReceiver`.
 - See the repository [Static ECS knowledge base](../../../docs/knowledge/static-ecs/) for world and marker lifecycle.
