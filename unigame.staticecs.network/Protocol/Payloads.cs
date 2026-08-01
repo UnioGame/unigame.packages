@@ -191,7 +191,7 @@ namespace UniGame.StaticEcs.Network
         /// <summary>Reads an exactly framed canonical command batch.</summary>
         public static bool TryReadCommandBatch(ReadOnlySpan<byte> source, out CommandBatchPayload value)
         {
-            value = null; var r = new WireReader(source); var count = r.U16(); if (r.U16() != 0 || count > ProtocolLimits.MaxCommandsPerBatch) return false; var commands = new CommandRecord[count]; uint previous = 0;
+            value = null; if (!ValidateCommandBatchFraming(source)) return false; var r = new WireReader(source); var count = r.U16(); r.U16(); var commands = new CommandRecord[count]; uint previous = 0;
             for (var i = 0; i < count; i++) { var type = r.Id(); var version = r.U16(); var flags = (CommandFlags)r.U16(); var sequence = r.U32(); var tick = r.U32(); var length = r.U32(); if (!r.Valid || flags != CommandFlags.None || sequence == 0 || (i > 0 && sequence <= previous) || length > ProtocolLimits.MaxCommandBytes || length > r.Remaining) return false; previous = sequence; commands[i] = new CommandRecord { TypeId = type, Version = version, Flags = flags, Sequence = sequence, ClientTick = tick, Payload = r.Copy((int)length) }; }
             if (!r.Complete) return false; value = new CommandBatchPayload { Commands = commands }; return true;
         }
@@ -208,7 +208,7 @@ namespace UniGame.StaticEcs.Network
         /// <summary>Reads an exactly framed canonical full snapshot.</summary>
         public static bool TryReadFullSnapshot(ReadOnlySpan<byte> source, out FullSnapshotPayload value)
         {
-            value = null; var r = new WireReader(source); var count = r.U32(); if (count > ProtocolLimits.MaxEntities) return false; var entities = new SnapshotEntity[count]; var previousEntity = default(WireEntityId);
+            value = null; if (!ValidateSnapshotFraming(source)) return false; var r = new WireReader(source); var count = r.U32(); var entities = new SnapshotEntity[count]; var previousEntity = default(WireEntityId);
             for (var i = 0; i < count; i++) { var id = r.Entity(); var kind = r.Id(); var flags = (EntityFlags)r.U16(); var recordCount = r.U16(); if (!r.Valid || (i > 0 && id.CompareTo(previousEntity) <= 0) || ((ushort)flags & ~1) != 0 || recordCount > ProtocolLimits.MaxRecordsPerEntity) return false; previousEntity = id; var records = new SnapshotRecord[recordCount]; SnapshotRecord previous = default;
                 for (var j = 0; j < recordCount; j++) { var record = new SnapshotRecord { TypeId = r.Id(), Kind = (RecordKind)r.U8(), Flags = (RecordFlags)r.U8(), Version = r.U16(), ElementCount = r.U32() }; var length = r.U32(); if (!r.Valid || length > ProtocolLimits.MaxComponentBytes || length > r.Remaining) return false; record.Payload = r.Copy((int)length); if ((j > 0 && Compare(record, previous) <= 0) || !ValidRecord(record, record.Payload)) return false; previous = record; records[j] = record; }
                 entities[i] = new SnapshotEntity { Entity = id, KindId = kind, Flags = flags, Records = records }; }
@@ -244,6 +244,34 @@ namespace UniGame.StaticEcs.Network
         private static bool Known(ConnectResult v) => v >= ConnectResult.Accepted && v <= ConnectResult.ChunkMapRejected;
         private static bool Known(ResyncReason v) => v >= ResyncReason.HashMismatch && v <= ResyncReason.UnexpectedEpoch;
         private static bool Known(DisconnectReason v) => v >= DisconnectReason.ProtocolViolation && v <= DisconnectReason.ServerShutdown;
+
+        internal static bool ValidateCommandBatchFraming(ReadOnlySpan<byte> source)
+        {
+            if (source.Length < 4) return false; var count = (ushort)(source[0] | source[1] << 8); if ((source[2] | source[3]) != 0 || count > ProtocolLimits.MaxCommandsPerBatch || source.Length < 4 + count * 32) return false;
+            var offset = 4; uint previous = 0;
+            for (var i = 0; i < count; i++) { if (offset > source.Length - 32) return false; var flags = (ushort)(source[offset + 18] | source[offset + 19] << 8); var sequence = Hashing.Read32(source, offset + 20); var length = Hashing.Read32(source, offset + 28); if (flags != 0 || sequence == 0 || i > 0 && sequence <= previous || length > ProtocolLimits.MaxCommandBytes || length > source.Length - offset - 32) return false; previous = sequence; offset += 32 + (int)length; }
+            return offset == source.Length;
+        }
+
+        internal static bool ValidateSnapshotFraming(ReadOnlySpan<byte> source)
+        {
+            if (source.Length < 4) return false; var count = Hashing.Read32(source, 0); if (count > ProtocolLimits.MaxEntities || source.Length < 4L + count * 28L) return false;
+            var offset = 4; var previousEntity = default(WireEntityId);
+            for (var i = 0; i < count; i++) { if (offset > source.Length - 28) return false; var entity = ReadEntity(source, offset); var flags = (ushort)(source[offset + 24] | source[offset + 25] << 8); var recordCount = (ushort)(source[offset + 26] | source[offset + 27] << 8); if (i > 0 && entity.CompareTo(previousEntity) <= 0 || (flags & ~1) != 0 || recordCount > ProtocolLimits.MaxRecordsPerEntity || source.Length - offset - 28 < recordCount * 28) return false; previousEntity = entity; offset += 28; SnapshotRecord previous = default;
+                for (var j = 0; j < recordCount; j++) { if (offset > source.Length - 28) return false; var length = Hashing.Read32(source, offset + 24); if (length > ProtocolLimits.MaxComponentBytes || length > source.Length - offset - 28) return false; var record = new SnapshotRecord { TypeId = TypeId.ReadBytes(source.Slice(offset, 16)), Kind = (RecordKind)source[offset + 16], Flags = (RecordFlags)source[offset + 17], Version = (ushort)(source[offset + 18] | source[offset + 19] << 8), ElementCount = Hashing.Read32(source, offset + 20) }; if (j > 0 && Compare(record, previous) <= 0 || !ValidRecord(record, source.Slice(offset + 28, (int)length))) return false; previous = record; offset += 28 + (int)length; } }
+            return offset == source.Length;
+        }
+
+        private static bool ValidRecord(SnapshotRecord record, ReadOnlySpan<byte> bytes)
+        {
+            if (record.Kind < RecordKind.Component || record.Kind > RecordKind.Multi || ((byte)record.Flags & ~1) != 0 || bytes.Length > ProtocolLimits.MaxComponentBytes) return false;
+            if (record.Kind != RecordKind.Component && record.Flags != 0) return false;
+            if (record.Kind == RecordKind.Component) return record.ElementCount == 1;
+            if (record.Kind == RecordKind.Tag) return record.ElementCount == 0 && bytes.IsEmpty;
+            if (record.Kind == RecordKind.Link) return record.ElementCount == 1 && bytes.Length == 8;
+            if (record.Kind == RecordKind.Links) { if (bytes.Length != record.ElementCount * 8L) return false; var previous = default(WireEntityId); for (var i = 0; i < record.ElementCount; i++) { var current = ReadEntity(bytes, i * 8); if (i > 0 && current.CompareTo(previous) <= 0) return false; previous = current; } return true; }
+            var offset = 0; for (var i = 0; i < record.ElementCount; i++) { if (offset > bytes.Length - 4) return false; var length = Hashing.Read32(bytes, offset); offset += 4; if (length > ProtocolLimits.MaxComponentBytes || length > bytes.Length - offset) return false; offset += (int)length; } return offset == bytes.Length;
+        }
     }
 
     internal ref struct WireWriter

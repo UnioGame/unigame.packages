@@ -210,7 +210,8 @@ namespace UniGame.StaticEcs.Network
         internal static void Write(Guid value, Span<byte> destination)
         {
             if (destination.Length < 16) throw new ArgumentException("A UUID requires 16 bytes.", nameof(destination));
-            var bytes = value.ToByteArray();
+            Span<byte> bytes = stackalloc byte[16];
+            if (!value.TryWriteBytes(bytes)) throw new InvalidOperationException("Unable to write UUID bytes.");
             destination[0] = bytes[3]; destination[1] = bytes[2]; destination[2] = bytes[1]; destination[3] = bytes[0];
             destination[4] = bytes[5]; destination[5] = bytes[4];
             destination[6] = bytes[7]; destination[7] = bytes[6];

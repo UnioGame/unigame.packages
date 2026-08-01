@@ -21,7 +21,7 @@ var schema = new SchemaBuilder<ServerWorld>()
     .Freeze();
 ```
 
-Packet payloads are written with `PayloadCodec`, framed with `PacketFraming`, and passed as owned `PacketLease` instances through an `ITransport`.
+Packet payloads are written with `PayloadCodec`, framed with `PacketFraming`, and passed as owned `PacketLease` instances through an `ITransport`. Successful decode returns a disposable `StagedPayload`; consume its pooled typed indexes and canonical payload slices before disposing it. Commands are decoded and authorized through `Schema.TryAuthorizeCommand` using a trusted endpoint `CommandContext`.
 
 ## Configuration
 

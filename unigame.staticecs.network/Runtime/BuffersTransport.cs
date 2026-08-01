@@ -28,7 +28,12 @@ namespace UniGame.StaticEcs.Network
         public PacketLease Copy() { EnsureValid(); var copy = Rent(_length); _buffer.AsSpan(0, _length).CopyTo(copy.CapacitySpan); copy.SetLength(_length); return copy; }
         /// <summary>Returns owned storage to the shared pool.</summary>
         public void Dispose() { if (_buffer == null) throw new InvalidOperationException("Packet storage was already returned or transferred."); var buffer = _buffer; _buffer = null; _length = 0; ArrayPool<byte>.Shared.Return(buffer); }
-        internal static PacketLease Transfer(ref PacketLease lease) { if (lease == null || !lease.IsValid) throw new InvalidOperationException("A valid packet lease is required."); var result = lease; lease = null; return result; }
+        internal static PacketLease Transfer(ref PacketLease lease)
+        {
+            if (lease == null || !lease.IsValid) throw new InvalidOperationException("A valid packet lease is required.");
+            var source = lease; var result = new PacketLease(source._buffer, source._length);
+            source._buffer = null; source._length = 0; lease = null; return result;
+        }
         private void EnsureValid() { if (_buffer == null) throw new InvalidOperationException("Packet storage has already been returned or transferred."); }
     }
 
@@ -68,7 +73,7 @@ namespace UniGame.StaticEcs.Network
     /// <summary>Creates bounded in-memory transports with deterministic delivery semantics.</summary>
     public sealed class MemoryTransport : ITransport
     {
-        private readonly Queue<Item> _incoming = new();
+        private readonly LinkedList<Item> _incoming = new();
         private readonly int _capacity;
         private MemoryTransport _peer;
         private uint _latestUnreliable;
@@ -84,23 +89,52 @@ namespace UniGame.StaticEcs.Network
         {
             var owned = PacketLease.Transfer(ref packet);
             if (State != TransportState.Connected || _peer == null || _peer.State != TransportState.Connected) { owned.Dispose(); return false; }
+            uint sequence = 0;
+            if (channel == Channel.UnreliableSequenced)
+            {
+                if (owned.Length < PacketHeader.Size || !PacketHeader.TryRead(owned.Span, out var header) ||
+                    header.Kind != PacketKind.FullSnapshot || header.PacketSequence == 0 ||
+                    owned.Length != PacketHeader.Size + header.WirePayloadLength)
+                {
+                    owned.Dispose();
+                    return false;
+                }
+
+                sequence = header.PacketSequence;
+                if (sequence <= _peer._latestUnreliable)
+                {
+                    owned.Dispose();
+                    return false;
+                }
+
+                var node = _peer._incoming.First;
+                while (node != null)
+                {
+                    var next = node.Next;
+                    if (node.Value.Channel == Channel.UnreliableSequenced)
+                    {
+                        _peer._incoming.Remove(node);
+                        node.Value.Packet.Dispose();
+                    }
+                    node = next;
+                }
+            }
+
             if (_peer._incoming.Count >= _peer._capacity)
             {
                 owned.Dispose();
                 if (channel == Channel.ReliableOrdered) { Fault(ResyncReason.QueueOverflow); _peer.Fault(ResyncReason.QueueOverflow); }
                 return false;
             }
-            uint sequence = 0; if (channel == Channel.UnreliableSequenced && owned.Length >= PacketHeader.Size && PacketHeader.TryRead(owned.Span, out var header)) sequence = header.PacketSequence;
-            if (channel == Channel.UnreliableSequenced && sequence != 0 && sequence <= _peer._latestUnreliable) { owned.Dispose(); return false; }
             if (channel == Channel.UnreliableSequenced) _peer._latestUnreliable = sequence;
-            _peer._incoming.Enqueue(new Item(channel, owned)); return true;
+            _peer._incoming.AddLast(new Item(channel, owned)); return true;
         }
         /// <inheritdoc />
-        public bool TryReceive(out Channel channel, out PacketLease packet) { if (_incoming.Count == 0) { channel = default; packet = null; return false; } var item = _incoming.Dequeue(); channel = item.Channel; packet = item.Packet; return true; }
+        public bool TryReceive(out Channel channel, out PacketLease packet) { if (_incoming.Count == 0) { channel = default; packet = null; return false; } var item = _incoming.First.Value; _incoming.RemoveFirst(); channel = item.Channel; packet = item.Packet; return true; }
         /// <summary>Disposes the transport and drains every queued lease.</summary>
         public void Dispose() { if (State == TransportState.Disposed) return; Drain(); State = TransportState.Disposed; _peer = null; }
         private void Fault(ResyncReason reason) { if (State != TransportState.Connected) return; FaultReason = reason; State = TransportState.Faulted; Drain(); }
-        private void Drain() { while (_incoming.Count > 0) _incoming.Dequeue().Packet.Dispose(); }
+        private void Drain() { while (_incoming.Count > 0) { var packet = _incoming.First.Value.Packet; _incoming.RemoveFirst(); packet.Dispose(); } }
         private readonly struct Item { internal Item(Channel channel, PacketLease packet) { Channel = channel; Packet = packet; } internal Channel Channel { get; } internal PacketLease Packet { get; } }
     }
 
