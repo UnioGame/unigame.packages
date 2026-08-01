@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-SESSION-CORE",
+  "base": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
+  "head": "58f416cf850030fa09df1ccbfa6e3f780d828085",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [
+    {
+      "priority": "P2",
+      "file": "unigame.staticecs.network/Tests/Editor/SessionTests.cs",
+      "line": 449,
+      "message": "Prove the independent local wire and decoded payload bounds with globally valid raw headers, including no decoded lease allocation for the decoded-only violation."
+    },
+    {
+      "priority": "P2",
+      "file": "unigame.staticecs.network/Tests/Editor/SessionTests.cs",
+      "line": 681,
+      "message": "Complete server-side malformed Client Hello coverage for nonce, tick, both advertised limits, capabilities, and schema/tick/limits admission precedence."
+    },
+    {
+      "priority": "P2",
+      "file": "unigame.staticecs.network/Tests/Editor/SessionTests.cs",
+      "line": 778,
+      "message": "Complete the independent header, direction, state and established-kind matrix, including Disconnect schema and epoch validation."
+    }
+  ],
+  "validation": [
+    "Reviewed the complete exact two-commit range from the frozen baseline through the repair head.",
+    "All seven cycle-1 findings are closed and no runtime state-machine, ownership, retry, lifecycle, public API, naming, or security-boundary defect remains.",
+    "The internal fresh-session sequence high-water seam is conformant and directly proves Session-level exhaustion without reflection.",
+    "The remaining findings are strictly test-completeness gaps in mandatory contract matrices.",
+    "Exact ownership, metadata, no-Sample, no-gameplay-transfer, diff-check and lemmings lifecycle scans passed.",
+    "Candidate evidence reports focused SessionTests 27/27 and the complete package harness 100/100; Unity EditMode remains post-integration."
+  ]
+}
