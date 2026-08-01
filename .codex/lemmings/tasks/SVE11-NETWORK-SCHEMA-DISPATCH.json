@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SCHEMA-DISPATCH",
   "mode": "strict",
-  "state": "ChangesRequested",
-  "previousState": "Candidate",
+  "state": "Candidate",
+  "previousState": "ChangesRequested",
   "role": "complex-worker",
   "branch": "codex/sve11-network-schema-dispatch",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-schema-dispatch",
@@ -54,6 +54,9 @@
       "Focused netstandard runtime build: 0 warnings, 0 errors",
       "Focused test assembly build: 0 warnings, 0 errors",
       "Ten schema, staging and dispatcher tests passed, including accepted, rejected, configuration, no-receiver and schema-mismatch paths",
+      "Repair cycle: Schema retains local WorldType while wire hash remains world-independent; generic consumers enforce EnsureWorld<TWorld>()",
+      "Repair regression: two worlds keep equal schema hashes while mismatched dispatcher construction rejects before authorizer, event registration or world creation",
+      "Repair runtime/test builds: 0 warnings, 0 errors; 11 focused tests passed",
       "git diff --check, meta pairing and ownership checks passed; worktree clean",
       "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests"
     ]
@@ -61,7 +64,9 @@
   "baseSha": "f04e4003f7aa21f48c141f5522fbdadc3c654dc0",
   "commits": {
     "candidate": "1e2eb891c9315ae604ce1841d47a73cdbf7d664a",
-    "fix": []
+    "fix": [
+      "4f69a5fef2f65543e2ee7f00f8431390372d6e11"
+    ]
   },
   "validation": {
     "riskToTest": [
@@ -91,7 +96,7 @@
     "base": "f04e4003f7aa21f48c141f5522fbdadc3c654dc0",
     "status": "ChangesRequested",
     "cycle": 1,
-    "head": "1e2eb891c9315ae604ce1841d47a73cdbf7d664a",
+    "head": "4f69a5fef2f65543e2ee7f00f8431390372d6e11",
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SCHEMA-DISPATCH.1e2eb891c9315ae604ce1841d47a73cdbf7d664a.json"
   },
   "close": {
