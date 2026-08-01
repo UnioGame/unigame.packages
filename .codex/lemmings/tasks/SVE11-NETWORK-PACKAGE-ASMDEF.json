@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-PACKAGE-ASMDEF",
+  "mode": "strict",
+  "state": "Planned",
+  "role": "focused-worker",
+  "branch": "codex/sve11-network-package-asmdef",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-package-asmdef",
+  "plan": {
+    "goal": "Restore separate Unity asmdef compilation without widening the accepted package API.",
+    "acceptance": [
+      "Add the Protocol-side friend declaration for exactly unigame.staticecs.network.",
+      "Keep Protocol helpers internal and change no existing source or asmdef.",
+      "Pass exact-source audit and git diff checks, then create one candidate commit."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-package-asmdef.md",
+      "99855b20be3ebd0e776aad4a03b3054819f596d0"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/Protocol/AssemblyInfo.cs",
+      "unigame.staticecs.network/Protocol/AssemblyInfo.cs.meta"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network/Protocol/*.asmdef",
+      "unigame.staticecs.network/Runtime/**",
+      "unigame.staticecs.network/Tests/**",
+      "unigame.ai.lemmings/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": null
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": []
+  },
+  "baseSha": "99855b20be3ebd0e776aad4a03b3054819f596d0",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "Friend name does not match the Runtime asmdef output name",
+        "test": "Exact-source audit plus real Unity package recompile"
+      },
+      {
+        "risk": "The fix broadens public Protocol API",
+        "test": "Ownership and exact diff audit"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Unity recompile",
+      "Unity EditMode: unigame.staticecs.network.tests"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "review": {
+    "taskId": "SVE11-NETWORK-PACKAGE-ASMDEF",
+    "base": "99855b20be3ebd0e776aad4a03b3054819f596d0",
+    "status": "Pending",
+    "cycle": 0,
+    "head": null,
+    "evidence": null
+  },
+  "close": {
+    "mergeCommit": null,
+    "integrationValidationPassed": false
+  }
+}
