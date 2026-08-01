@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-TRANSPORT-CLOSE",
+  "mode": "strict",
+  "state": "Assigned",
+  "role": "focused-worker",
+  "branch": "codex/sve11-network-transport-close",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-transport-close",
+  "plan": {
+    "goal": "Make MemoryTransport peer closure, errors, draining and lease ownership deterministic for Session.",
+    "acceptance": [
+      "Implement the exact TransportState and TransportError values and invariant from the frozen contract.",
+      "Propagate peer-visible close and symmetrically detach/drain on every terminal pair transition.",
+      "Preserve transfer-first lease ownership and distinguish invalid unreliable inputs from normal lossy rejection.",
+      "Document single-thread affinity and the intentional FaultReason compatibility break.",
+      "Pass the full frozen transition/alias matrix without touching schema/session/replication or asmdefs."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-transport-close.md",
+      "4293593b25e6c00b1a61642230d0e621bd746733"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/Runtime/BuffersTransport.cs",
+      "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network/Protocol/**",
+      "unigame.staticecs.network/Runtime/Schema*.cs",
+      "unigame.staticecs.network/Runtime/Replication/**",
+      "unigame.staticecs.network/Runtime/*.asmdef",
+      "unigame.staticecs.network/README.md",
+      "unigame.ai.lemmings/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": "gpt-5.6-sol:medium"
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": []
+  },
+  "baseSha": "4293593b25e6c00b1a61642230d0e621bd746733",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "A stopped peer remains Connected and Session waits forever",
+        "test": "Connected Dispose immediately yields peer Closed/RemoteClosed and drains both queues"
+      },
+      {
+        "risk": "Terminal or rejected sends leak or double-return packet storage",
+        "test": "Alias invalidation matrix for Closed/Faulted/Disposed, overflow, invalid and stale sends"
+      },
+      {
+        "risk": "Normal snapshot loss becomes a terminal transport error",
+        "test": "Stale/equal/capacity rejection remains Connected/None and preserves accepted latest state"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Focused runtime/test compile and tests",
+      "Unity EditMode unigame.staticecs.network.tests after integration"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "review": {
+    "taskId": "SVE11-NETWORK-TRANSPORT-CLOSE",
+    "base": "4293593b25e6c00b1a61642230d0e621bd746733",
+    "status": "Pending",
+    "cycle": 0,
+    "head": null,
+    "evidence": null
+  },
+  "close": {
+    "mergeCommit": null,
+    "integrationValidationPassed": false
+  }
+}
