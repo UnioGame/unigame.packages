@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-REPLICATOR-REPLAN",
   "mode": "strict",
-  "state": "Active",
-  "previousState": "Candidate",
+  "state": "Candidate",
+  "previousState": "Active",
   "role": "complex-worker",
   "branch": "codex/sve11-network-replicator-replan",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-replicator-replan",
@@ -65,13 +65,17 @@
       "Representative warmed Capture/dispose loop measured zero managed bytes",
       "Exact base-to-head ownership, metadata, Sample scan, git diff --check and lemmings check --all passed",
       "Temporary harness removed and candidate worktree is clean",
+      "Repair added complete rich-world fingerprints, lifecycle-hook propagation and capture failure ownership coverage",
+      "Post-repair warnings-as-errors compilation and focused replication tests passed 15/15 twice",
       "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests"
     ]
   },
   "baseSha": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
   "commits": {
     "candidate": "68f5eb35cfe91e76b426aa58169f42edb7ff16ca",
-    "fix": []
+    "fix": [
+      "14c1eb47af6e94ff5471b4417afbcd86dc3395b2"
+    ]
   },
   "validation": {
     "riskToTest": [
