@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-CORE",
   "mode": "strict",
-  "state": "Planned",
-  "previousState": "Replan Required",
+  "state": "Ready",
+  "previousState": "Planned",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-core",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-core",
@@ -76,7 +76,8 @@
       "Unity EditMode deferred to post-integration because the isolated worktree is package-only.",
       "Repair cycle 1 closes all seven review findings; focused SessionTests pass 27/27 and the complete package harness passes 100/100.",
       "Repair adds production MemoryTransport barriers, transfer-then-throw ownership, full semantic/disconnect matrices, Session-level exhaustion, cached-transform zero allocation and corrected README guidance.",
-      "Cycle 2 found no runtime defects and requires replanning only the remaining mandatory test matrices."
+      "Cycle 2 found no runtime defects and requires replanning only the remaining mandatory test matrices.",
+      "The cycle-2 test-only replan was independently accepted by gpt-5.6-sol:high at integration head a55b1d9d5a699bd807b223f491dc868a71234ca7."
     ]
   },
   "baseSha": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-SESSION-CORE",
+  "integrationHead": "a55b1d9d5a699bd807b223f491dc868a71234ca7",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "scope": "Test-only replan after the second failed implementation review",
+  "evidence": [
+    "The three added acceptance criteria map one-to-one to the three cycle-2 findings.",
+    "The risk-to-test mapping fixes independent 25/24 and 24/25 predecode cases and CRC-valid matrix inputs.",
+    "All expected outcomes are defined by the unchanged frozen contract; no protocol decision or production change is required.",
+    "The bounded repair may modify only unigame.staticecs.network/Tests/Editor/SessionTests.cs."
+  ]
+}
