@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-LEASE",
   "mode": "strict",
-  "state": "Ready",
-  "previousState": "Draft",
+  "state": "Candidate",
+  "previousState": "Ready",
   "role": "focused-worker",
   "branch": "codex/sve11-network-lease",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-lease",
@@ -44,15 +44,23 @@
   "models": {
     "requested": null,
     "assigned": "gpt-5.6-sol:medium",
-    "actual": null
+    "actual": "gpt-5.6-sol:medium"
   },
   "execution": {
-    "handoff": null,
-    "validationEvidence": []
+    "handoff": "PacketLease is now a generation-checked readonly value handle backed by an intrusive warm pool, and all baseline aggregate/transport consumers use explicit ref-transfer ownership.",
+    "validationEvidence": [
+      "Candidate compilation against project ScriptAssemblies passed",
+      "Focused lease and consumer tests passed 26/26",
+      "Warmed Rent/Dispose and Rent/Transfer/Dispose loops measured zero managed bytes",
+      "Generation exhaustion, stale aliases, cross-thread handoff, staging, framing, history and transport regressions passed",
+      "Unity NUnit 3.5 lacks NonParallelizable; pool-sensitive tests use the accepted assembly-shared namespace PoolTestGate",
+      "Exact six-file ownership, Sample scan, git diff --check and lemmings check --all passed",
+      "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests"
+    ]
   },
   "baseSha": "d2b3207c3dbeef448f9b635bdb57030fe1f6f2df",
   "commits": {
-    "candidate": null,
+    "candidate": "72dd00d63c5575c7701b10194f87e78887a2d029",
     "fix": []
   },
   "validation": {
