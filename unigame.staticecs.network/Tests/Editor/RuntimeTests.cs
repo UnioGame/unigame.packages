@@ -634,6 +634,56 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
+        public void MemoryTransportBeginStepPreservesReliableQueueOverflowFault()
+        {
+            MemoryTransport.CreatePair(1, out var sender, out var receiver);
+            var queued = Lease(1);
+            var queuedAlias = queued;
+            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref queued), Is.True);
+            var overflow = Lease(2);
+            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref overflow), Is.False);
+            Assert.That(overflow.IsValid, Is.False);
+            Assert.That(queuedAlias.IsValid, Is.False);
+
+            ((ISteppedTransport)sender).BeginStep(0);
+            ((ISteppedTransport)receiver).BeginStep(ulong.MaxValue);
+
+            AssertTransport(sender, TransportState.Faulted, TransportError.QueueOverflow);
+            AssertTransport(receiver, TransportState.Faulted, TransportError.QueueOverflow);
+            AssertTerminalReceive(sender);
+            AssertTerminalReceive(receiver);
+            sender.Dispose();
+            receiver.Dispose();
+        }
+
+        [Test]
+        public void CommandDispatcherChecksNullFirstAndRejectsMissingAcceptedEventWithoutActivity()
+        {
+            Assert.Throws<ArgumentNullException>(() => new CommandDispatcher<MissingAcceptedWorld>(null));
+            MissingAcceptedCodec.ReadCalls = 0;
+            MissingAcceptedCodec.WriteCalls = 0;
+            MissingAcceptedAuthorizer.Calls = 0;
+            var schema = new SchemaBuilder<MissingAcceptedWorld>()
+                .Command<MissingAcceptedCommand, MissingAcceptedCodec, MissingAcceptedAuthorizer>(Id(41), 1, Codec(41), 4)
+                .Freeze();
+
+            World<MissingAcceptedWorld>.Create(WorldConfig.Default());
+            try
+            {
+                World<MissingAcceptedWorld>.Types().Event<CommandRejectedEvent<MissingAcceptedCommand>>();
+                World<MissingAcceptedWorld>.Initialize();
+                Assert.Throws<InvalidOperationException>(() => new CommandDispatcher<MissingAcceptedWorld>(schema));
+                Assert.That(MissingAcceptedCodec.ReadCalls, Is.Zero);
+                Assert.That(MissingAcceptedCodec.WriteCalls, Is.Zero);
+                Assert.That(MissingAcceptedAuthorizer.Calls, Is.Zero);
+            }
+            finally
+            {
+                World<MissingAcceptedWorld>.Destroy();
+            }
+        }
+
+        [Test]
         public void CommandDispatcherRejectsSchemaFromAnotherWorldBeforeActivity()
         {
             CrossWorldAuthorizer.Calls = 0;
@@ -943,6 +993,7 @@ namespace UniGame.StaticEcs.Network.Tests
         private struct DispatchWorld : IWorldType { }
         private struct SchemaOwnerWorld : IWorldType { }
         private struct WrongConsumerWorld : IWorldType { }
+        private struct MissingAcceptedWorld : IWorldType { }
         private struct TestEntityType : IEntityType { public byte Id() => 1; }
         private struct TestTag : ITag { }
         private struct TestLink : ILinkType { }
@@ -952,6 +1003,7 @@ namespace UniGame.StaticEcs.Network.Tests
         private struct TestCommand { public int Value; }
         private struct DispatchCommand { public int Value; }
         private struct CrossWorldCommand { public int Value; }
+        private struct MissingAcceptedCommand { }
         private struct TestAuthorizer : ICommandAuthorizer<TestWorld, TestCommand> { public bool Authorize(in CommandContext context, in TestCommand command) => context.PeerId == 7 && command.Value == 42; }
         private struct DispatchAuthorizer : ICommandAuthorizer<DispatchWorld, DispatchCommand> { public bool Authorize(in CommandContext context, in DispatchCommand command) => context.PeerId == 7 && command.Value == 42; }
         private struct CrossWorldAuthorizer : ICommandAuthorizer<SchemaOwnerWorld, CrossWorldCommand>
@@ -964,6 +1016,11 @@ namespace UniGame.StaticEcs.Network.Tests
             internal static int Calls;
             public bool Authorize(in CommandContext context, in CrossWorldCommand command) { Calls++; return true; }
         }
+        private struct MissingAcceptedAuthorizer : ICommandAuthorizer<MissingAcceptedWorld, MissingAcceptedCommand>
+        {
+            internal static int Calls;
+            public bool Authorize(in CommandContext context, in MissingAcceptedCommand command) { Calls++; return true; }
+        }
         private sealed class ThrowingTransform : IPayloadTransform
         {
             public byte Id => 0;
@@ -974,6 +1031,13 @@ namespace UniGame.StaticEcs.Network.Tests
         private struct TestCommandCodec : ICodec<TestCommand> { public bool TryWrite(in TestCommand value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out TestCommand value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new TestCommand { Value = raw }; return ok; } }
         private struct DispatchCommandCodec : ICodec<DispatchCommand> { public bool TryWrite(in DispatchCommand value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out DispatchCommand value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new DispatchCommand { Value = raw }; return ok; } }
         private struct CrossWorldCommandCodec : ICodec<CrossWorldCommand> { public bool TryWrite(in CrossWorldCommand value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out CrossWorldCommand value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new CrossWorldCommand { Value = raw }; return ok; } }
+        private struct MissingAcceptedCodec : ICodec<MissingAcceptedCommand>
+        {
+            internal static int ReadCalls;
+            internal static int WriteCalls;
+            public bool TryWrite(in MissingAcceptedCommand value, Span<byte> destination, out int written) { WriteCalls++; written = 0; return false; }
+            public bool TryRead(ReadOnlySpan<byte> source, out MissingAcceptedCommand value, out int read) { ReadCalls++; value = default; read = 0; return false; }
+        }
         private struct MultiIntCodec : ICodec<TestMulti> { public bool TryWrite(in TestMulti value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out TestMulti value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new TestMulti { Value = raw }; return ok; } }
         private struct IntCodec : ICodec<TestComponent>, ICodec<int>
         {

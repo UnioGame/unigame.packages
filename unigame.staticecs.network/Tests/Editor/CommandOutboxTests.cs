@@ -64,6 +64,11 @@ namespace UniGame.StaticEcs.Network.Tests
             Assert.That(outbox.Enqueue(in failing, 0), Is.EqualTo(EnqueueResult.CodecFailed));
             var invalid = new InvalidLengthCommand();
             Assert.That(outbox.Enqueue(in invalid, 0), Is.EqualTo(EnqueueResult.CodecFailed));
+            var negative = new NegativeLengthCommand();
+            Assert.That(outbox.Enqueue(in negative, 0), Is.EqualTo(EnqueueResult.CodecFailed));
+            Assert.That(outbox.Count, Is.Zero);
+            Assert.That(outbox.Bytes, Is.Zero);
+            Assert.That(outbox.LastSequence, Is.Zero);
             var throwing = new ThrowingCommand();
             Assert.Throws<InvalidOperationException>(() => outbox.Enqueue(in throwing, 0));
             Assert.That(outbox.Count, Is.Zero);
@@ -79,6 +84,23 @@ namespace UniGame.StaticEcs.Network.Tests
             Assert.That(outbox.LastSequence, Is.EqualTo(1));
 
             Assert.That(outbox.Enqueue(in zero, 3), Is.EqualTo(EnqueueResult.Full));
+        }
+
+        [Test]
+        public void EmptyBuildReturnsDefaultOutputsWithoutMutation()
+        {
+            using var outbox = new CommandOutbox<OutboxWorld>(ValueSchema(), 1, 64);
+
+            Assert.That(outbox.TryBuild(out var payload, out var through), Is.False);
+            Assert.That(payload.IsValid, Is.False);
+            Assert.That(payload, Is.EqualTo(default(PacketLease)));
+            Assert.That(through, Is.Zero);
+            Assert.That(outbox.Count, Is.Zero);
+            Assert.That(outbox.UnsentCount, Is.Zero);
+            Assert.That(outbox.Bytes, Is.Zero);
+            Assert.That(outbox.LastSequence, Is.Zero);
+            Assert.That(outbox.LastSentSequence, Is.Zero);
+            Assert.That(outbox.AcknowledgedSequence, Is.Zero);
         }
 
         [Test]
@@ -154,9 +176,9 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
-        public void EntryAndCircularByteRingsWrapWithoutChangingPayloads()
+        public void SplitByteRingBuildsRemainIndependentFrozenAndCanonical()
         {
-            using var outbox = new CommandOutbox<OutboxWorld>(BlobSchema(), 3, 140);
+            using var outbox = new CommandOutbox<OutboxWorld>(BlobSchema(), 3, 161);
             var first = new BlobCommand { Seed = 1 };
             var second = new BlobCommand { Seed = 2 };
             Assert.That(outbox.Enqueue(in first, 1), Is.EqualTo(EnqueueResult.Queued));
@@ -164,23 +186,45 @@ namespace UniGame.StaticEcs.Network.Tests
             SendPending(outbox);
             Assert.That(outbox.Acknowledge(1), Is.True);
 
-            for (var sequence = 3; sequence <= 10; sequence++)
+            for (var sequence = 3; sequence <= 7; sequence++)
             {
                 var command = new BlobCommand { Seed = sequence };
                 Assert.That(outbox.Enqueue(in command, (uint)sequence), Is.EqualTo(EnqueueResult.Queued));
-                Assert.That(outbox.TryBuild(out var payload, out var through), Is.True);
-                Assert.That(through, Is.EqualTo((uint)sequence));
-                Assert.That(PayloadCodec.TryReadCommandBatch(payload.Span, out var batch), Is.True);
-                Assert.That(batch.Commands.Length, Is.EqualTo(1));
-                Assert.That(batch.Commands[0].Payload[0], Is.EqualTo((byte)sequence));
-                payload.Dispose();
-                outbox.MarkSent(through);
+                SendPending(outbox);
                 Assert.That(outbox.Acknowledge((uint)(sequence - 1)), Is.True);
                 Assert.That(outbox.Count, Is.EqualTo(1));
             }
 
-            Assert.That(outbox.Acknowledge(10), Is.True);
+            // Seven 20-byte payloads leave the tail at 140; payload eight ends at 160,
+            // so payload nine begins at 160 and splits across the physical 161-byte boundary.
+            var eighth = new BlobCommand { Seed = 8 };
+            var ninth = new BlobCommand { Seed = 9 };
+            Assert.That(outbox.Enqueue(in eighth, 8), Is.EqualTo(EnqueueResult.Queued));
+            Assert.That(outbox.Enqueue(in ninth, 9), Is.EqualTo(EnqueueResult.Queued));
+            Assert.That(outbox.Count, Is.EqualTo(3));
+            Assert.That(outbox.UnsentCount, Is.EqualTo(2));
+            Assert.That(outbox.Bytes, Is.EqualTo(160));
+
+            Assert.That(outbox.TryBuild(out var initial, out var initialThrough), Is.True);
+            Assert.That(initialThrough, Is.EqualTo(9));
+            var expected = initial.Span.ToArray();
+            Assert.That(outbox.TryBuild(out var retry, out var retryThrough), Is.True);
+            Assert.That(retryThrough, Is.EqualTo(initialThrough));
+            initial.Dispose();
+            Assert.That(retry.IsValid, Is.True);
+            CollectionAssert.AreEqual(expected, retry.Span.ToArray());
+            Assert.That(PayloadCodec.TryReadCommandBatch(retry.Span, out var batch), Is.True);
+            Assert.That(batch.Commands.Length, Is.EqualTo(2));
+            Assert.That(batch.Commands[0].Sequence, Is.EqualTo(8));
+            Assert.That(batch.Commands[1].Sequence, Is.EqualTo(9));
+            Assert.That(batch.Commands[0].Payload, Is.EqualTo(ExpectedBlob(8)));
+            Assert.That(batch.Commands[1].Payload, Is.EqualTo(ExpectedBlob(9)));
+            retry.Dispose();
+
+            outbox.MarkSent(initialThrough);
+            Assert.That(outbox.Acknowledge(initialThrough), Is.True);
             Assert.That(outbox.Count, Is.Zero);
+            Assert.That(outbox.Bytes, Is.Zero);
         }
 
         [Test]
@@ -290,12 +334,14 @@ namespace UniGame.StaticEcs.Network.Tests
             .Command<ZeroCommand, ZeroCodec, Allow<ZeroCommand>>(Id(2), 1, Codec(2), 1)
             .Command<FailingCommand, FailingCodec, Allow<FailingCommand>>(Id(3), 1, Codec(3), 8)
             .Command<InvalidLengthCommand, InvalidLengthCodec, Allow<InvalidLengthCommand>>(Id(4), 1, Codec(4), 4)
+            .Command<NegativeLengthCommand, NegativeLengthCodec, Allow<NegativeLengthCommand>>(Id(7), 1, Codec(7), 4)
             .Command<ThrowingCommand, ThrowingCodec, Allow<ThrowingCommand>>(Id(5), 1, Codec(5), 4)
             .Command<ScratchCommand, ScratchCodec, Allow<ScratchCommand>>(Id(6), 1, Codec(6), 64)
             .Freeze();
 
         private static TypeId Id(int value) => new(new Guid(value, 0, 0, new byte[8]));
         private static CodecId Codec(int value) => new(new Guid(value, 1, 0, new byte[8]));
+        private static byte[] ExpectedBlob(byte value) { var bytes = new byte[20]; Array.Fill(bytes, value); return bytes; }
         private static void AssertHex(ReadOnlySpan<byte> bytes, string expected) =>
             Assert.That(BitConverter.ToString(bytes.ToArray()).Replace("-", string.Empty), Is.EqualTo(expected));
 
@@ -305,6 +351,7 @@ namespace UniGame.StaticEcs.Network.Tests
         private struct ZeroCommand { }
         private struct FailingCommand { }
         private struct InvalidLengthCommand { }
+        private struct NegativeLengthCommand { }
         private struct ThrowingCommand { }
         private struct ScratchCommand { }
         private struct MaximumCommand { public int Seed; }
@@ -346,6 +393,12 @@ namespace UniGame.StaticEcs.Network.Tests
         {
             public bool TryWrite(in InvalidLengthCommand value, Span<byte> destination, out int written) { written = destination.Length + 1; return true; }
             public bool TryRead(ReadOnlySpan<byte> source, out InvalidLengthCommand value, out int read) { value = default; read = 0; return false; }
+        }
+
+        private struct NegativeLengthCodec : ICodec<NegativeLengthCommand>
+        {
+            public bool TryWrite(in NegativeLengthCommand value, Span<byte> destination, out int written) { written = -1; return true; }
+            public bool TryRead(ReadOnlySpan<byte> source, out NegativeLengthCommand value, out int read) { value = default; read = 0; return false; }
         }
 
         private struct ThrowingCodec : ICodec<ThrowingCommand>
