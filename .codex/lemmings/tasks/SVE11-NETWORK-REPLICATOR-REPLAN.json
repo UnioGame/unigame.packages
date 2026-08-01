@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-REPLICATOR-REPLAN",
   "mode": "strict",
-  "state": "Candidate",
-  "previousState": "Active",
+  "state": "Replan Required",
+  "previousState": "Candidate",
   "role": "complex-worker",
   "branch": "codex/sve11-network-replicator-replan",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-replicator-replan",
@@ -106,9 +106,9 @@
     "taskId": "SVE11-NETWORK-REPLICATOR-REPLAN",
     "base": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
     "status": "ChangesRequested",
-    "cycle": 1,
-    "head": "68f5eb35cfe91e76b426aa58169f42edb7ff16ca",
-    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-REPLICATOR-REPLAN.68f5eb35cfe91e76b426aa58169f42edb7ff16ca.json"
+    "cycle": 2,
+    "head": "14c1eb47af6e94ff5471b4417afbcd86dc3395b2",
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-REPLICATOR-REPLAN.14c1eb47af6e94ff5471b4417afbcd86dc3395b2.json"
   },
   "close": null
 }

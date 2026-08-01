@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-REPLICATOR-REPLAN",
+  "base": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
+  "head": "14c1eb47af6e94ff5471b4417afbcd86dc3395b2",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [
+    {
+      "priority": "P1",
+      "file": "unigame.staticecs.network/Tests/Editor/ReplicationTests.cs",
+      "line": 486,
+      "message": "The survivor-conflict InvalidEntity preflight still lacks the required rich successful-ledger preservation proof because the preceding successful replacement leaves only one minimal entity."
+    }
+  ],
+  "validation": [
+    "Five cycle-one findings are closed: phase leases/close metadata, lifecycle metadata, Capture failure ownership, FFS OnAdd propagation and README guidance.",
+    "The complete runtime range was re-reviewed and continues to satisfy capture ownership, canonical ordering, scope, preflight, transition and phased apply contracts.",
+    "The exact four-commit range is linear and clean, stays within ownership, includes paired metadata and contains no Sample identifier or forbidden dependency.",
+    "git diff --check and lemmings check --all passed; focused compile and 15/15 tests remain task evidence.",
+    "This second ChangesRequested verdict requires Replan Required under the Strict workflow."
+  ]
+}
+

@@ -25,7 +25,7 @@
       "resource": "sve11-network-replicator-replan worktree",
       "owner": "SVE11-NETWORK-REPLICATOR-REPLAN",
       "scope": "Only task-owned replication schema, runtime, test and README paths",
-      "status": "Active"
+      "status": "Released"
     }
   ],
   "close": {
