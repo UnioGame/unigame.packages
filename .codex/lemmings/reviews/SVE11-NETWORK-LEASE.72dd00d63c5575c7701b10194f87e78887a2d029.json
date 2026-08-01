@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-LEASE",
+  "base": "d2b3207c3dbeef448f9b635bdb57030fe1f6f2df",
+  "head": "72dd00d63c5575c7701b10194f87e78887a2d029",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [],
+  "validation": [
+    "Exact ancestry verified: base is the merge-base and ancestor of head; candidate worktree is clean; the range contains one commit and exactly the six task-owned files.",
+    "PacketLease is a readonly value handle over a sealed state; default/stale/double/transferred operations fail, normal transfer increments generation, and Dispose detaches/increments before returning the array then state.",
+    "Generation exhaustion is non-wrapping: max-token Dispose retires the state, while max-token Transfer acquires a fresh pooled state, moves buffer and length without copying, defaults the source, and retires the exhausted state.",
+    "The intrusive state pool is lock-protected and Rent returns an acquired state on ArrayPool failure; normal warmed Rent/Dispose and Rent/Transfer paths contain no managed wrapper allocation.",
+    "Framing uses default failed outputs, borrowed in PacketLease decode inputs, ref-transfer on success, and finally-based cleanup for transform, validation, and staging failures.",
+    "PayloadStager consumes every valid input on success, false, or exception; StagedPayload clears ownership before idempotent aggregate cleanup and documents borrowed payload/index lifetimes.",
+    "MemoryTransport ref-transfers into mutable queue items and out to receivers; every closed, faulted, invalid, stale, lossy, overflow, replacement, receive, and drain path has exactly one queue owner or disposal.",
+    "TickRecord validates default-or-valid optional sources, rejects same-generation aliases across all sources, computes checked bytes and allocates the destination command array before the first transfer, then defaults every transferred ref/Span source and clears owned slots on disposal.",
+    "README documents logical-owner aliases, Copy retention, borrowed Span/ReadOnlyMemory lifetime, serialized thread handoff, and ref-consuming transport usage; no wire, schema, asmdef, Unity, replication, session, or diagnostics files changed.",
+    "Pool-sensitive tests use the accepted shared static Monitor gate; exact ArrayPool bucket/state/lock paths are warmed before GC.GetAllocatedBytesForCurrentThread, measurement encloses only the loops, and assertions occur afterward in separate Rent/Dispose and Rent/Transfer/Dispose tests.",
+    "Focused tests cover default/stale/double aliases, high-water state reuse, forced max-generation migration/retirement, serialized cross-thread handoff, staging consumption, TickRecord preflight/transfer, framing exception cleanup, and all transport terminal paths.",
+    "git diff --check and commit check passed; lemmings check --all passed with strict/idle and zero findings. Candidate handoff records project ScriptAssemblies compilation, focused 26/26 tests, and zero-byte warmed measurements; full Unity EditMode unigame.staticecs.network.tests remains the declared post-integration gate."
+  ]
+}
+

@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-LEASE",
   "mode": "strict",
-  "state": "Candidate",
-  "previousState": "Ready",
+  "state": "Accepted",
+  "previousState": "Candidate",
   "role": "focused-worker",
   "branch": "codex/sve11-network-lease",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-lease",
@@ -87,6 +87,13 @@
     "allowedOutputs": [],
     "debt": []
   },
-  "review": null,
+  "review": {
+    "taskId": "SVE11-NETWORK-LEASE",
+    "base": "d2b3207c3dbeef448f9b635bdb57030fe1f6f2df",
+    "status": "Accepted",
+    "cycle": 1,
+    "head": "72dd00d63c5575c7701b10194f87e78887a2d029",
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-LEASE.72dd00d63c5575c7701b10194f87e78887a2d029.json"
+  },
   "close": null
 }
