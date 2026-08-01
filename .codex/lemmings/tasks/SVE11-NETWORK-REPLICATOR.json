@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-REPLICATOR",
+  "mode": "strict",
+  "state": "Assigned",
+  "role": "complex-worker",
+  "branch": "codex/sve11-network-replicator",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-replicator",
+  "plan": {
+    "goal": "Implement the frozen role-bound replica scope plus canonical full-snapshot capture and preflighted apply.",
+    "acceptance": [
+      "Add ScopeRole, ReplicaScope<TWorld>, Replicator<TWorld>, CaptureResult and ApplyResult with the exact ownership and result semantics in the frozen contract.",
+      "Extend retained generic invokers for allocation-conscious capture, semantic validation, typed creation, phased apply, removal and disable normalization without runtime reflection or boxing.",
+      "Validate pre-existing exact Self/Other chunks without registration/adoption and maintain an exact per-session replica GID ledger.",
+      "Capture canonical ReplicatedTag entities and records; reject unsupported disabled noncomponents and missing same-snapshot relation targets.",
+      "Complete all deterministic schema/scope/GID/segment/occupant/target preflight before any mutation, then apply in the frozen hook-safe order.",
+      "Add focused dedicated-world tests for success, canonical bytes, isolation/despawn, every required no-mutation failure, disabled behavior, replacement and hook exception propagation."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-replication.md",
+      "Integrated SVE11-NETWORK-SCHEMA-DISPATCH",
+      "7773efd0df507f83f7056aecf5941bb26d0a2185"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/Runtime/Schema.cs",
+      "unigame.staticecs.network/Runtime/SchemaInvokers.cs",
+      "unigame.staticecs.network/Runtime/Replication/**",
+      "unigame.staticecs.network/Tests/Editor/ReplicationTests.cs",
+      "unigame.staticecs.network/Tests/Editor/ReplicationTests.cs.meta",
+      "unigame.staticecs.network/README.md"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network/Protocol/**",
+      "unigame.staticecs.network/Runtime/Staging.cs",
+      "unigame.staticecs.network/Runtime/CommandDispatcher.cs",
+      "unigame.staticecs.network/Runtime/*.asmdef",
+      "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs",
+      "unigame.ai.lemmings/**",
+      "unigame.staticecs.unity/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": "gpt-5.6-sol:medium"
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": []
+  },
+  "baseSha": "7773efd0df507f83f7056aecf5941bb26d0a2185",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "Invalid or foreign snapshot state mutates the client world",
+        "test": "World fingerprint remains identical for every returned preflight failure"
+      },
+      {
+        "risk": "Full snapshot despawn crosses session boundaries",
+        "test": "Two scopes/foreign occupants prove only exact ledger GIDs are updated or removed"
+      },
+      {
+        "risk": "Capture order or relation targets are nondeterministic",
+        "test": "Canonical golden bytes across insertion/query orders and same-snapshot target validation"
+      },
+      {
+        "risk": "Entity slot reuse corrupts an existing segment",
+        "test": "Different-version ledger replacement succeeds only when old GID is missing; surviving/foreign occupant conflicts"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Focused package source build/tests",
+      "Unity EditMode unigame.staticecs.network.tests after integration"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "review": {
+    "taskId": "SVE11-NETWORK-REPLICATOR",
+    "base": "7773efd0df507f83f7056aecf5941bb26d0a2185",
+    "status": "Pending",
+    "cycle": 0,
+    "head": null,
+    "evidence": null
+  },
+  "close": {
+    "mergeCommit": null,
+    "integrationValidationPassed": false
+  }
+}
