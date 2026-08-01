@@ -13,7 +13,14 @@
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-PACKAGE-ASMDEF-V1.baseline.json"
   },
   "close": {
-    "mergeCommits": [],
-    "phaseValidation": []
+    "mergeCommits": [
+      "5e9b1614723411eff57dcce8a0ec98381478c790"
+    ],
+    "phaseValidation": [
+      "Unity separate-asmdef recompile completed with failed=false and no errors",
+      "Unity EditMode unigame.staticecs.network.tests: 16 passed, 0 failed in 0.51s",
+      "Unity EditMode EcsServiceRegistryTests: 7 passed, 0 failed in 1.01s",
+      "lemmings check --all passed after integration"
+    ]
   }
 }

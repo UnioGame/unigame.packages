@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-PACKAGE-ASMDEF",
   "mode": "strict",
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "focused-worker",
   "branch": "codex/sve11-network-package-asmdef",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-package-asmdef",
@@ -43,7 +43,9 @@
     "validationEvidence": [
       "Exact two-file ownership and friend-name audit passed",
       "git diff --check and lemmings check --all passed",
-      "Deferred integration gate: real Unity recompile and focused EditMode tests"
+      "Unity separate-asmdef recompile completed with failed=false and no errors",
+      "Unity EditMode unigame.staticecs.network.tests: 16 passed, 0 failed in 0.51s",
+      "Unity EditMode EcsServiceRegistryTests regression suite: 7 passed, 0 failed in 1.01s"
     ]
   },
   "baseSha": "99855b20be3ebd0e776aad4a03b3054819f596d0",
@@ -79,7 +81,7 @@
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-PACKAGE-ASMDEF.4a5d077797f731b292b4e01de9d625d331bc8f6b.json"
   },
   "close": {
-    "mergeCommit": null,
-    "integrationValidationPassed": false
+    "mergeCommit": "5e9b1614723411eff57dcce8a0ec98381478c790",
+    "integrationValidationPassed": true
   }
 }
