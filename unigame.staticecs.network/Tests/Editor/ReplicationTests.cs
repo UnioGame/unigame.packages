@@ -480,10 +480,50 @@ namespace UniGame.StaticEcs.Network.Tests
                 Assert.That(new EntityGID(id + 2, 2, Cluster).TryUnpack<ReplicaWorld>(out var changedKind), Is.True);
                 Assert.That(changedKind.EntityType, Is.EqualTo(default(NetEntity).Id()));
 
-                using var survivorConflict = Stage(schema, Snapshot(
-                    new SnapshotEntity { Entity = new WireEntityId(id + 2, Cluster, 2), KindId = Id(1) },
-                    new SnapshotEntity { Entity = new WireEntityId(id + 3, Cluster, 1), KindId = Id(7) }));
-                AssertApplyFailure(replica, survivorConflict, ApplyResult.InvalidEntity);
+                var rich = RichSnapshot().Entities;
+                var successfulEntities = new SnapshotEntity[rich.Length + 1];
+                successfulEntities[0] = new SnapshotEntity
+                {
+                    Entity = new WireEntityId(id + 2, Cluster, 2),
+                    KindId = Id(1),
+                    Records = new[] { ComponentRecord(91) }
+                };
+                Array.Copy(rich, 0, successfulEntities, 1, rich.Length);
+                using (var successful = Stage(schema, Snapshot(successfulEntities)))
+                    Assert.That(replica.Apply(successful), Is.EqualTo(ApplyResult.Success));
+
+                Assert.That(new EntityGID(id + 2, 2, Cluster).TryUnpack<ReplicaWorld>(out var survivor), Is.True);
+                Assert.That(survivor.Read<Value>().Number, Is.EqualTo(91));
+                var richGids = RichGids();
+                Assert.That(richGids[0].TryUnpack<ReplicaWorld>(out var first), Is.True);
+                Assert.That(richGids[1].TryUnpack<ReplicaWorld>(out var second), Is.True);
+                Assert.That(richGids[2].TryUnpack<ReplicaWorld>(out var source), Is.True);
+                Assert.That(first.Has<StateTag>(), Is.True);
+                Assert.That(first.Read<Value>().Number, Is.EqualTo(17));
+                Assert.That(World<ReplicaWorld>.Components<Value>.Instance.HasDisabled(first), Is.True);
+                var multi = first.Read<World<ReplicaWorld>.Multi<Item>>().AsReadOnlySpan;
+                Assert.That(multi.Length, Is.EqualTo(2));
+                Assert.That(multi[0].Number, Is.EqualTo(2));
+                Assert.That(multi[1].Number, Is.EqualTo(1));
+                Assert.That(second.Read<Value>().Number, Is.EqualTo(23));
+                Assert.That(source.IsDisabled, Is.True);
+                Assert.That(source.Read<Value>().Number, Is.EqualTo(42));
+                Assert.That(source.Read<World<ReplicaWorld>.Link<ParentLink>>().Value, Is.EqualTo(richGids[1]));
+                var links = source.Read<World<ReplicaWorld>.Links<TargetLinks>>().AsReadOnlySpan;
+                Assert.That(links.Length, Is.EqualTo(2));
+                Assert.That(links[0].Value, Is.EqualTo(richGids[0]));
+                Assert.That(links[1].Value, Is.EqualTo(richGids[1]));
+                Assert.That(World<ReplicaWorld>.GetChunkOwner(Chunk), Is.EqualTo(ChunkOwnerType.Other));
+                Assert.That(World<ReplicaWorld>.GetChunkClusterId(Chunk), Is.EqualTo(Cluster));
+
+                var conflictEntities = new SnapshotEntity[rich.Length + 2];
+                conflictEntities[0] = successfulEntities[0];
+                conflictEntities[1] = new SnapshotEntity { Entity = new WireEntityId(id + 3, Cluster, 1), KindId = Id(7) };
+                Array.Copy(rich, 0, conflictEntities, 2, rich.Length);
+                var before = Fingerprint<ReplicaWorld>();
+                using var survivorConflict = Stage(schema, Snapshot(conflictEntities));
+                Assert.That(replica.Apply(survivorConflict), Is.EqualTo(ApplyResult.InvalidEntity));
+                Assert.That(Fingerprint<ReplicaWorld>(), Is.EqualTo(before));
             }
             finally
             {
