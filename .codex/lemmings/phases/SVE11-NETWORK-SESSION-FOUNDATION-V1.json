@@ -19,18 +19,25 @@
       "resource": "Game.Packages integration branch",
       "owner": "orchestrator",
       "scope": "Only the orchestrator integrates an Accepted foundation candidate",
-      "status": "Active"
+      "status": "Released"
     },
     {
       "resource": "sve11-network-session-foundation worktree",
       "owner": "SVE11-NETWORK-SESSION-FOUNDATION",
       "scope": "Only the frozen session-foundation protocol, runtime, tests and README paths",
-      "status": "Active"
+      "status": "Released"
     }
   ],
   "close": {
-    "mergeCommits": [],
-    "phaseValidation": []
+    "mergeCommits": [
+      "ea2c345",
+      "12b1512"
+    ],
+    "phaseValidation": [
+      "Strict cycle-2 implementation review Accepted at 62d7a52222d03b605cfbd57df7bf24af553a28cc.",
+      "Unity 6000.3.20f1 recompile completed with no errors.",
+      "Unity EditMode unigame.staticecs.network.tests passed 73/73 in 4.66 seconds.",
+      "Integration branch retained only expected untracked orchestration worktrees."
+    ]
   }
 }
-
