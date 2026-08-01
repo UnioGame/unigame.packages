@@ -11,6 +11,17 @@
     "status": "Accepted",
     "reviewerModel": "gpt-5.6-sol:high",
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-LEASE-V1.baseline.json"
+  },
+  "close": {
+    "mergeCommits": [
+      "800f5b3e13d7e452116c131c1ae7ac10fff46b78"
+    ],
+    "phaseValidation": [
+      "Independent candidate review Accepted with zero findings",
+      "Candidate compilation and focused tests passed 26/26",
+      "Warmed lease allocation loops measured zero managed bytes",
+      "Unity recompile completed with zero compiler errors",
+      "Unity EditMode unigame.staticecs.network.tests: 41 passed, 0 failed in 0.73s"
+    ]
   }
 }
-

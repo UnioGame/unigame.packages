@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-LEASE",
   "mode": "strict",
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "focused-worker",
   "branch": "codex/sve11-network-lease",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-lease",
@@ -55,7 +55,8 @@
       "Generation exhaustion, stale aliases, cross-thread handoff, staging, framing, history and transport regressions passed",
       "Unity NUnit 3.5 lacks NonParallelizable; pool-sensitive tests use the accepted assembly-shared namespace PoolTestGate",
       "Exact six-file ownership, Sample scan, git diff --check and lemmings check --all passed",
-      "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests"
+      "Unity recompile completed with zero compiler errors",
+      "Unity EditMode unigame.staticecs.network.tests: 41 passed, 0 failed in 0.73s"
     ]
   },
   "baseSha": "d2b3207c3dbeef448f9b635bdb57030fe1f6f2df",
@@ -95,5 +96,8 @@
     "head": "72dd00d63c5575c7701b10194f87e78887a2d029",
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-LEASE.72dd00d63c5575c7701b10194f87e78887a2d029.json"
   },
-  "close": null
+  "close": {
+    "mergeCommit": "800f5b3e13d7e452116c131c1ae7ac10fff46b78",
+    "integrationValidationPassed": true
+  }
 }
