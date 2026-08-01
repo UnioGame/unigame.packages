@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-REPLICATOR-PROOF",
   "mode": "strict",
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "complex-worker",
   "branch": "codex/sve11-network-replicator-proof",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-replicator-proof",
@@ -65,7 +65,8 @@
       "Warnings-as-errors compilation and focused replication tests passed 15/15 including zero-allocation Capture",
       "Reviewed README/runtime trees remain identical to the previous repaired head",
       "Full ownership/meta, proof range, Sample, git diff --check and lemmings check --all gates passed",
-      "Deferred integration gate: Unity EditMode unigame.staticecs.network.tests"
+      "Unity recompile completed with zero compiler errors",
+      "Unity EditMode unigame.staticecs.network.tests: 56 passed, 0 failed in 3.84s"
     ]
   },
   "baseSha": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
@@ -106,5 +107,8 @@
     "head": "c2ad8560740ce2b8fb3283fc86ebbb92d6fd4d4c",
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-REPLICATOR-PROOF.c2ad8560740ce2b8fb3283fc86ebbb92d6fd4d4c.json"
   },
-  "close": null
+  "close": {
+    "mergeCommit": "11aa5ad020edd8df240522d766ca278ee9a836f3",
+    "integrationValidationPassed": true
+  }
 }

@@ -19,7 +19,7 @@
       "resource": "Game.Packages integration branch",
       "owner": "orchestrator",
       "scope": "Only the orchestrator integrates an Accepted replication candidate",
-      "status": "Active"
+      "status": "Released"
     },
     {
       "resource": "sve11-network-replicator-replan worktree",
@@ -31,11 +31,23 @@
       "resource": "sve11-network-replicator-proof worktree",
       "owner": "SVE11-NETWORK-REPLICATOR-PROOF",
       "scope": "Replayed replication range plus the strengthened survivor-conflict proof",
-      "status": "Active"
+      "status": "Released"
     }
   ],
   "close": {
-    "mergeCommits": [],
-    "phaseValidation": []
+    "mergeCommits": [
+      "133b8061ac63cdfe167195979feb184b7388ade7",
+      "d807bfc1c325fc45e738a3959dd5617bd037bdd7",
+      "8d42202383a3119f08db4871d1ad4cd0fc31274b",
+      "7eccadab033be48ee690aeeecfc590ae4b6814cf",
+      "11aa5ad020edd8df240522d766ca278ee9a836f3"
+    ],
+    "phaseValidation": [
+      "Fresh full-range independent review Accepted with zero findings",
+      "Warnings-as-errors compile and focused replication tests passed 15/15",
+      "Representative warmed Capture measured zero managed allocation",
+      "Unity recompile completed with zero compiler errors",
+      "Unity EditMode unigame.staticecs.network.tests: 56 passed, 0 failed in 3.84s"
+    ]
   }
 }
