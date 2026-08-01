@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-TRANSPORT-CLOSE-V1",
+  "repoRoot": "D:/Dev/kontora/static.ecs.template/GameClient/Game.Packages",
+  "baselineSha": "4293593b25e6c00b1a61642230d0e621bd746733",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [],
+  "validation": [
+    "Exact package repository baseline and clean tracked tree verified.",
+    "Numeric compatibility, terminal state/error invariant and intentional FaultReason break are frozen.",
+    "Lease transfer, pair detach/drain, peer close, invalid input and normal lossy drop behavior are deterministic.",
+    "Single-thread affinity, exact owned paths and focused validation matrix are sufficient."
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-TRANSPORT-CLOSE-V1",
+  "repoRoot": "D:/Dev/kontora/static.ecs.template/GameClient/Game.Packages",
+  "baselineSha": "4293593b25e6c00b1a61642230d0e621bd746733",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [
+    "Bind the baseline to the Game.Packages repository rather than the outer workspace.",
+    "Freeze terminal TransportError semantics and distinguish invalid unreliable input from normal lossy rejection.",
+    "Preserve existing TransportState numeric values and detach/drain both endpoints on every terminal pair transition."
+  ]
+}
