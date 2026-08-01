@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-FOUNDATION-REPLAN",
   "mode": "strict",
-  "state": "Candidate",
-  "previousState": "Active",
+  "state": "Accepted",
+  "previousState": "Candidate",
   "role": "complex-worker",
   "branch": "codex/sve11-network-foundation-replan",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-foundation-replan",
@@ -83,10 +83,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-FOUNDATION-REPLAN",
     "base": "0231d545a3065a54e9d2d6d68a5ed3378d933966",
-    "status": "Pending",
-    "cycle": 0,
+    "status": "Accepted",
+    "cycle": 1,
     "head": "367c4c95847d486b132545a2e207abcc9ee0afe7",
-    "evidence": null
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-FOUNDATION-REPLAN.367c4c95847d486b132545a2e207abcc9ee0afe7.json"
   },
   "close": {
     "mergeCommit": null,
