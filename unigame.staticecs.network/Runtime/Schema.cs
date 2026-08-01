@@ -87,6 +87,22 @@ namespace UniGame.StaticEcs.Network
                 throw new InvalidOperationException($"Schema for world `{WorldType.FullName}` cannot be used with world `{typeof(TWorld).FullName}`.");
         }
 
+        internal bool TryGetCommand<T>(out SchemaEntry entry, out ICommandInvoker<T> invoker) where T : unmanaged
+        {
+            for (var i = 0; i < _entries.Length; i++)
+            {
+                var candidate = _entries[i];
+                if (candidate.Kind != SchemaKind.Command || candidate.CommandInvoker is not ICommandInvoker<T> typed) continue;
+                entry = candidate;
+                invoker = typed;
+                return true;
+            }
+
+            entry = null;
+            invoker = null;
+            return false;
+        }
+
         internal bool Validate(StagedPayload staged)
         {
             if (staged.Kind == PacketKind.CommandBatch)

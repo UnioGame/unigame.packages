@@ -68,6 +68,29 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
+        public void DisconnectReasonValuesAndRequestedGoldenRemainFrozen()
+        {
+            Assert.That((ushort)DisconnectReason.ProtocolViolation, Is.EqualTo(1));
+            Assert.That((ushort)DisconnectReason.SchemaMismatch, Is.EqualTo(2));
+            Assert.That((ushort)DisconnectReason.LimitsExceeded, Is.EqualTo(3));
+            Assert.That((ushort)DisconnectReason.UnexpectedEpoch, Is.EqualTo(4));
+            Assert.That((ushort)DisconnectReason.TransportClosed, Is.EqualTo(5));
+            Assert.That((ushort)DisconnectReason.SequenceExhausted, Is.EqualTo(6));
+            Assert.That((ushort)DisconnectReason.ServerShutdown, Is.EqualTo(7));
+            Assert.That((ushort)DisconnectReason.Requested, Is.EqualTo(8));
+
+            var bytes = new byte[4];
+            Assert.That(PayloadCodec.TryWrite(new DisconnectPayload { Reason = DisconnectReason.ServerShutdown }, bytes, out var length), Is.True);
+            AssertHex(bytes, length, "07000000");
+            Assert.That(PayloadCodec.TryWrite(new DisconnectPayload { Reason = DisconnectReason.Requested }, bytes, out length), Is.True);
+            AssertHex(bytes, length, "08000000");
+            Assert.That(PayloadCodec.TryReadDisconnect(bytes, out var decoded), Is.True);
+            Assert.That(decoded.Reason, Is.EqualTo(DisconnectReason.Requested));
+            bytes[0] = 9;
+            Assert.That(PayloadCodec.TryReadDisconnect(bytes, out _), Is.False);
+        }
+
+        [Test]
         public void RfcUuidAndEntityIdBytesAreCanonical()
         {
             var id = new TypeId(new Guid("00112233-4455-6677-8899-aabbccddeeff")); var bytes = new byte[16]; id.WriteBytes(bytes);

@@ -5,7 +5,7 @@ Transport-neutral protocol and replication foundations for deterministic Static 
 ## Capabilities
 
 - Defines bounded version-one packet framing, canonical payload codecs, stable RFC UUID identifiers, CRC32, xxHash64, and schema hashing.
-- Provides AOT-safe typed schema registration with retained entity, record, and command invokers, generation-checked pooled packet ownership, transport and transform contracts, command markers, and bounded tick history.
+- Provides AOT-safe typed schema registration with retained entity, record, and command invokers, generation-checked pooled packet ownership, stepped transport and transform contracts, a bounded command outbox, command markers, and bounded tick history.
 - Rejects unknown flags and enum values, unsupported transforms, malformed lengths, invalid hashes, reserved fields, and non-canonical ordering before ECS mutation.
 - Binds schema-validated command and snapshot stages to the exact schema identity that accepted them.
 - Dispatches commands through retained codecs and authorizers, then emits typed accepted or rejected Static ECS events.
@@ -47,6 +47,28 @@ finally
 
 Create a `CommandDispatcher<TWorld>` from the same frozen schema and pass it only staged command batches. The dispatcher derives sequence and client tick from the stage, accepts the trusted peer id from the endpoint, and returns an exhaustive `DispatchResult` without transferring stage ownership.
 
+Create one `CommandOutbox<TWorld>` per session epoch after negotiating its decoded command-batch capacity. Enqueue uses the schema's retained typed codec. `TryBuild` returns an owned canonical decoded payload and freezes its sequence prefix until the exact `MarkSent` call. Mark only after a successful reliable transport send; cumulative acknowledgements release sent entries.
+
+```csharp
+using var outbox = new CommandOutbox<ServerWorld>(schema, byteCapacity: negotiatedBytes);
+var result = outbox.Enqueue(in command, clientTick);
+if (result == EnqueueResult.Queued && outbox.TryBuild(out var commands, out var throughSequence))
+{
+    try
+    {
+        if (TryFrameAndSendReliably(commands.Span))
+            outbox.MarkSent(throughSequence);
+    }
+    finally
+    {
+        if (commands.IsValid)
+            commands.Dispose();
+    }
+}
+```
+
+When a transport also implements `ISteppedTransport`, call `BeginStep` once with the deterministic logical step index before receiving or sending session packets. `MemoryTransport` implements this barrier as a no-op.
+
 Register the negotiated chunks before creating a scope. The wire map always uses role `1` (`AuthoritySelf`); the local scope selects whether those chunks must be `Self` or `Other` owned.
 
 ```csharp
@@ -85,5 +107,6 @@ On a replica world, stage the decoded `FullSnapshot` with the equivalent replica
 - Replica chunks must be empty when `ReplicaScope<TWorld>` is created. Scope construction and replication never register, free, load, unload, or remap chunks.
 - Version one preserves disabled entities and ordinary disableable components. FFS tag storage does not represent a disabled tag state; disabled links, link sets, and multi-components are rejected as `DisabledUnsupported`.
 - Apply validates the full snapshot before mutation. Typed lifecycle hooks and user codecs run directly; exceptions propagate, and no rollback guarantee is made after mutation starts.
-- Explicitly register both `CommandAcceptedEvent<T>` and `CommandRejectedEvent<T>` closed generic event types before initializing the world. A missing type returns `ConfigurationError`; a registered result event without a receiver returns `NoReceiver`.
+- Explicitly register both `CommandAcceptedEvent<T>` and `CommandRejectedEvent<T>` closed generic event types before initializing the world. `CommandDispatcher<TWorld>` construction rejects an uninitialized world or a missing result type. `ConfigurationError` remains a defensive result if world registration drifts after construction; a registered result event without a receiver returns `NoReceiver`.
+- Command outboxes accept capacities from 36 bytes through `MaxWirePayloadBytes`. A codec always receives its complete registered command bound, so `CodecFailed`, standalone `TooLarge`, and current-capacity `Full` remain distinct outcomes.
 - See the repository [Static ECS knowledge base](../../../docs/knowledge/static-ecs/) for world and marker lifecycle.

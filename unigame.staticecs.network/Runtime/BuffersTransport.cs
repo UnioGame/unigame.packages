@@ -220,8 +220,15 @@ namespace UniGame.StaticEcs.Network
         bool TryReceive(out Channel channel, out PacketLease packet);
     }
 
+    /// <summary>Advances a transport at a deterministic finite non-blocking logical step barrier.</summary>
+    public interface ISteppedTransport
+    {
+        /// <summary>Begins one caller-defined logical transport step.</summary>
+        void BeginStep(ulong stepIndex);
+    }
+
     /// <summary>Creates bounded, single-thread-affine in-memory transports with deterministic delivery semantics.</summary>
-    public sealed class MemoryTransport : ITransport
+    public sealed class MemoryTransport : ITransport, ISteppedTransport
     {
         private readonly LinkedList<Item> _incoming = new();
         private readonly int _capacity;
@@ -234,6 +241,8 @@ namespace UniGame.StaticEcs.Network
         public TransportError Error { get; private set; }
         /// <summary>Creates a connected pair with a bounded receive queue.</summary>
         public static void CreatePair(int queueCapacity, out MemoryTransport left, out MemoryTransport right) { if (queueCapacity <= 0) throw new ArgumentOutOfRangeException(nameof(queueCapacity)); left = new MemoryTransport(queueCapacity); right = new MemoryTransport(queueCapacity); left._peer = right; right._peer = left; }
+        /// <inheritdoc />
+        public void BeginStep(ulong stepIndex) { }
         /// <inheritdoc />
         public bool TrySend(Channel channel, ref PacketLease packet)
         {

@@ -5,12 +5,6 @@ using NUnit.Framework;
 
 namespace UniGame.StaticEcs.Network.Tests
 {
-    // Unity's pinned NUnit 3.5 predates NonParallelizableAttribute; pool-sensitive fixtures share this gate.
-    internal static class PoolTestGate
-    {
-        internal static readonly object Sync = new();
-    }
-
     public sealed class RuntimeTests
     {
         [SetUp]
@@ -545,7 +539,7 @@ namespace UniGame.StaticEcs.Network.Tests
             World<DispatchWorld>.Initialize();
             try
             {
-                Assert.That(new CommandDispatcher<DispatchWorld>(schema).Dispatch(staged, 0, 7), Is.EqualTo(DispatchResult.ConfigurationError));
+                Assert.Throws<InvalidOperationException>(() => new CommandDispatcher<DispatchWorld>(schema));
             }
             finally
             {
@@ -569,25 +563,74 @@ namespace UniGame.StaticEcs.Network.Tests
         public void CommandDispatcherRejectsWrongPayloadSchemaAndIndexBeforeMutation()
         {
             var schema = DispatchSchema();
+            World<DispatchWorld>.Create(WorldConfig.Default());
+            World<DispatchWorld>.Types().Event<CommandAcceptedEvent<DispatchCommand>>().Event<CommandRejectedEvent<DispatchCommand>>();
+            World<DispatchWorld>.Initialize();
+            try
+            {
+                var dispatcher = new CommandDispatcher<DispatchWorld>(schema);
+                using var staged = StageDispatchCommand(schema, 1, 2, 42);
+                Assert.That(dispatcher.Dispatch(staged, -1, 7), Is.EqualTo(DispatchResult.InvalidCommand));
+                Assert.That(dispatcher.Dispatch(staged, 1, 7), Is.EqualTo(DispatchResult.InvalidCommand));
+
+                var other = new SchemaBuilder<DispatchWorld>()
+                    .Command<DispatchCommand, DispatchCommandCodec, DispatchAuthorizer>(Id(31), 1, Codec(30), 4)
+                    .Freeze();
+                Assert.That(new CommandDispatcher<DispatchWorld>(other).Dispatch(staged, 0, 7), Is.EqualTo(DispatchResult.SchemaMismatch));
+
+                var ackLease = PacketLease.Rent(1);
+                ackLease.SetLength(0);
+                Assert.That(PayloadStager.TryStage(PacketKind.Ack, ref ackLease, null, out var ack), Is.True);
+                Assert.That(dispatcher.Dispatch(ack, 0, 7), Is.EqualTo(DispatchResult.WrongPayload));
+                ack.Dispose();
+
+                var disposed = StageDispatchCommand(schema, 1, 2, 42);
+                disposed.Dispose();
+                Assert.That(dispatcher.Dispatch(disposed, 0, 7), Is.EqualTo(DispatchResult.InvalidCommand));
+            }
+            finally
+            {
+                World<DispatchWorld>.Destroy();
+            }
+        }
+
+        [Test]
+        public void CommandDispatcherRequiresInitializedWorldAndRetainsLifecycleDefense()
+        {
+            var schema = DispatchSchema();
+            Assert.Throws<InvalidOperationException>(() => new CommandDispatcher<DispatchWorld>(schema));
+
+            World<DispatchWorld>.Create(WorldConfig.Default());
+            World<DispatchWorld>.Types().Event<CommandAcceptedEvent<DispatchCommand>>().Event<CommandRejectedEvent<DispatchCommand>>();
+            World<DispatchWorld>.Initialize();
             var dispatcher = new CommandDispatcher<DispatchWorld>(schema);
+            World<DispatchWorld>.Destroy();
+
             using var staged = StageDispatchCommand(schema, 1, 2, 42);
-            Assert.That(dispatcher.Dispatch(staged, -1, 7), Is.EqualTo(DispatchResult.InvalidCommand));
-            Assert.That(dispatcher.Dispatch(staged, 1, 7), Is.EqualTo(DispatchResult.InvalidCommand));
+            Assert.That(dispatcher.Dispatch(staged, 0, 7), Is.EqualTo(DispatchResult.ConfigurationError));
+        }
 
-            var other = new SchemaBuilder<DispatchWorld>()
-                .Command<DispatchCommand, DispatchCommandCodec, DispatchAuthorizer>(Id(31), 1, Codec(30), 4)
-                .Freeze();
-            Assert.That(new CommandDispatcher<DispatchWorld>(other).Dispatch(staged, 0, 7), Is.EqualTo(DispatchResult.SchemaMismatch));
+        [Test]
+        public void MemoryTransportBeginStepIsANoOpAcrossLifecycleStates()
+        {
+            MemoryTransport.CreatePair(2, out var sender, out var receiver);
+            var packet = Lease(3);
+            Assert.That(sender.TrySend(Channel.ReliableOrdered, ref packet), Is.True);
+            ((ISteppedTransport)sender).BeginStep(1);
+            ((ISteppedTransport)receiver).BeginStep(ulong.MaxValue);
+            AssertTransport(sender, TransportState.Connected, TransportError.None);
+            AssertTransport(receiver, TransportState.Connected, TransportError.None);
+            Assert.That(receiver.TryReceive(out var channel, out var received), Is.True);
+            Assert.That(channel, Is.EqualTo(Channel.ReliableOrdered));
+            Assert.That(received.Span[0], Is.EqualTo(3));
+            received.Dispose();
 
-            var ackLease = PacketLease.Rent(1);
-            ackLease.SetLength(0);
-            Assert.That(PayloadStager.TryStage(PacketKind.Ack, ref ackLease, null, out var ack), Is.True);
-            Assert.That(dispatcher.Dispatch(ack, 0, 7), Is.EqualTo(DispatchResult.WrongPayload));
-            ack.Dispose();
-
-            var disposed = StageDispatchCommand(schema, 1, 2, 42);
-            disposed.Dispose();
-            Assert.That(dispatcher.Dispatch(disposed, 0, 7), Is.EqualTo(DispatchResult.InvalidCommand));
+            sender.Dispose();
+            ((ISteppedTransport)sender).BeginStep(2);
+            ((ISteppedTransport)receiver).BeginStep(2);
+            AssertTransport(sender, TransportState.Disposed, TransportError.Disposed);
+            AssertTransport(receiver, TransportState.Closed, TransportError.RemoteClosed);
+            receiver.Dispose();
         }
 
         [Test]

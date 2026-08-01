@@ -243,7 +243,7 @@ namespace UniGame.StaticEcs.Network
         private static WireEntityId ReadEntity(ReadOnlySpan<byte> bytes, int offset) => new(Hashing.Read32(bytes, offset), (ushort)(bytes[offset + 4] | bytes[offset + 5] << 8), (ushort)(bytes[offset + 6] | bytes[offset + 7] << 8));
         private static bool Known(ConnectResult v) => v >= ConnectResult.Accepted && v <= ConnectResult.ChunkMapRejected;
         private static bool Known(ResyncReason v) => v >= ResyncReason.HashMismatch && v <= ResyncReason.UnexpectedEpoch;
-        private static bool Known(DisconnectReason v) => v >= DisconnectReason.ProtocolViolation && v <= DisconnectReason.ServerShutdown;
+        private static bool Known(DisconnectReason v) => v >= DisconnectReason.ProtocolViolation && v <= DisconnectReason.Requested;
 
         internal static bool ValidateCommandBatchFraming(ReadOnlySpan<byte> source)
         {

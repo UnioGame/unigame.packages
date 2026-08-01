@@ -116,7 +116,9 @@ namespace UniGame.StaticEcs.Network
         /// <summary>A sequence counter was exhausted.</summary>
         SequenceExhausted = 6,
         /// <summary>The server shut down.</summary>
-        ServerShutdown = 7
+        ServerShutdown = 7,
+        /// <summary>The endpoint requested an orderly session close.</summary>
+        Requested = 8
     }
 
     /// <summary>Defines immutable version-one protocol limits.</summary>

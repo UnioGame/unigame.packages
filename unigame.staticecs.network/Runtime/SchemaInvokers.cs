@@ -36,11 +36,13 @@ namespace UniGame.StaticEcs.Network
     internal interface ICommandInvoker : IEntryCodec
     {
         Type AuthorizerType { get; }
+        bool HasRegisteredResultEvents { get; }
         DispatchResult Dispatch(ReadOnlySpan<byte> payload, in CommandContext context);
     }
 
     internal interface ICommandInvoker<T> : ICommandInvoker where T : unmanaged
     {
+        bool TryWrite(in T command, Span<byte> destination, out int written);
         bool TryAuthorize(ReadOnlySpan<byte> payload, in CommandContext context, out T command);
     }
 
@@ -313,6 +315,15 @@ namespace UniGame.StaticEcs.Network
     {
         public Type RuntimeType => typeof(T);
         public Type AuthorizerType => typeof(TAuthorizer);
+        public bool HasRegisteredResultEvents =>
+            World<TWorld>.IsEventTypeRegistered<CommandAcceptedEvent<T>>() &&
+            World<TWorld>.IsEventTypeRegistered<CommandRejectedEvent<T>>();
+
+        public bool TryWrite(in T command, Span<byte> destination, out int written)
+        {
+            var codec = default(TCodec);
+            return codec.TryWrite(in command, destination, out written);
+        }
 
         public bool Validate(ReadOnlySpan<byte> payload, uint count)
         {
@@ -333,8 +344,7 @@ namespace UniGame.StaticEcs.Network
             var codec = default(TCodec);
             if (!codec.TryRead(payload, out var command, out var read) || read != payload.Length)
                 return DispatchResult.InvalidCommand;
-            if (!World<TWorld>.IsEventTypeRegistered<CommandAcceptedEvent<T>>() ||
-                !World<TWorld>.IsEventTypeRegistered<CommandRejectedEvent<T>>())
+            if (!HasRegisteredResultEvents)
                 return DispatchResult.ConfigurationError;
 
             var authorizer = default(TAuthorizer);

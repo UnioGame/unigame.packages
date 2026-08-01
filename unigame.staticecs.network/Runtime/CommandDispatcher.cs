@@ -32,6 +32,16 @@ namespace UniGame.StaticEcs.Network
         {
             if (schema == null) throw new ArgumentNullException(nameof(schema));
             schema.EnsureWorld<TWorld>();
+            if (World<TWorld>.Status != WorldStatus.Initialized)
+                throw new InvalidOperationException($"World `{typeof(TWorld).FullName}` must be initialized before command dispatch is configured.");
+            var entries = schema.RetainedEntries;
+            for (var i = 0; i < entries.Length; i++)
+            {
+                var entry = entries[i];
+                if (entry.Kind != SchemaKind.Command) continue;
+                if (entry.CommandInvoker == null || !entry.CommandInvoker.HasRegisteredResultEvents)
+                    throw new InvalidOperationException($"Command `{entry.RuntimeType.FullName}` requires both accepted and rejected result event registrations.");
+            }
             _schema = schema;
         }
 
