@@ -3,7 +3,7 @@
   "taskId": "SVE11-NETWORK-REPLICATOR",
   "mode": "strict",
   "state": "Replan Required",
-  "previousState": "ChangesRequested",
+  "previousState": "Candidate",
   "role": "complex-worker",
   "branch": "codex/sve11-network-replicator",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-replicator",

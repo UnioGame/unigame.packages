@@ -9,7 +9,7 @@ This compatibility addendum applies to replication work based on or after `SVE11
 - `Replicator<TWorld>.Capture(out PacketLease payload)` assigns `payload = default` before validation or allocation.
 - A successful capture transfers the local owner with `payload = PacketLease.Transfer(ref lease)`.
 - Every result other than `CaptureResult.Success` leaves the output default and invalid.
-- Cleanup releases only a local lease that remains valid after the attempted transfer.
+- The local lease starts as `default`. A `finally` block checks `lease.IsValid`, disposes it, and clears it to `default` on every return or exception path.
 - `Capture`, `CaptureResult`, and all other public replication names and result values remain unchanged.
 
 ## Staging ownership
@@ -24,4 +24,3 @@ This compatibility addendum applies to replication work based on or after `SVE11
 - Setup creates a fixed non-empty snapshot with representative records and relations, then performs and disposes one complete capture to warm query, schema, array-pool, and lease-state paths.
 - The measured interval contains only repeated `Capture`, primitive result accumulation, payload-length accumulation, and valid-owner disposal. It contains no assertions, LINQ, closures, world mutations, or setup.
 - Post-loop assertions require every result to be `Success`, every output to have been valid and non-empty, and `GC.GetAllocatedBytesForCurrentThread` delta to equal zero.
-
