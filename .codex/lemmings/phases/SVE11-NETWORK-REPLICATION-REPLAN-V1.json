@@ -26,6 +26,12 @@
       "owner": "SVE11-NETWORK-REPLICATOR-REPLAN",
       "scope": "Only task-owned replication schema, runtime, test and README paths",
       "status": "Released"
+    },
+    {
+      "resource": "sve11-network-replicator-proof worktree",
+      "owner": "SVE11-NETWORK-REPLICATOR-PROOF",
+      "scope": "Replayed replication range plus the strengthened survivor-conflict proof",
+      "status": "Active"
     }
   ],
   "close": {

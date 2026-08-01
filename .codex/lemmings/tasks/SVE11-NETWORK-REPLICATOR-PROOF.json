@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-REPLICATOR-PROOF",
+  "mode": "strict",
+  "state": "Ready",
+  "previousState": "Planned",
+  "role": "complex-worker",
+  "branch": "codex/sve11-network-replicator-proof",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-replicator-proof",
+  "plan": {
+    "goal": "Replay the complete post-lease replication range and close the survivor-conflict rich-ledger preservation proof.",
+    "acceptance": [
+      "Replay the four provenance commits separately and in order with -x from the exact accepted phase baseline.",
+      "Keep the reviewed runtime and README content unchanged from the previous repaired head.",
+      "Strengthen the survivor-conflict InvalidEntity case so its immediately preceding successful ledger retains representative rich state and transition survivors.",
+      "Fingerprint exact topology, identities, kinds, disabled state, tag, values, link target, ordered links and ordered multi values before and after the returned failure.",
+      "Pass the complete replication suite, zero-allocation Capture proof, compile, ownership, metadata, Sample and Strict gates.",
+      "Receive a fresh high-review of the entire baseline-to-proof-head range."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-replication.md",
+      ".codex/lemmings/contracts/SVE11-network-packet-lease.md",
+      ".codex/lemmings/contracts/SVE11-network-replication-post-lease.md",
+      "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
+      "Replay provenance: c78573e83e1f660e7283223d540b2a044ba16373, d6ac8c8d0fabc0dd2802af7158e82a19fd3bc69c, 68f5eb35cfe91e76b426aa58169f42edb7ff16ca, 14c1eb47af6e94ff5471b4417afbcd86dc3395b2"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/Runtime/Schema.cs",
+      "unigame.staticecs.network/Runtime/SchemaInvokers.cs",
+      "unigame.staticecs.network/Runtime/Replication.meta",
+      "unigame.staticecs.network/Runtime/Replication/**",
+      "unigame.staticecs.network/Tests/Editor/ReplicationTests.cs",
+      "unigame.staticecs.network/Tests/Editor/ReplicationTests.cs.meta",
+      "unigame.staticecs.network/README.md"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network/Protocol/**",
+      "unigame.staticecs.network/Runtime/BuffersTransport.cs",
+      "unigame.staticecs.network/Runtime/Framing.cs",
+      "unigame.staticecs.network/Runtime/Staging.cs",
+      "unigame.staticecs.network/Runtime/History.cs",
+      "unigame.staticecs.network/Runtime/CommandDispatcher.cs",
+      "unigame.staticecs.network/Runtime/*.asmdef",
+      "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs",
+      "unigame.ai.lemmings/**",
+      "unigame.staticecs.unity/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": null
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": []
+  },
+  "baseSha": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "Survivor-conflict preflight mutates or loses rich replicated state after a successful kind/generation transition",
+        "test": "Successful transition ledger plus representative rich state has an exact complete fingerprint before and after returned InvalidEntity"
+      },
+      {
+        "risk": "The replay obscures prior fixes or introduces unrelated drift",
+        "test": "Separate -x provenance commits, identical reviewed README/runtime trees and full-range ownership review"
+      },
+      {
+        "risk": "Strengthened proof regresses warmed capture allocation or other replication behavior",
+        "test": "Full focused replication suite including strict zero-allocation Capture measurement"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Focused warnings-as-errors compile and all replication tests",
+      "Exact ownership/meta and Sample scans",
+      "lemmings check --all",
+      "Unity EditMode unigame.staticecs.network.tests after integration"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "review": null,
+  "close": null
+}
