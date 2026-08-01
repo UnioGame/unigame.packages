@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-TRANSPORT-CLOSE",
+  "base": "4293593b25e6c00b1a61642230d0e621bd746733",
+  "head": "e07464d3e18daa66a17a5fb38fe97676cd25c62c",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [
+    { "priority": "P1", "file": "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs", "line": 555, "message": "Wrong-flags fixture corrupts CRC first; recompute valid CRC so flag validation is actually exercised." },
+    { "priority": "P1", "file": "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs", "line": 471, "message": "After capacity rejection, prove the same sequence can later enqueue so latest sequence was not advanced." },
+    { "priority": "P1", "file": "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs", "line": 128, "message": "Prove Dispose is idempotent from Faulted." },
+    { "priority": "P1", "file": "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs", "line": 441, "message": "Retain and invalidate the replaced older unreliable lease alias." },
+    { "priority": "P1", "file": "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs", "line": 555, "message": "Retain queued aliases and prove invalid-packet terminal draining disposes them." }
+  ],
+  "validation": [
+    "Runtime transition and ownership implementation passed review with no source blocker.",
+    "Exact range/ownership/worktree/diff and Strict checks passed; repairs are test-only."
+  ]
+}
