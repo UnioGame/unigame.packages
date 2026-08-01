@@ -21,6 +21,12 @@
       "owner": "orchestrator",
       "scope": "Only the orchestrator integrates an Accepted Session Core candidate",
       "status": "Active"
+    },
+    {
+      "resource": "sve11-network-session-core worktree",
+      "owner": "SVE11-NETWORK-SESSION-CORE",
+      "scope": "Only the frozen Session Core additions, SessionTests and README",
+      "status": "Active"
     }
   ],
   "close": {

@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-SESSION-CORE",
+  "mode": "strict",
+  "state": "Ready",
+  "previousState": null,
+  "role": "complex-worker",
+  "branch": "codex/sve11-network-session-core",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-core",
+  "plan": {
+    "goal": "Implement the deterministic typed Session connection state machine over stepped transports without gameplay transfer.",
+    "acceptance": [
+      "Implement the exact four-packet two-Hello handshake, phase-specific schema binding, bounded negotiation and endpoint-specific Result timing.",
+      "Own and validate authority/replica scope and replicator at the frozen lifecycle seams without Capture, Apply, command build or dispatch.",
+      "Enforce header limits before decoded allocation and implement exact semantic, sequence, retry and transport-exception behavior.",
+      "Implement Requested close, rejection delivery barrier, terminal mapping and explicit Session disposal ownership.",
+      "Expose only the frozen short public API and internal test probes, preserve all protocol/replication code, and pass the full package suite."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-session-core.md",
+      "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/Runtime/SessionTypes.cs",
+      "unigame.staticecs.network/Runtime/SessionTypes.cs.meta",
+      "unigame.staticecs.network/Runtime/SessionProtocol.cs",
+      "unigame.staticecs.network/Runtime/SessionProtocol.cs.meta",
+      "unigame.staticecs.network/Runtime/Session.cs",
+      "unigame.staticecs.network/Runtime/Session.cs.meta",
+      "unigame.staticecs.network/Tests/Editor/SessionTests.cs",
+      "unigame.staticecs.network/Tests/Editor/SessionTests.cs.meta",
+      "unigame.staticecs.network/README.md"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network/Protocol/**",
+      "unigame.staticecs.network/Runtime/Replication/**",
+      "unigame.staticecs.network/Runtime/BuffersTransport.cs",
+      "unigame.staticecs.network/Runtime/CommandOutbox.cs",
+      "unigame.staticecs.network/Runtime/CommandDispatcher.cs",
+      "unigame.staticecs.network/Runtime/Framing.cs",
+      "unigame.staticecs.network/Runtime/Staging.cs",
+      "unigame.staticecs.network/Runtime/Schema.cs",
+      "unigame.staticecs.network/Runtime/SchemaInvokers.cs",
+      "unigame.staticecs.network/Runtime/History.cs",
+      "unigame.staticecs.network/Tests/Editor/ProtocolTests.cs",
+      "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs",
+      "unigame.staticecs.network/Tests/Editor/CommandOutboxTests.cs",
+      "unigame.staticecs.network/Tests/Editor/ReplicationTests.cs",
+      "unigame.staticecs.network/Runtime/*.asmdef",
+      "unigame.staticecs.network/package.json",
+      "unigame.ai.lemmings/**",
+      "unigame.staticecs.unity/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": null
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": []
+  },
+  "baseSha": "2bba4bb4b54c5a8be4ddbe89daf6c1c78df050ed",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "Handshake or rejection advances before reliable ownership is committed",
+        "test": "Capacity-one pair pump plus connected-false and throwing transport retry matrix with exact bytes and sequences"
+      },
+      {
+        "risk": "Peer-controlled header causes allocation above negotiated limits",
+        "test": "Pre-decode attacker-length tests proving no decoded rent before local bound rejection"
+      },
+      {
+        "risk": "Topology/lifecycle drift acknowledges an unusable replica mapping",
+        "test": "Authority and replica invalidation at every retry, Ack and established Step seam with no ECS mutation"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Focused warnings-as-errors Session compile and tests",
+      "Full available package harness",
+      "Exact ownership/meta/no-Sample scans",
+      "lemmings check --all",
+      "Unity EditMode unigame.staticecs.network.tests after integration"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "review": null,
+  "close": null
+}
