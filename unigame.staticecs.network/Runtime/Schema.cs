@@ -66,16 +66,23 @@ namespace UniGame.StaticEcs.Network
     /// <summary>Contains an immutable deterministic network schema.</summary>
     public sealed class Schema
     {
-        internal Schema(TypeId hash, SchemaEntry[] entries) { Hash = hash; Entries = entries; }
+        internal Schema(TypeId hash, SchemaEntry[] entries, Type worldType) { Hash = hash; Entries = entries; WorldType = worldType; }
         /// <summary>Gets the first 16 bytes of the canonical manifest SHA-256.</summary>
         public TypeId Hash { get; }
         /// <summary>Gets manifest records ordered by kind then RFC UUID bytes.</summary>
         public IReadOnlyList<SchemaEntry> Entries { get; }
+        internal Type WorldType { get; }
         /// <summary>Finds a schema record by stable identifier.</summary>
         public bool TryGet(TypeId typeId, out SchemaEntry entry)
         {
             for (var i = 0; i < Entries.Count; i++) if (Entries[i].TypeId == typeId) { entry = Entries[i]; return true; }
             entry = null; return false;
+        }
+
+        internal void EnsureWorld<TWorld>() where TWorld : struct, IWorldType
+        {
+            if (WorldType != typeof(TWorld))
+                throw new InvalidOperationException($"Schema for world `{WorldType.FullName}` cannot be used with world `{typeof(TWorld).FullName}`.");
         }
 
         internal bool Validate(StagedPayload staged)
@@ -155,7 +162,7 @@ namespace UniGame.StaticEcs.Network
             for (var i = 0; i < _entries.Count; i++) if (_entries[i].Invoker == null) throw new InvalidOperationException("Every schema record requires a retained typed invoker.");
             var prefix = Encoding.ASCII.GetBytes("SECS-SCHEMA-V1"); var bytes = new byte[prefix.Length + _entries.Count * 44]; prefix.CopyTo(bytes, 0); var offset = prefix.Length;
             for (var i = 0; i < _entries.Count; i++) { var e = _entries[i]; bytes[offset] = (byte)e.Kind; bytes[offset + 1] = e.Flags; Hashing.Write16(bytes, offset + 2, e.Version); e.TypeId.WriteBytes(bytes.AsSpan(offset + 4, 16)); e.CodecId.WriteBytes(bytes.AsSpan(offset + 20, 16)); Hashing.Write32(bytes, offset + 36, e.MaxPayload); Hashing.Write32(bytes, offset + 40, e.MaxCount); offset += 44; }
-            using var sha = SHA256.Create(); var digest = sha.ComputeHash(bytes); return new Schema(TypeId.ReadBytes(digest.AsSpan(0, 16)), _entries.ToArray());
+            using var sha = SHA256.Create(); var digest = sha.ComputeHash(bytes); return new Schema(TypeId.ReadBytes(digest.AsSpan(0, 16)), _entries.ToArray(), typeof(TWorld));
         }
 
         private void Add(SchemaKind kind, byte flags, ushort version, TypeId typeId, CodecId codecId, uint maxPayload, uint maxCount, Type type, ISchemaInvoker invoker)

@@ -210,6 +210,30 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
+        public void CommandDispatcherRejectsSchemaFromAnotherWorldBeforeActivity()
+        {
+            CrossWorldAuthorizer.Calls = 0;
+            OtherWorldAuthorizer.Calls = 0;
+            var schema = new SchemaBuilder<SchemaOwnerWorld>()
+                .Command<CrossWorldCommand, CrossWorldCommandCodec, CrossWorldAuthorizer>(Id(40), 1, Codec(40), 4)
+                .Freeze();
+            var equivalentOtherWorldSchema = new SchemaBuilder<WrongConsumerWorld>()
+                .Command<CrossWorldCommand, CrossWorldCommandCodec, OtherWorldAuthorizer>(Id(40), 1, Codec(40), 4)
+                .Freeze();
+
+            Assert.Throws<InvalidOperationException>(() => new CommandDispatcher<WrongConsumerWorld>(schema));
+            Assert.That(schema.Hash, Is.EqualTo(equivalentOtherWorldSchema.Hash));
+            Assert.That(CrossWorldAuthorizer.Calls, Is.Zero);
+            Assert.That(OtherWorldAuthorizer.Calls, Is.Zero);
+            Assert.That(World<SchemaOwnerWorld>.Status, Is.EqualTo(WorldStatus.NotCreated));
+            Assert.That(World<WrongConsumerWorld>.Status, Is.EqualTo(WorldStatus.NotCreated));
+            Assert.That(World<SchemaOwnerWorld>.IsEventTypeRegistered<CommandAcceptedEvent<CrossWorldCommand>>(), Is.False);
+            Assert.That(World<SchemaOwnerWorld>.IsEventTypeRegistered<CommandRejectedEvent<CrossWorldCommand>>(), Is.False);
+            Assert.That(World<WrongConsumerWorld>.IsEventTypeRegistered<CommandAcceptedEvent<CrossWorldCommand>>(), Is.False);
+            Assert.That(World<WrongConsumerWorld>.IsEventTypeRegistered<CommandRejectedEvent<CrossWorldCommand>>(), Is.False);
+        }
+
+        [Test]
         public void MalformedCommandCodecIsRejectedBeforeStagedPayloadEscapes()
         {
             var schema = new SchemaBuilder<TestWorld>().Command<TestCommand, TestCommandCodec, TestAuthorizer>(Id(10), 1, Codec(10), 4).Freeze();
@@ -311,6 +335,8 @@ namespace UniGame.StaticEcs.Network.Tests
         private static byte[] EntityBytes(uint id) => new byte[] { (byte)id, (byte)(id >> 8), (byte)(id >> 16), (byte)(id >> 24), 0, 0, 1, 0 };
         private struct TestWorld : IWorldType { }
         private struct DispatchWorld : IWorldType { }
+        private struct SchemaOwnerWorld : IWorldType { }
+        private struct WrongConsumerWorld : IWorldType { }
         private struct TestEntityType : IEntityType { public byte Id() => 1; }
         private struct TestTag : ITag { }
         private struct TestLink : ILinkType { }
@@ -319,10 +345,22 @@ namespace UniGame.StaticEcs.Network.Tests
         private struct TestComponent : IComponent { public int Value; }
         private struct TestCommand { public int Value; }
         private struct DispatchCommand { public int Value; }
+        private struct CrossWorldCommand { public int Value; }
         private struct TestAuthorizer : ICommandAuthorizer<TestWorld, TestCommand> { public bool Authorize(in CommandContext context, in TestCommand command) => context.PeerId == 7 && command.Value == 42; }
         private struct DispatchAuthorizer : ICommandAuthorizer<DispatchWorld, DispatchCommand> { public bool Authorize(in CommandContext context, in DispatchCommand command) => context.PeerId == 7 && command.Value == 42; }
+        private struct CrossWorldAuthorizer : ICommandAuthorizer<SchemaOwnerWorld, CrossWorldCommand>
+        {
+            internal static int Calls;
+            public bool Authorize(in CommandContext context, in CrossWorldCommand command) { Calls++; return true; }
+        }
+        private struct OtherWorldAuthorizer : ICommandAuthorizer<WrongConsumerWorld, CrossWorldCommand>
+        {
+            internal static int Calls;
+            public bool Authorize(in CommandContext context, in CrossWorldCommand command) { Calls++; return true; }
+        }
         private struct TestCommandCodec : ICodec<TestCommand> { public bool TryWrite(in TestCommand value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out TestCommand value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new TestCommand { Value = raw }; return ok; } }
         private struct DispatchCommandCodec : ICodec<DispatchCommand> { public bool TryWrite(in DispatchCommand value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out DispatchCommand value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new DispatchCommand { Value = raw }; return ok; } }
+        private struct CrossWorldCommandCodec : ICodec<CrossWorldCommand> { public bool TryWrite(in CrossWorldCommand value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out CrossWorldCommand value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new CrossWorldCommand { Value = raw }; return ok; } }
         private struct MultiIntCodec : ICodec<TestMulti> { public bool TryWrite(in TestMulti value, Span<byte> destination, out int written) { var raw = value.Value; return new IntCodec().TryWrite(in raw, destination, out written); } public bool TryRead(ReadOnlySpan<byte> source, out TestMulti value, out int read) { var ok = new IntCodec().TryRead(source, out int raw, out read); value = new TestMulti { Value = raw }; return ok; } }
         private struct IntCodec : ICodec<TestComponent>, ICodec<int>
         {

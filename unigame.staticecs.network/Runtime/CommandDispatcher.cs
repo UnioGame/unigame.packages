@@ -28,7 +28,12 @@ namespace UniGame.StaticEcs.Network
         private readonly Schema _schema;
 
         /// <summary>Creates a dispatcher for an immutable network schema.</summary>
-        public CommandDispatcher(Schema schema) => _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        public CommandDispatcher(Schema schema)
+        {
+            if (schema == null) throw new ArgumentNullException(nameof(schema));
+            schema.EnsureWorld<TWorld>();
+            _schema = schema;
+        }
 
         /// <summary>Validates, authorizes, and emits one command using the trusted endpoint peer identity.</summary>
         public DispatchResult Dispatch(StagedPayload commands, int index, uint peerId)
