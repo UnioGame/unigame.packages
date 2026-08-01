@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-REPLICATOR-REPLAN",
+  "mode": "strict",
+  "state": "Ready",
+  "previousState": "Draft",
+  "role": "complex-worker",
+  "branch": "codex/sve11-network-replicator-replan",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-replicator-replan",
+  "plan": {
+    "goal": "Rebuild the accepted replication implementation on the post-lease baseline with deterministic transitions and allocation-free warmed capture.",
+    "acceptance": [
+      "Preserve the frozen role-bound ReplicaScope and canonical full-snapshot capture/apply semantics.",
+      "Include the reviewed segment-transition repair that destroys outgoing ledger entities before creation and validates incoming entities plus exact survivors.",
+      "Adapt Capture and staging to default-invalid PacketLease and exclusive ref-transfer ownership under the post-lease addendum.",
+      "Preserve post-lease README ownership and borrowed-view guidance while adding replication usage and configuration.",
+      "Pass the expanded deterministic no-mutation, topology, replacement, disabled collection and canonical byte matrix.",
+      "Prove a representative warmed Capture/dispose loop allocates exactly zero managed bytes.",
+      "Keep short public names and contain no Sample production or test identifiers."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-replication.md",
+      ".codex/lemmings/contracts/SVE11-network-packet-lease.md",
+      ".codex/lemmings/contracts/SVE11-network-replication-post-lease.md",
+      "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
+      "Provenance: 10893ac002569f07535144c62e9bafe3f3852a76 and f59db7542b2a231a86d5dfdc1325c912aa3d6590"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/Runtime/Schema.cs",
+      "unigame.staticecs.network/Runtime/SchemaInvokers.cs",
+      "unigame.staticecs.network/Runtime/Replication.meta",
+      "unigame.staticecs.network/Runtime/Replication/**",
+      "unigame.staticecs.network/Tests/Editor/ReplicationTests.cs",
+      "unigame.staticecs.network/Tests/Editor/ReplicationTests.cs.meta",
+      "unigame.staticecs.network/README.md"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network/Protocol/**",
+      "unigame.staticecs.network/Runtime/BuffersTransport.cs",
+      "unigame.staticecs.network/Runtime/Framing.cs",
+      "unigame.staticecs.network/Runtime/Staging.cs",
+      "unigame.staticecs.network/Runtime/History.cs",
+      "unigame.staticecs.network/Runtime/CommandDispatcher.cs",
+      "unigame.staticecs.network/Runtime/*.asmdef",
+      "unigame.staticecs.network/Tests/Editor/RuntimeTests.cs",
+      "unigame.ai.lemmings/**",
+      "unigame.staticecs.unity/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": null
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": []
+  },
+  "baseSha": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "A failed or successful Capture leaks, aliases or double-returns pooled ownership",
+        "test": "Default failure outputs, success ref-transfer and finally cleanup across all result/exception paths"
+      },
+      {
+        "risk": "A segment kind transition corrupts survivors or blocks a valid replacement",
+        "test": "Whole-segment and same-slot generation transition matrix with exact no-mutation fingerprints"
+      },
+      {
+        "risk": "Capture retains per-tick managed allocation after lease pooling",
+        "test": "Dedicated-world representative warmed Capture/dispose loop with strict zero allocation delta"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Focused package source build/tests",
+      "rg Sample across owned production and tests",
+      "lemmings check --all",
+      "Unity EditMode unigame.staticecs.network.tests after integration"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "review": null,
+  "close": null
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-REPLICATION-REPLAN-V1",
+  "baselineSha": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
+  "integrationBranch": "codex/sve11-network-package",
+  "contractsFrozen": true,
+  "contracts": [
+    ".codex/lemmings/contracts/SVE11-network-replication.md",
+    ".codex/lemmings/contracts/SVE11-network-packet-lease.md",
+    ".codex/lemmings/contracts/SVE11-network-replication-post-lease.md"
+  ],
+  "baselineReview": {
+    "status": "Accepted",
+    "reviewerModel": "gpt-5.6-sol:high",
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-REPLICATION-REPLAN-V1.baseline.json"
+  }
+}
+

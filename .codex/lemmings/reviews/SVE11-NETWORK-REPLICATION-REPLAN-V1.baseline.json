@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-REPLICATION-REPLAN-V1",
+  "baselineSha": "eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [],
+  "validation": [
+    "Baseline eab1d95e037ed9c1a9752d8a6c46b86d0202e8e2 is the verified clean post-lease integration commit and is an ancestor of planning head 3efc8886fa7e00c222901d03d5e621c118920cec.",
+    "The planning range changes only the frozen post-lease replication addendum and historical replicator task metadata; git diff --check passes and the tracked worktree is clean.",
+    "The addendum explicitly resolves nullable/default precedence and freezes default initialization, ref-transfer success, finally-based valid-owner cleanup, consuming ref staging and failed-output assertions.",
+    "The addendum requires a dedicated world, shared PoolTestGate fixture gate, exact representative Capture warm-up, allocation-free measured loop and strict zero-byte post-loop assertion.",
+    "The historical task is Replan Required with previousState Candidate, records f59db7542b2a231a86d5dfdc1325c912aa3d6590 as an unreviewed repair, and preserves its immutable cycle-one review unchanged.",
+    "Commits 10893ac002569f07535144c62e9bafe3f3852a76 and f59db7542b2a231a86d5dfdc1325c912aa3d6590 have valid direct ancestry and touch only the replanned ownership.",
+    "The fresh phase binds the original replication contract, accepted PacketLease contract and post-lease compatibility addendum to the exact baseline.",
+    "The fresh task uses a unique branch and worktree, explicit orchestrator and writer leases, exact source ownership, required forbidden paths, unchanged public names and no Sample scope.",
+    "The final candidate must use the new post-cherry-pick adapted head and receive an immutable exact-range review before integration.",
+    "lemmings check --all passed with zero errors, warnings or findings."
+  ]
+}
+
