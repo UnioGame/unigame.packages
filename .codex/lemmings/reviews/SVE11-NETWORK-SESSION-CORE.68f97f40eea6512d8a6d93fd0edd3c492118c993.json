@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-SESSION-CORE",
+  "cycle": 4,
+  "base": "24e6b1dee284ef2cf8939f3a997070231856369c",
+  "head": "68f97f40eea6512d8a6d93fd0edd3c492118c993",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [],
+  "validation": [
+    "The repair is exactly one commit and changes only Tests/Editor/SessionTests.cs.",
+    "No protocol-internal Hashing access remains and TestWire adds no public API.",
+    "CRC32 and xxHash64 known vectors pass; little-endian header offsets remain exact.",
+    "Production PacketHeader and Session consume independently generated test packets, so the matrices remain non-tautological.",
+    "No assertions or test cases were removed; focused SessionTests remain 30/30 and the package harness remains 103/103.",
+    "The full head changes only the nine accepted owned paths and lemmings check --all passes."
+  ]
+}
