@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-SESSION-TRANSFER-V1",
+  "repoRoot": "D:/Dev/kontora/static.ecs.template/GameClient/Game.Packages",
+  "baselineSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
+  "planningHead": "b9cf02634a3aece8c0f5cc23765d939b9068bd21",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [
+    "Freeze acknowledgement fields per outbound intent or relax byte-identical retries; latest piggyback and retry requirements conflict under receive-before-send interleavings.",
+    "Remove the unreachable oversized Session-history acceptance or provide an allowed bounded-history seam.",
+    "Freeze thrown Apply and Dispatch callback semantics, including terminal state, high-water, acknowledgement, history, cleanup, and retry behavior after partial mutation.",
+    "Make every ApplyResult test implementable by narrowing end-to-end outcomes or adding a pure internal mapping seam.",
+    "Complete empty CommandBatch, accepted ResyncReason, retained-resync replacement, and Capture validation precedence."
+  ],
+  "validation": [
+    "Reviewed planning head b9cf02634a3aece8c0f5cc23765d939b9068bd21 against frozen baseline ee5968c3001c35353df45035916e9ea0f660a42e.",
+    "Reviewed the proposal and all referenced accepted contracts against Session, framing, staging, outbox, dispatcher, replicator, history, packet, and transport implementations.",
+    "git diff --check and lemmings check --all passed."
+  ]
+}

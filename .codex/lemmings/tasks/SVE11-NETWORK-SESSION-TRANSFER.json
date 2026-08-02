@@ -58,7 +58,9 @@
   },
   "execution": {
     "handoff": null,
-    "validationEvidence": []
+    "validationEvidence": [
+      "Baseline review cycle 1 requested exact retry-ack freezing, reachable history/apply tests, callback exception semantics, and public/protocol precedence refinements."
+    ]
   },
   "baseSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
   "commits": {
@@ -69,7 +71,7 @@
     "riskToTest": [
       {
         "risk": "Retries or piggyback acknowledgements advance ownership before transport acceptance",
-        "test": "Capacity-one and throwing transports with byte-identical retry and exact high-water assertions"
+        "test": "Receive-between-retries, capacity-one and throwing transports with frozen byte-identical intents and later Ack assertions"
       },
       {
         "risk": "Malformed direction, sequence, tick, schema or future acknowledgement mutates ECS or retention",
@@ -77,7 +79,7 @@
       },
       {
         "risk": "Capture/apply/resync leaks leases or loses the latest full snapshot",
-        "test": "Supersession, all CaptureResult/ApplyResult mappings, history rejection and disposal ownership"
+        "test": "Supersession, reachable outcomes plus pure result mapping, callback throws, first-failure resync stability and disposal ownership"
       }
     ],
     "commands": [
