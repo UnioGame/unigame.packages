@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-DIAGNOSTICS",
   "mode": "strict",
-  "state": "Active",
-  "previousState": "ChangesRequested",
+  "state": "Review",
+  "previousState": "Active",
   "role": "complex-worker",
   "branch": "codex/sve11-network-diagnostics",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-diagnostics",
@@ -70,13 +70,17 @@
       "Independent gpt-5.6-sol:high baseline review accepted the complete frozen contract at planning head 74cb3b1beba08c0c4dde04b60261489e74ca4755.",
       "Candidate edf4408982fdd2e9f6cbae10d784fbc17e52ba27 changes exactly 20 owned files; runtime and tests compile with zero warnings/errors in the standalone overlay.",
       "Focused diagnostics/replay tests pass 18/18 and the full standalone package harness passes 161 tests; only the known baseline Mono allocation-counter anomaly was excluded.",
-      "Ownership, Unity meta, ordinary-log privacy, forbidden-name, whitespace and lemmings check --all scans are clean."
+      "Ownership, Unity meta, ordinary-log privacy, forbidden-name, whitespace and lemmings check --all scans are clean.",
+      "Strict repair 722d93ed325c028a914bf0f7a0bff26fde3bc5d4 fixes replay step/truncation validation, simultaneous-close State cardinality, and expands the focused acceptance matrix to 31 passing tests.",
+      "The repaired full standalone package reflection harness passes 174/174; the known baseline Mono allocation-counter defect remains the only excluded test."
     ]
   },
   "baseSha": "14459a615b46826269751f034c3eb53071614a33",
   "commits": {
     "candidate": "edf4408982fdd2e9f6cbae10d784fbc17e52ba27",
-    "fix": []
+    "fix": [
+      "722d93ed325c028a914bf0f7a0bff26fde3bc5d4"
+    ]
   },
   "validation": {
     "riskToTest": [
@@ -113,7 +117,7 @@
     "base": "14459a615b46826269751f034c3eb53071614a33",
     "status": "Pending",
     "cycle": 3,
-    "head": "edf4408982fdd2e9f6cbae10d784fbc17e52ba27",
+    "head": "722d93ed325c028a914bf0f7a0bff26fde3bc5d4",
     "evidence": null
   },
   "close": null
