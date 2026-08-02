@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-PROFILER",
   "mode": "strict",
-  "state": "Active",
-  "previousState": "Accepted",
+  "state": "Review",
+  "previousState": "Active",
   "role": "complex-worker",
   "branch": "codex/sve11-network-profiler",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-profiler",
@@ -57,7 +57,8 @@
   "commits": {
     "candidate": "c725199fc0f1010b518fb18e5d2b3d594d91b060",
     "fix": [
-      "06a4b4ad2caebef15fc3f6827b20cc7f5567b82e"
+      "06a4b4ad2caebef15fc3f6827b20cc7f5567b82e",
+      "6993ddc99f04b309ea821644601ccbda372f288b"
     ]
   },
   "validation": {
@@ -90,7 +91,7 @@
     "base": "56b3672539eea260f17ec100ff42841d8f161124",
     "status": "Pending",
     "cycle": 3,
-    "head": "06a4b4ad2caebef15fc3f6827b20cc7f5567b82e",
+    "head": "6993ddc99f04b309ea821644601ccbda372f288b",
     "evidence": null
   },
   "close": null
