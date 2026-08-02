@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-PROFILER",
   "mode": "strict",
-  "state": "Active",
-  "previousState": "ChangesRequested",
+  "state": "Review",
+  "previousState": "Active",
   "role": "complex-worker",
   "branch": "codex/sve11-network-profiler",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-profiler",
@@ -48,13 +48,16 @@
       "The draft rejects a synthetic Drops metric and freezes honest Declines semantics without changing core diagnostics.",
       "Independent gpt-5.6-sol:high baseline review accepted the frozen contract at planning head f9e625a.",
       "Candidate c725199fc0f1010b518fb18e5d2b3d594d91b060 changes only the new profiler package root and compiles runtime plus tests with zero Roslyn diagnostics against Unity references.",
-      "Static scans find exactly eight markers, ten counters, one public runtime type, complete Unity metas, clean whitespace and no forbidden names."
+      "Static scans find exactly eight markers, ten counters, one public runtime type, complete Unity metas, clean whitespace and no forbidden names.",
+      "Repair 06a4b4ad2caebef15fc3f6827b20cc7f5567b82e adds deterministic static initialization and exact completed-marker evidence for transport and callback exceptions plus sentinels."
     ]
   },
   "baseSha": "56b3672539eea260f17ec100ff42841d8f161124",
   "commits": {
     "candidate": "c725199fc0f1010b518fb18e5d2b3d594d91b060",
-    "fix": []
+    "fix": [
+      "06a4b4ad2caebef15fc3f6827b20cc7f5567b82e"
+    ]
   },
   "validation": {
     "riskToTest": [
@@ -86,7 +89,7 @@
     "base": "56b3672539eea260f17ec100ff42841d8f161124",
     "status": "Pending",
     "cycle": 2,
-    "head": "c725199fc0f1010b518fb18e5d2b3d594d91b060",
+    "head": "06a4b4ad2caebef15fc3f6827b20cc7f5567b82e",
     "evidence": null
   },
   "close": null
