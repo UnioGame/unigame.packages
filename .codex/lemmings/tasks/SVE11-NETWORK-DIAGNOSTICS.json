@@ -64,7 +64,8 @@
     "handoff": null,
     "validationEvidence": [
       "Read-only diagnostics and profiler discovery completed at exact baseline 14459a615b46826269751f034c3eb53071614a33.",
-      "The base diagnostics phase is intentionally Unity-free; the Unity Profiler adapter is a later dependent package."
+      "The base diagnostics phase is intentionally Unity-free; the Unity Profiler adapter is a later dependent package.",
+      "Baseline review requested exact tape lifecycle and binary layout, terminal logger fault policy, role-specific resync cardinality and payload-only decoded byte accounting; the contract now freezes all five."
     ]
   },
   "baseSha": "14459a615b46826269751f034c3eb53071614a33",
@@ -106,7 +107,7 @@
     "taskId": "SVE11-NETWORK-DIAGNOSTICS",
     "base": "14459a615b46826269751f034c3eb53071614a33",
     "status": "Pending",
-    "cycle": 0,
+    "cycle": 1,
     "head": null,
     "evidence": null
   },
