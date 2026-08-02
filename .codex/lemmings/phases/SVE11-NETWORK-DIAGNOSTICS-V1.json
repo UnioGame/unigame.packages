@@ -24,7 +24,7 @@
       "resource": "sve11-network-diagnostics worktree",
       "owner": "SVE11-NETWORK-DIAGNOSTICS",
       "scope": "Only the frozen diagnostics files and bounded Session instrumentation",
-      "status": "Reserved"
+      "status": "Active"
     }
   ],
   "close": {
