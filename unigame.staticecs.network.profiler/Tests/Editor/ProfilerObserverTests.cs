@@ -93,15 +93,16 @@ namespace UniGame.StaticEcs.Network.Profiler.Tests
                 Assert.That(server.Capture(0), Is.EqualTo(CaptureResult.Success));
                 server.Step(9);
                 client.Step(9);
+                client.Step(10);
                 Assert.That(source.GID.TryUnpack<ClientWorld>(out var replica), Is.True);
                 replica.Delete<ReplicatedTag>();
 
                 Assert.That(server.Capture(1), Is.EqualTo(CaptureResult.Success));
                 server.Step(10);
-                client.Step(10);
                 client.Step(11);
-                server.Step(11);
                 client.Step(12);
+                server.Step(11);
+                client.Step(13);
 
                 clientStats = client.Stats;
                 serverStats = server.Stats;
