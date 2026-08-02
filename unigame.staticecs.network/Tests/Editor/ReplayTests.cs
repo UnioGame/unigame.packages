@@ -302,6 +302,79 @@ namespace UniGame.StaticEcs.Network.Tests
             Assert.That(disposeTape.IsComplete, Is.False);
         }
 
+        [Test]
+        public void SaveUsesLifecyclePrecedenceBeforeValidatingOutput()
+        {
+            var open = new ReplayTape(1024);
+            Assert.Throws<InvalidOperationException>(() => open.Save(null));
+            open.Dispose();
+            Assert.Throws<ObjectDisposedException>(() => open.Save(null));
+
+            var recording = new ReplayTape(1024);
+            var trace = new TraceTransport(new ScriptTransport(), recording);
+            Assert.Throws<InvalidOperationException>(() => recording.Save(null));
+            Assert.Throws<InvalidOperationException>(() => recording.Save(new ReadOnlyStream()));
+            recording.Dispose();
+            Assert.Throws<ObjectDisposedException>(() => recording.Save(null));
+            trace.Dispose();
+
+            using var sealedTape = RecordSingleSend(new byte[] { 1 }, true);
+            Assert.Throws<ArgumentNullException>(() => sealedTape.Save(null));
+            Assert.Throws<ArgumentException>(() => sealedTape.Save(new ReadOnlyStream()));
+            var replay = new ReplayTransport(sealedTape);
+            Assert.Throws<InvalidOperationException>(() => sealedTape.Save(null));
+            Assert.Throws<InvalidOperationException>(() => sealedTape.Save(new ReadOnlyStream()));
+            sealedTape.Dispose();
+            Assert.Throws<ObjectDisposedException>(() => sealedTape.Save(null));
+            Assert.Throws<InvalidOperationException>(replay.Dispose);
+        }
+
+        [Test]
+        public void VersionOneGoldenCoversFullHeaderRecordsAndPayload()
+        {
+            var inner = new ScriptTransport { SendMode = SendMode.Accept };
+            using var tape = new ReplayTape(1024);
+            using (var trace = new TraceTransport(inner, tape))
+            {
+                trace.BeginStep(0x0102030405060708UL);
+                var packet = Lease(0xAA, 0xBB);
+                Assert.That(trace.TrySend(Channel.ReliableOrdered, ref packet), Is.True);
+                Assert.That(trace.TryReceive(out _, out _), Is.False);
+            }
+            using var output = new MemoryStream();
+            tape.Save(output);
+            CollectionAssert.AreEqual(GoldenBytes(), output.ToArray());
+        }
+
+        [Test]
+        public void LoadSystematicallyRejectsMalformedHeaderAndRecordFields()
+        {
+            var golden = GoldenBytes();
+            var recordCases = new[]
+            {
+                (40, (byte)0), (41, (byte)0), (42, (byte)0), (43, (byte)4),
+                (44, (byte)5), (45, (byte)1), (60, (byte)1), (66, (byte)2),
+                (80, (byte)3), (91, (byte)1), (92, (byte)0)
+            };
+            foreach (var test in recordCases)
+            {
+                var bytes = (byte[])golden.Clone();
+                bytes[test.Item1] = test.Item2;
+                Write64(bytes, 24, XxHash64(bytes.AsSpan(40)));
+                Assert.Throws<InvalidDataException>(() => ReplayTape.Load(new MemoryStream(bytes), 1024),
+                    $"offset {test.Item1}");
+            }
+
+            var count = (byte[])golden.Clone(); Write32(count, 12, 4);
+            Assert.Throws<InvalidDataException>(() => ReplayTape.Load(new MemoryStream(count), 1024), "count");
+            var sectionLength = (byte[])golden.Clone(); Write64(sectionLength, 16, 23);
+            Assert.Throws<InvalidDataException>(() => ReplayTape.Load(new MemoryStream(sectionLength), 1024), "section length");
+            var checksum = (byte[])golden.Clone(); checksum[24] ^= 1;
+            Assert.Throws<InvalidDataException>(() => ReplayTape.Load(new MemoryStream(checksum), 1024), "checksum");
+            var reserved = (byte[])golden.Clone(); reserved[36] = 1;
+            Assert.Throws<InvalidDataException>(() => ReplayTape.Load(new MemoryStream(reserved), 1024), "header reserved");
+        }
+
         private static ReplayTape RecordSingleSend(byte[] bytes, bool accepted)
         {
             var tape = new ReplayTape(1024);
@@ -325,6 +398,26 @@ namespace UniGame.StaticEcs.Network.Tests
 
         private static uint Read32(byte[] bytes, int offset) =>
             (uint)(bytes[offset] | bytes[offset + 1] << 8 | bytes[offset + 2] << 16 | bytes[offset + 3] << 24);
+
+        private static void Write32(byte[] bytes, int offset, uint value)
+        {
+            for (var i = 0; i < 4; i++) bytes[offset + i] = (byte)(value >> (i * 8));
+        }
+
+        private static byte[] GoldenBytes() => new byte[]
+        {
+            0x53, 0x45, 0x43, 0x53, 0x4E, 0x45, 0x54, 0x31, 0x01, 0x00, 0x28, 0x00,
+            0x03, 0x00, 0x00, 0x00, 0x4A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xCE, 0x4F, 0x96, 0x0A, 0x7F, 0x6A, 0x57, 0xB1, 0x01, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x01, 0x01, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x07, 0x06, 0x05,
+            0x04, 0x03, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x07, 0x06, 0x05,
+            0x04, 0x03, 0x02, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xAA, 0xBB,
+            0x03, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x07, 0x06, 0x05,
+            0x04, 0x03, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        };
 
         private static void SetRecordStep(ReplayTape tape, int index, ulong step)
         {
@@ -418,6 +511,11 @@ namespace UniGame.StaticEcs.Network.Tests
                 return true;
             }
             public void Dispose() { if (State == TransportState.Disposed) return; DisposeCount++; State = TransportState.Disposed; Error = TransportError.Disposed; if (DisposeThrow) throw new InvalidOperationException("dispose"); }
+        }
+
+        private sealed class ReadOnlyStream : MemoryStream
+        {
+            public override bool CanWrite => false;
         }
     }
 }

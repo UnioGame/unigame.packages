@@ -33,6 +33,8 @@ namespace UniGame.StaticEcs.Network.Tests
             Assert.That(first, Is.EqualTo(same));
             Assert.That(first == same, Is.True);
             Assert.That(first != new TickFingerprint(1, 17, 23), Is.True);
+            Assert.That(first != new TickFingerprint(0, 18, 23), Is.True);
+            Assert.That(first != new TickFingerprint(0, 17, 24), Is.True);
         }
 
         [Test]
@@ -423,6 +425,230 @@ namespace UniGame.StaticEcs.Network.Tests
             }
         }
 
+        [Test]
+        public void DecodeFailurePairsFaultAndExactWireCountersWithThrowingObserver()
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other);
+            MemoryTransport.CreatePair(4, out var clientTransport, out var peer);
+            var observer = new RecordingThrowingObserver();
+            using var client = new Session<ClientWorld>(ClientConfig(), EmptySchema<ClientWorld>(), clientTransport, observer);
+            try
+            {
+                var malformed = PacketLease.Rent(1); malformed.CapacitySpan[0] = 0xFF; malformed.SetLength(1);
+                Assert.That(peer.TrySend(Channel.ReliableOrdered, ref malformed), Is.True);
+                client.Step(0);
+                Assert.That(client.State, Is.EqualTo(SessionState.Faulted));
+                Assert.That(client.Stats.ReceivedPackets, Is.EqualTo(1));
+                Assert.That(client.Stats.ReceivedBytes, Is.EqualTo(1));
+                Assert.That(client.Stats.DecodedBytes, Is.Zero);
+                Assert.That(client.Stats.Faults, Is.EqualTo(1));
+                AssertPair(observer.Events, SessionEventKind.Decode, false);
+                Assert.That(observer.Events.Exists(value => value.Kind == SessionEventKind.Fault), Is.True);
+                Assert.That(client.Stats.ObserverErrors, Is.EqualTo((ulong)observer.Events.Count));
+            }
+            finally { peer.Dispose(); DestroyWorld<ClientWorld>(); }
+        }
+
+        [Test]
+        public void DecodeExceptionPairsWithoutDecodedOrDispatchCounters()
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, true);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, true);
+            var receiver = World<ServerWorld>.RegisterEventReceiver<CommandAcceptedEvent<DiagCommand>>();
+            MemoryTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            var observer = new RecordingThrowingObserver();
+            using var client = new Session<ClientWorld>(ClientConfig(), CommandSchema<ClientWorld, DiagCommandCodec, ClientCommandAuthorizer>(), clientTransport);
+            using var server = new Session<ServerWorld>(ServerConfig(), CommandSchema<ServerWorld, ModeCommandCodec, ServerCommandAuthorizer>(), serverTransport, observer);
+            try
+            {
+                PumpEstablished(client, server);
+                var before = server.Stats;
+                var command = new DiagCommand { Value = 12 };
+                Assert.That(client.Enqueue(in command, 2), Is.EqualTo(EnqueueResult.Queued));
+                client.Step(3);
+                ModeCommandCodec.ReadMode = 2;
+                var error = Assert.Throws<InvalidOperationException>(() => server.Step(3));
+                Assert.That(error.Message, Is.EqualTo("codec read"));
+                Assert.That(server.Stats.ReceivedPackets, Is.EqualTo(before.ReceivedPackets + 1));
+                Assert.That(server.Stats.ReceivedBytes, Is.EqualTo(before.ReceivedBytes +
+                    (ulong)LastEnd(observer.Events, SessionEventKind.Receive).WireBytes));
+                Assert.That(server.Stats.DecodedBytes, Is.EqualTo(before.DecodedBytes));
+                Assert.That(server.Stats.CommandsAccepted, Is.EqualTo(before.CommandsAccepted));
+                Assert.That(server.Stats.CommandsRejected, Is.EqualTo(before.CommandsRejected));
+                Assert.That(server.Stats.Faults, Is.EqualTo(before.Faults + 1));
+                AssertPair(observer.Events, SessionEventKind.Decode, false);
+                Assert.That(server.Stats.ObserverErrors, Is.EqualTo((ulong)observer.Events.Count));
+            }
+            finally
+            {
+                ModeCommandCodec.ReadMode = 0;
+                World<ServerWorld>.DeleteEventReceiver(ref receiver);
+                DestroyWorld<ClientWorld>(); DestroyWorld<ServerWorld>();
+            }
+        }
+
+        [TestCase(1, false)]
+        [TestCase(2, true)]
+        public void EncodeFailureAndExceptionPairWithoutAdvancingWireCounters(int readMode, bool throws)
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, true);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, true);
+            MemoryTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            var observer = new RecordingThrowingObserver();
+            using var client = new Session<ClientWorld>(ClientConfig(), CommandSchema<ClientWorld, ModeCommandCodec, ClientCommandAuthorizer>(), clientTransport, observer);
+            using var server = new Session<ServerWorld>(ServerConfig(), CommandSchema<ServerWorld, DiagCommandCodec, ServerCommandAuthorizer>(), serverTransport);
+            try
+            {
+                PumpEstablished(client, server);
+                var command = new DiagCommand { Value = 13 };
+                Assert.That(client.Enqueue(in command, 2), Is.EqualTo(EnqueueResult.Queued));
+                var before = client.Stats;
+                ModeCommandCodec.ReadMode = readMode;
+                if (throws)
+                    Assert.That(Assert.Throws<InvalidOperationException>(() => client.Step(3)).Message, Is.EqualTo("codec read"));
+                else
+                    client.Step(3);
+                Assert.That(client.Stats.SentPackets, Is.EqualTo(before.SentPackets));
+                Assert.That(client.Stats.SentBytes, Is.EqualTo(before.SentBytes));
+                AssertPair(observer.Events, SessionEventKind.Encode, false);
+                Assert.That(client.Stats.Faults, Is.EqualTo(before.Faults + (throws ? 0UL : 1UL)));
+                Assert.That(client.Stats.ObserverErrors, Is.EqualTo((ulong)observer.Events.Count));
+            }
+            finally { ModeCommandCodec.ReadMode = 0; DestroyWorld<ClientWorld>(); DestroyWorld<ServerWorld>(); }
+        }
+
+        [TestCase(1, false)]
+        [TestCase(2, true)]
+        public void CaptureFailureAndExceptionPairWithoutCommittingStats(int writeMode, bool throws)
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, replication: true);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, replication: true);
+            var entity = World<ServerWorld>.NewEntityInChunk<DiagEntity>(Chunk);
+            entity.Set<ReplicatedTag>(); entity.Set(new DiagValue { Value = 7 });
+            MemoryTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            var observer = new RecordingThrowingObserver();
+            using var client = new Session<ClientWorld>(ClientConfig(), ReplicationSchema<ClientWorld>(), clientTransport);
+            using var server = new Session<ServerWorld>(ServerConfig(), ReplicationSchema<ServerWorld>(), serverTransport, observer);
+            try
+            {
+                PumpEstablished(client, server);
+                DiagValueCodec.WriteMode = writeMode;
+                if (throws)
+                    Assert.That(Assert.Throws<InvalidOperationException>(() => server.Capture(0)).Message, Is.EqualTo("codec write"));
+                else
+                    Assert.That(server.Capture(0), Is.EqualTo(CaptureResult.CodecFailed));
+                Assert.That(server.Stats.SnapshotsCaptured, Is.Zero);
+                AssertPair(observer.Events, SessionEventKind.Capture, false);
+                Assert.That(server.Stats.ObserverErrors, Is.EqualTo((ulong)observer.Events.Count));
+            }
+            finally { DiagValueCodec.WriteMode = 0; DestroyWorld<ClientWorld>(); DestroyWorld<ServerWorld>(); }
+        }
+
+        [Test]
+        public void DispatchExceptionPairsAndPreservesCommandCounters()
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, true);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, true);
+            var receiver = World<ServerWorld>.RegisterEventReceiver<CommandAcceptedEvent<DiagCommand>>();
+            MemoryTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            var observer = new RecordingThrowingObserver();
+            using var client = new Session<ClientWorld>(ClientConfig(), CommandSchema<ClientWorld, DiagCommandCodec, ClientCommandAuthorizer>(), clientTransport);
+            using var server = new Session<ServerWorld>(ServerConfig(), CommandSchema<ServerWorld, DiagCommandCodec, ModeCommandAuthorizer>(), serverTransport, observer);
+            try
+            {
+                PumpEstablished(client, server);
+                var command = new DiagCommand { Value = 14 }; client.Enqueue(in command, 2); client.Step(3); server.Step(3);
+                Assert.That(server.Stats.CommandsAccepted, Is.EqualTo(1));
+                var before = server.Stats;
+                command.Value = 15; client.Enqueue(in command, 3); client.Step(4);
+                ModeCommandAuthorizer.Throw = true;
+                Assert.That(Assert.Throws<InvalidOperationException>(() => server.Step(4)).Message, Is.EqualTo("authorize"));
+                Assert.That(server.Stats.CommandsAccepted, Is.EqualTo(before.CommandsAccepted));
+                Assert.That(server.Stats.CommandsRejected, Is.EqualTo(before.CommandsRejected));
+                Assert.That(server.Stats.DecodedBytes, Is.EqualTo(before.DecodedBytes +
+                    (ulong)LastEnd(observer.Events, SessionEventKind.Decode).DecodedBytes));
+                Assert.That(server.Stats.Faults, Is.EqualTo(before.Faults + 1));
+                AssertPair(observer.Events, SessionEventKind.Dispatch, false);
+                Assert.That(server.Stats.ObserverErrors, Is.EqualTo((ulong)observer.Events.Count));
+            }
+            finally
+            {
+                ModeCommandAuthorizer.Throw = false;
+                World<ServerWorld>.DeleteEventReceiver(ref receiver);
+                DestroyWorld<ClientWorld>(); DestroyWorld<ServerWorld>();
+            }
+        }
+
+        [Test]
+        public void ApplyConflictPairsAndQueuesExactlyOneClientResync()
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, replication: true);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, replication: true);
+            var source = World<ServerWorld>.NewEntityInChunk<DiagEntity>(Chunk);
+            source.Set<ReplicatedTag>(); source.Set(new DiagValue { Value = 9 });
+            MemoryTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            var observer = new RecordingThrowingObserver();
+            using var client = new Session<ClientWorld>(ClientConfig(), ReplicationSchema<ClientWorld>(), clientTransport, observer);
+            using var server = new Session<ServerWorld>(ServerConfig(), ReplicationSchema<ServerWorld>(), serverTransport);
+            try
+            {
+                PumpEstablished(client, server);
+                Assert.That(server.Capture(0), Is.EqualTo(CaptureResult.Success));
+                server.Step(3); client.Step(3);
+                Assert.That(source.GID.TryUnpack<ClientWorld>(out var replica), Is.True);
+                replica.Delete<ReplicatedTag>();
+                Assert.That(server.Capture(1), Is.EqualTo(CaptureResult.Success));
+                server.Step(4); client.Step(4);
+                Assert.That(client.Stats.SnapshotsApplied, Is.EqualTo(1));
+                Assert.That(client.Stats.Resyncs, Is.EqualTo(1));
+                AssertPair(observer.Events, SessionEventKind.Apply, false);
+                Assert.That(observer.Events.FindAll(value => value.Kind == SessionEventKind.Resync).Count, Is.EqualTo(1));
+                client.Step(5); server.Step(5); client.Step(6);
+                Assert.That(client.Stats.Resyncs, Is.EqualTo(1));
+                Assert.That(server.Stats.Resyncs, Is.EqualTo(1));
+                Assert.That(client.Stats.ObserverErrors, Is.EqualTo((ulong)observer.Events.Count));
+            }
+            finally { DestroyWorld<ClientWorld>(); DestroyWorld<ServerWorld>(); }
+        }
+
+        [Test]
+        public void ApplyExceptionPairsFaultsAndPreservesApplyCounter()
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, replication: true);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, replication: true);
+            var source = World<ServerWorld>.NewEntityInChunk<DiagEntity>(Chunk);
+            source.Set<ReplicatedTag>(); source.Set(new DiagValue { Value = 10 });
+            MemoryTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            var observer = new RecordingThrowingObserver();
+            using var client = new Session<ClientWorld>(ClientConfig(), ReplicationSchema<ClientWorld>(), clientTransport, observer);
+            using var server = new Session<ServerWorld>(ServerConfig(), ReplicationSchema<ServerWorld>(), serverTransport);
+            try
+            {
+                PumpEstablished(client, server);
+                Assert.That(server.Capture(0), Is.EqualTo(CaptureResult.Success));
+                server.Step(3);
+                var before = client.Stats;
+                DiagValueCodec.Reads = 0;
+                DiagValueCodec.ThrowOnReadCall = 2;
+                Assert.That(Assert.Throws<InvalidOperationException>(() => client.Step(3)).Message, Is.EqualTo("value read"));
+                Assert.That(client.Stats.SnapshotsApplied, Is.EqualTo(before.SnapshotsApplied));
+                Assert.That(client.Stats.ReceivedPackets, Is.EqualTo(before.ReceivedPackets + 1));
+                Assert.That(client.Stats.ReceivedBytes, Is.EqualTo(before.ReceivedBytes +
+                    (ulong)LastEnd(observer.Events, SessionEventKind.Receive).WireBytes));
+                Assert.That(client.Stats.DecodedBytes, Is.EqualTo(before.DecodedBytes +
+                    (ulong)LastEnd(observer.Events, SessionEventKind.Decode).DecodedBytes));
+                Assert.That(client.Stats.Faults, Is.EqualTo(before.Faults + 1));
+                AssertPair(observer.Events, SessionEventKind.Apply, false);
+                Assert.That(client.Stats.ObserverErrors, Is.EqualTo((ulong)observer.Events.Count));
+            }
+            finally
+            {
+                DiagValueCodec.Reads = 0;
+                DiagValueCodec.ThrowOnReadCall = 0;
+                DestroyWorld<ClientWorld>(); DestroyWorld<ServerWorld>();
+            }
+        }
+
         private static SessionEvent Event(ulong id, long timestamp = 0, long elapsed = 0,
             SessionEventKind kind = SessionEventKind.Step, SessionEventPhase phase = SessionEventPhase.Point,
             PacketKind packet = (PacketKind)0, Channel channel = default, ulong hash = 0) =>
@@ -461,10 +687,11 @@ namespace UniGame.StaticEcs.Network.Tests
             Assert.That(server.State, Is.EqualTo(SessionState.Established));
         }
 
-        private static void CreateWorld<TWorld>(ChunkOwnerType owner, bool command = false) where TWorld : struct, IWorldType
+        private static void CreateWorld<TWorld>(ChunkOwnerType owner, bool command = false, bool replication = false) where TWorld : struct, IWorldType
         {
             World<TWorld>.Create(WorldConfig.Default());
             World<TWorld>.Types().Tag<ReplicatedTag>();
+            if (replication) World<TWorld>.Types().EntityType<DiagEntity>().Component<DiagValue>();
             if (command)
                 World<TWorld>.Types().Event<CommandAcceptedEvent<DiagCommand>>()
                     .Event<CommandRejectedEvent<DiagCommand>>();
@@ -490,6 +717,32 @@ namespace UniGame.StaticEcs.Network.Tests
             new SchemaBuilder<TWorld>().Command<DiagCommand, DiagCommandCodec, TAuthorizer>(
                 CommandId, 1, CommandCodecId, 4).Freeze();
 
+        private static Schema CommandSchema<TWorld, TCodec, TAuthorizer>()
+            where TWorld : struct, IWorldType
+            where TCodec : struct, ICodec<DiagCommand>
+            where TAuthorizer : struct, ICommandAuthorizer<TWorld, DiagCommand> =>
+            new SchemaBuilder<TWorld>().Command<DiagCommand, TCodec, TAuthorizer>(
+                CommandId, 1, CommandCodecId, 4).Freeze();
+
+        private static Schema ReplicationSchema<TWorld>() where TWorld : struct, IWorldType =>
+            new SchemaBuilder<TWorld>()
+                .EntityKind<DiagEntity>(new TypeId(new Guid(603, 0, 0, new byte[8])))
+                .Component<DiagValue, DiagValueCodec>(new TypeId(new Guid(604, 0, 0, new byte[8])),
+                    1, new CodecId(new Guid(605, 0, 0, new byte[8])), 4)
+                .Freeze();
+
+        private static void AssertPair(List<SessionEvent> events, SessionEventKind kind, bool success)
+        {
+            var pair = events.FindAll(value => value.Kind == kind);
+            Assert.That(pair.Count, Is.GreaterThanOrEqualTo(2), kind.ToString());
+            Assert.That(pair[pair.Count - 2].Phase, Is.EqualTo(SessionEventPhase.Begin));
+            Assert.That(pair[pair.Count - 1].Phase, Is.EqualTo(SessionEventPhase.End));
+            Assert.That(pair[pair.Count - 1].Success, Is.EqualTo(success));
+        }
+
+        private static SessionEvent LastEnd(List<SessionEvent> events, SessionEventKind kind) =>
+            events.FindLast(value => value.Kind == kind && value.Phase == SessionEventPhase.End);
+
         private sealed class RecordingObserver : ISessionObserver
         {
             internal readonly List<SessionEvent> Events = new();
@@ -499,6 +752,16 @@ namespace UniGame.StaticEcs.Network.Tests
         private sealed class ThrowingObserver : ISessionObserver
         {
             public void Observe(in SessionEvent value) => throw new InvalidOperationException("observer");
+        }
+
+        private sealed class RecordingThrowingObserver : ISessionObserver
+        {
+            internal readonly List<SessionEvent> Events = new();
+            public void Observe(in SessionEvent value)
+            {
+                Events.Add(value);
+                throw new InvalidOperationException("observer");
+            }
         }
 
         private sealed class ThrowStepTransport : ITransport, ISteppedTransport
@@ -550,12 +813,54 @@ namespace UniGame.StaticEcs.Network.Tests
                 value = new DiagCommand { Value = BitConverter.ToInt32(source) }; read = 4; return true;
             }
         }
+        private struct ModeCommandCodec : ICodec<DiagCommand>
+        {
+            internal static int ReadMode;
+            public bool TryWrite(in DiagCommand value, Span<byte> destination, out int written) =>
+                new DiagCommandCodec().TryWrite(in value, destination, out written);
+            public bool TryRead(ReadOnlySpan<byte> source, out DiagCommand value, out int read)
+            {
+                if (ReadMode == 2) throw new InvalidOperationException("codec read");
+                if (ReadMode == 1) { value = default; read = 0; return false; }
+                return new DiagCommandCodec().TryRead(source, out value, out read);
+            }
+        }
         private struct ClientCommandAuthorizer : ICommandAuthorizer<ClientWorld, DiagCommand>
         { public bool Authorize(in CommandContext context, in DiagCommand command) => true; }
         private struct ServerCommandAuthorizer : ICommandAuthorizer<ServerWorld, DiagCommand>
         { public bool Authorize(in CommandContext context, in DiagCommand command) => true; }
         private struct RejectCommandAuthorizer : ICommandAuthorizer<ServerWorld, DiagCommand>
         { public bool Authorize(in CommandContext context, in DiagCommand command) => false; }
+        private struct ModeCommandAuthorizer : ICommandAuthorizer<ServerWorld, DiagCommand>
+        {
+            internal static bool Throw;
+            public bool Authorize(in CommandContext context, in DiagCommand command) =>
+                Throw ? throw new InvalidOperationException("authorize") : true;
+        }
+
+        private struct DiagEntity : IEntityType { public byte Id() => 17; }
+        private struct DiagValue : IComponent
+        {
+            public int Value;
+        }
+        private struct DiagValueCodec : ICodec<DiagValue>
+        {
+            internal static int WriteMode;
+            internal static int Reads;
+            internal static int ThrowOnReadCall;
+            public bool TryWrite(in DiagValue value, Span<byte> destination, out int written)
+            {
+                if (WriteMode == 2) throw new InvalidOperationException("codec write");
+                if (WriteMode == 1 || destination.Length < 4) { written = 0; return false; }
+                BitConverter.TryWriteBytes(destination, value.Value); written = 4; return true;
+            }
+            public bool TryRead(ReadOnlySpan<byte> source, out DiagValue value, out int read)
+            {
+                if (++Reads == ThrowOnReadCall) throw new InvalidOperationException("value read");
+                if (source.Length != 4) { value = default; read = 0; return false; }
+                value = new DiagValue { Value = BitConverter.ToInt32(source) }; read = 4; return true;
+            }
+        }
 
         private struct ClientWorld : IWorldType { }
         private struct ServerWorld : IWorldType { }

@@ -49,8 +49,8 @@ namespace UniGame.StaticEcs.Network
         /// <summary>Writes a sealed complete transcript using the version-one little-endian format.</summary>
         public void Save(Stream output)
         {
-            if (output == null) throw new ArgumentNullException(nameof(output));
-            if (!output.CanWrite) throw new ArgumentException("The output stream must be writable.", nameof(output));
+            byte[] section;
+            byte[] header;
             lock (_sync)
             {
                 EnsurePublic();
@@ -59,18 +59,20 @@ namespace UniGame.StaticEcs.Network
                 if (_bytes > int.MaxValue)
                     throw new InvalidOperationException("The tape is too large for the version-one format.");
 
-                var section = new byte[(int)_bytes];
+                section = new byte[(int)_bytes];
                 var offset = 0;
                 for (var i = 0; i < _records.Count; i++) offset += WriteRecord(_records[i], section.AsSpan(offset));
-                var header = new byte[FileHeaderSize];
+                header = new byte[FileHeaderSize];
                 header[0] = 0x53; header[1] = 0x45; header[2] = 0x43; header[3] = 0x53;
                 header[4] = 0x4e; header[5] = 0x45; header[6] = 0x54; header[7] = 0x31;
                 Hashing.Write16(header, 8, 1); Hashing.Write16(header, 10, FileHeaderSize);
                 Hashing.Write32(header, 12, (uint)_records.Count); Hashing.Write64(header, 16, (ulong)_bytes);
                 Hashing.Write64(header, 24, Hashing.XxHash64(section)); Hashing.Write32(header, 32, 1);
-                output.Write(header, 0, header.Length);
-                output.Write(section, 0, section.Length);
             }
+            if (output == null) throw new ArgumentNullException(nameof(output));
+            if (!output.CanWrite) throw new ArgumentException("The output stream must be writable.", nameof(output));
+            output.Write(header, 0, header.Length);
+            output.Write(section, 0, section.Length);
         }
 
         /// <summary>Loads and transactionally validates one complete version-one transcript.</summary>
