@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-SESSION-TRANSFER",
+  "mode": "strict",
+  "state": "Planned",
+  "previousState": null,
+  "role": "complex-worker",
+  "branch": "codex/sve11-network-session-transfer",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-transfer",
+  "plan": {
+    "goal": "Add deterministic established-state command, full-snapshot, acknowledgement, bounded-history and resync transfer to Session.",
+    "acceptance": [
+      "Expose only Enqueue, Capture and NeedsSnapshot on Session and preserve every frozen Core contract.",
+      "Implement exact role/state, packet-field, priority, acknowledgement, retry, sequence and error mappings.",
+      "Own outbox, dispatcher, history and pending snapshot leases transactionally across construction, steps and disposal.",
+      "Use full snapshots only; do not add delta, rollback, prediction, diagnostics, Unity or real transport behavior.",
+      "Pass focused, full package and post-integration Unity EditMode validation."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-session-transfer.md",
+      ".codex/lemmings/contracts/SVE11-network-session-core.md",
+      "ee5968c3001c35353df45035916e9ea0f660a42e"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/Runtime/SessionTransfer.cs",
+      "unigame.staticecs.network/Runtime/SessionTransfer.cs.meta",
+      "unigame.staticecs.network/Runtime/Session.cs",
+      "unigame.staticecs.network/Runtime/SessionProtocol.cs",
+      "unigame.staticecs.network/Tests/Editor/SessionTransferTests.cs",
+      "unigame.staticecs.network/Tests/Editor/SessionTransferTests.cs.meta",
+      "unigame.staticecs.network/README.md"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network/Protocol/**",
+      "unigame.staticecs.network/Runtime/Replication/**",
+      "unigame.staticecs.network/Runtime/BuffersTransport.cs",
+      "unigame.staticecs.network/Runtime/CommandOutbox.cs",
+      "unigame.staticecs.network/Runtime/CommandDispatcher.cs",
+      "unigame.staticecs.network/Runtime/Framing.cs",
+      "unigame.staticecs.network/Runtime/Staging.cs",
+      "unigame.staticecs.network/Runtime/Schema.cs",
+      "unigame.staticecs.network/Runtime/SchemaInvokers.cs",
+      "unigame.staticecs.network/Runtime/History.cs",
+      "unigame.staticecs.network/Runtime/*.asmdef",
+      "unigame.staticecs.network/package.json",
+      "unigame.ai.lemmings/**",
+      "unigame.staticecs.unity/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": null
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": []
+  },
+  "baseSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "Retries or piggyback acknowledgements advance ownership before transport acceptance",
+        "test": "Capacity-one and throwing transports with byte-identical retry and exact high-water assertions"
+      },
+      {
+        "risk": "Malformed direction, sequence, tick, schema or future acknowledgement mutates ECS or retention",
+        "test": "Independent raw-header matrices with world/history/outbox fingerprints"
+      },
+      {
+        "risk": "Capture/apply/resync leaks leases or loses the latest full snapshot",
+        "test": "Supersession, all CaptureResult/ApplyResult mappings, history rejection and disposal ownership"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Focused warnings-as-errors SessionTransfer compile and tests",
+      "Full available package harness",
+      "Exact ownership/meta/no-Sample scans",
+      "lemmings check --all",
+      "Unity EditMode unigame.staticecs.network.tests after integration"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "review": {
+    "taskId": "SVE11-NETWORK-SESSION-TRANSFER",
+    "base": "ee5968c3001c35353df45035916e9ea0f660a42e",
+    "status": "Pending",
+    "cycle": 0,
+    "head": null,
+    "evidence": null
+  },
+  "close": null
+}
