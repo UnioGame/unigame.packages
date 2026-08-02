@@ -20,17 +20,24 @@
       "resource": "Game.Packages integration branch",
       "owner": "orchestrator",
       "scope": "Only the orchestrator integrates an Accepted Session Transfer candidate",
-      "status": "Active"
+      "status": "Released"
     },
     {
       "resource": "sve11-network-session-transfer worktree",
       "owner": "SVE11-NETWORK-SESSION-TRANSFER",
       "scope": "Only the frozen Session Transfer files and tests",
-      "status": "Active"
+      "status": "Released"
     }
   ],
   "close": {
-    "mergeCommits": [],
-    "phaseValidation": []
+    "mergeCommits": [
+      "81cd1bff376b0a6931122d6fe5c4920865d7ead1",
+      "10864112e734c8636bd0ba123e28c852711e519b"
+    ],
+    "phaseValidation": [
+      "Independent gpt-5.6-sol:high cycle-2 review accepted the complete frozen range.",
+      "Focused SessionTransfer tests passed 41/41 and the complete standalone harness reported 143 passed with only the known baseline allocation flake.",
+      "Unity EditMode unigame.staticecs.network.tests passed 144/144 in 3.01 seconds."
+    ]
   }
 }

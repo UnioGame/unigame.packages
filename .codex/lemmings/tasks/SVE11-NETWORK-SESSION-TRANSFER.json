@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-TRANSFER",
   "mode": "strict",
-  "state": "Active",
-  "previousState": "Ready",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-transfer",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-transfer",
@@ -67,7 +67,10 @@
       "Replan freezes domain-aware acknowledgement ordering: NoneTick and command zero are bottom sentinels, then real values advance monotonically.",
       "The restarted Strict baseline review was accepted by gpt-5.6-sol:high at planning head e5071746f6e5e97145ba35a4436e82fc45f00604.",
       "Candidate e2f25f2fb95a56934ec8aefe338a946501748c0d changes exactly seven owned paths; focused SessionTransfer tests pass 28/28 and warnings-as-errors compilation reports 0 warnings/0 errors.",
-      "The standalone package harness reports 130 passed and one pre-existing SessionTests allocation assertion at +24 bytes; the candidate adds no failing transfer test."
+      "The standalone package harness reports 130 passed and one pre-existing SessionTests allocation assertion at +24 bytes; the candidate adds no failing transfer test.",
+      "Strict repair aabdbedc470df05cf5a433ed93e1d81a88eac5f4 changes only SessionTransferTests.cs; focused tests pass 41/41 and the standalone harness reports 143 passed plus the known allocation flake.",
+      "Independent gpt-5.6-sol:high cycle-2 rereview accepted the complete range through aabdbedc470df05cf5a433ed93e1d81a88eac5f4.",
+      "Post-integration Unity EditMode assembly unigame.staticecs.network.tests passed 144/144 in 3.01 seconds with zero failures."
     ]
   },
   "baseSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
@@ -123,5 +126,13 @@
     "head": "aabdbedc470df05cf5a433ed93e1d81a88eac5f4",
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SESSION-TRANSFER-V1.accepted.aabdbed.json"
   },
-  "close": null
+  "close": {
+    "mergeCommit": "10864112e734c8636bd0ba123e28c852711e519b",
+    "integrationValidationPassed": true,
+    "evidence": [
+      "Accepted implementation and test repair integrated as 81cd1bff376b0a6931122d6fe5c4920865d7ead1 and 10864112e734c8636bd0ba123e28c852711e519b.",
+      "Unity compiled the integrated package and completed the EditMode assembly with exit code 0.",
+      "Unity EditMode unigame.staticecs.network.tests passed 144/144 in 3.01 seconds."
+    ]
+  }
 }
