@@ -1,0 +1,17 @@
+{
+  "name": "unigame.staticecs.network.profiler",
+  "rootNamespace": "UniGame.StaticEcs.Network.Profiler",
+  "references": [
+    "unigame.staticecs.network",
+    "Unity.Profiling.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

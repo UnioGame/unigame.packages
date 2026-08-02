@@ -1,0 +1,20 @@
+{
+  "name": "unigame.staticecs.network.profiler.tests",
+  "rootNamespace": "UniGame.StaticEcs.Network.Profiler.Tests",
+  "references": [
+    "unigame.staticecs.network.profiler",
+    "unigame.staticecs.network",
+    "FFS.StaticEcs",
+    "Unity.Profiling.Core"
+  ],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "noEngineReferences": false
+}
