@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-PROFILER",
   "mode": "strict",
-  "state": "Accepted",
-  "previousState": "Review",
+  "state": "Active",
+  "previousState": "Accepted",
   "role": "complex-worker",
   "branch": "codex/sve11-network-profiler",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-profiler",
@@ -49,7 +49,8 @@
       "Independent gpt-5.6-sol:high baseline review accepted the frozen contract at planning head f9e625a.",
       "Candidate c725199fc0f1010b518fb18e5d2b3d594d91b060 changes only the new profiler package root and compiles runtime plus tests with zero Roslyn diagnostics against Unity references.",
       "Static scans find exactly eight markers, ten counters, one public runtime type, complete Unity metas, clean whitespace and no forbidden names.",
-      "Repair 06a4b4ad2caebef15fc3f6827b20cc7f5567b82e adds deterministic static initialization and exact completed-marker evidence for transport and callback exceptions plus sentinels."
+      "Repair 06a4b4ad2caebef15fc3f6827b20cc7f5567b82e adds deterministic static initialization and exact completed-marker evidence for transport and callback exceptions plus sentinels.",
+      "Post-integration Unity compilation exposed a test-only missing direct reference to unigame.staticecs.network.protocol for TypeId and CodecId; runtime profiler assembly compiled."
     ]
   },
   "baseSha": "56b3672539eea260f17ec100ff42841d8f161124",
@@ -87,10 +88,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-PROFILER",
     "base": "56b3672539eea260f17ec100ff42841d8f161124",
-    "status": "Accepted",
-    "cycle": 2,
+    "status": "Pending",
+    "cycle": 3,
     "head": "06a4b4ad2caebef15fc3f6827b20cc7f5567b82e",
-    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-PROFILER-V1.accepted.06a4b4a.json"
+    "evidence": null
   },
   "close": null
 }
