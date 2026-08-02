@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-TRANSFER",
   "mode": "strict",
-  "state": "Planned",
-  "previousState": null,
+  "state": "Replan Required",
+  "previousState": "Planned",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-transfer",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-transfer",
@@ -59,7 +59,8 @@
   "execution": {
     "handoff": null,
     "validationEvidence": [
-      "Baseline review cycle 1 requested exact retry-ack freezing, reachable history/apply tests, callback exception semantics, and public/protocol precedence refinements."
+      "Baseline review cycle 1 requested exact retry-ack freezing, reachable history/apply tests, callback exception semantics, and public/protocol precedence refinements.",
+      "Baseline review cycle 2 resolved the original blockers but requires reliable-intent serialization and exact Capture/history exception scope."
     ]
   },
   "baseSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
