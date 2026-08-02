@@ -54,7 +54,7 @@
   "models": {
     "requested": null,
     "assigned": "gpt-5.6-sol:medium",
-    "actual": null
+    "actual": "gpt-5.6-sol:medium"
   },
   "execution": {
     "handoff": "Implement the frozen transfer contract from exact baseline ee5968c3001c35353df45035916e9ea0f660a42e in the isolated worktree; change only owned paths and create one candidate commit.",
@@ -65,12 +65,14 @@
       "Post-Replan review requires Requested-close interlock, queued versus active resync distinction, and monotonic cross-domain acknowledgement tracking.",
       "Post-Replan cycle 2 found that snapshot acknowledgement ordering must treat NoneTick as a logical bottom sentinel instead of numeric uint max.",
       "Replan freezes domain-aware acknowledgement ordering: NoneTick and command zero are bottom sentinels, then real values advance monotonically.",
-      "The restarted Strict baseline review was accepted by gpt-5.6-sol:high at planning head e5071746f6e5e97145ba35a4436e82fc45f00604."
+      "The restarted Strict baseline review was accepted by gpt-5.6-sol:high at planning head e5071746f6e5e97145ba35a4436e82fc45f00604.",
+      "Candidate e2f25f2fb95a56934ec8aefe338a946501748c0d changes exactly seven owned paths; focused SessionTransfer tests pass 28/28 and warnings-as-errors compilation reports 0 warnings/0 errors.",
+      "The standalone package harness reports 130 passed and one pre-existing SessionTests allocation assertion at +24 bytes; the candidate adds no failing transfer test."
     ]
   },
   "baseSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
   "commits": {
-    "candidate": null,
+    "candidate": "e2f25f2fb95a56934ec8aefe338a946501748c0d",
     "fix": []
   },
   "validation": {
@@ -115,8 +117,8 @@
     "taskId": "SVE11-NETWORK-SESSION-TRANSFER",
     "base": "ee5968c3001c35353df45035916e9ea0f660a42e",
     "status": "Pending",
-    "cycle": 0,
-    "head": null,
+    "cycle": 1,
+    "head": "e2f25f2fb95a56934ec8aefe338a946501748c0d",
     "evidence": null
   },
   "close": null
