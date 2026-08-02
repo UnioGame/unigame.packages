@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-TRANSFER",
   "mode": "strict",
-  "state": "Replan Required",
-  "previousState": "Planned",
+  "state": "Planned",
+  "previousState": "Replan Required",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-transfer",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-transfer",
@@ -63,7 +63,8 @@
       "Baseline review cycle 2 resolved the original blockers but requires reliable-intent serialization and exact Capture/history exception scope.",
       "Replan serializes one active reliable intent, freezes transactional Capture exceptions, and excludes process-level allocator failure recovery from the Session protocol contract.",
       "Post-Replan review requires Requested-close interlock, queued versus active resync distinction, and monotonic cross-domain acknowledgement tracking.",
-      "Post-Replan cycle 2 found that snapshot acknowledgement ordering must treat NoneTick as a logical bottom sentinel instead of numeric uint max."
+      "Post-Replan cycle 2 found that snapshot acknowledgement ordering must treat NoneTick as a logical bottom sentinel instead of numeric uint max.",
+      "Replan freezes domain-aware acknowledgement ordering: NoneTick and command zero are bottom sentinels, then real values advance monotonically."
     ]
   },
   "baseSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
@@ -84,6 +85,10 @@
       {
         "risk": "Requested close or cross-domain snapshot success invalidates an active reliable transfer intent",
         "test": "Same-sequence Disconnect cancellation matrix and monotonic max acknowledgement interleaving"
+      },
+      {
+        "risk": "Numeric max treats NoneTick as newer than every real snapshot acknowledgement",
+        "test": "None-to-zero, None-to-positive, real-to-stale and every successful carrier update the domain-aware tracker"
       },
       {
         "risk": "Malformed direction, sequence, tick, schema or future acknowledgement mutates ECS or retention",
