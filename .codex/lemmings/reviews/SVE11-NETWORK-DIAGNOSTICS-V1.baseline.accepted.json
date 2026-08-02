@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-DIAGNOSTICS-V1",
+  "repoRoot": "D:/Dev/kontora/static.ecs.template/GameClient/Game.Packages",
+  "baselineSha": "14459a615b46826269751f034c3eb53071614a33",
+  "planningHead": "74cb3b1beba08c0c4dde04b60261489e74ca4755",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [],
+  "validation": [
+    "All findings from both prior baseline review cycles are closed.",
+    "Initial Connected/None and per-tag transcript invariants are exact and compatible with Session and ITransport ownership.",
+    "Tape lifecycle, deferred disposal, terminal NDJSON fault accounting, resync cardinality, payload-only decoded bytes and zero-payload record capacity are coherent.",
+    "The declared ownership is sufficient without protocol, asmdef, package manifest or Unity changes."
+  ]
+}

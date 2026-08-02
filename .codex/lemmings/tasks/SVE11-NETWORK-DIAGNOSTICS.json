@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-DIAGNOSTICS",
   "mode": "strict",
-  "state": "Draft",
-  "previousState": null,
+  "state": "Ready",
+  "previousState": "Draft",
   "role": "complex-worker",
   "branch": "codex/sve11-network-diagnostics",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-diagnostics",
@@ -57,16 +57,17 @@
   },
   "models": {
     "requested": null,
-    "assigned": null,
+    "assigned": "gpt-5.6-sol:medium",
     "actual": null
   },
   "execution": {
-    "handoff": null,
+    "handoff": "Implement the frozen diagnostics contract from exact code baseline 14459a615b46826269751f034c3eb53071614a33 in the isolated worktree; change only owned files and create one candidate commit.",
     "validationEvidence": [
       "Read-only diagnostics and profiler discovery completed at exact baseline 14459a615b46826269751f034c3eb53071614a33.",
       "The base diagnostics phase is intentionally Unity-free; the Unity Profiler adapter is a later dependent package.",
       "Baseline review requested exact tape lifecycle and binary layout, terminal logger fault policy, role-specific resync cardinality and payload-only decoded byte accounting; the contract now freezes all five.",
-      "Cycle-2 review requested initial transport state and tag-specific transcript invariants; Trace now requires Connected/None and every tag has exact step, flags, channel and payload rules."
+      "Cycle-2 review requested initial transport state and tag-specific transcript invariants; Trace now requires Connected/None and every tag has exact step, flags, channel and payload rules.",
+      "Independent gpt-5.6-sol:high baseline review accepted the complete frozen contract at planning head 74cb3b1beba08c0c4dde04b60261489e74ca4755."
     ]
   },
   "baseSha": "14459a615b46826269751f034c3eb53071614a33",
