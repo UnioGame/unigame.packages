@@ -24,7 +24,7 @@
       "resource": "sve11-network-profiler worktree",
       "owner": "SVE11-NETWORK-PROFILER",
       "scope": "Only the new optional profiler package",
-      "status": "Pending"
+      "status": "Active"
     }
   ],
   "close": {
