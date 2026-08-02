@@ -61,7 +61,8 @@
     "validationEvidence": [
       "Baseline review cycle 1 requested exact retry-ack freezing, reachable history/apply tests, callback exception semantics, and public/protocol precedence refinements.",
       "Baseline review cycle 2 resolved the original blockers but requires reliable-intent serialization and exact Capture/history exception scope.",
-      "Replan serializes one active reliable intent, freezes transactional Capture exceptions, and excludes process-level allocator failure recovery from the Session protocol contract."
+      "Replan serializes one active reliable intent, freezes transactional Capture exceptions, and excludes process-level allocator failure recovery from the Session protocol contract.",
+      "Post-Replan review requires Requested-close interlock, queued versus active resync distinction, and monotonic cross-domain acknowledgement tracking."
     ]
   },
   "baseSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
@@ -78,6 +79,10 @@
       {
         "risk": "A new higher-priority reliable intent steals the uncommitted sequence of a failed send",
         "test": "Failed batch then resync and failed Ack then command/resync retain one active reliable intent until commit"
+      },
+      {
+        "risk": "Requested close or cross-domain snapshot success invalidates an active reliable transfer intent",
+        "test": "Same-sequence Disconnect cancellation matrix and monotonic max acknowledgement interleaving"
       },
       {
         "risk": "Malformed direction, sequence, tick, schema or future acknowledgement mutates ECS or retention",

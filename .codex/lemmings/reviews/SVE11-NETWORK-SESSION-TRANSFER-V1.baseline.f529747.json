@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-SESSION-TRANSFER-V1",
+  "repoRoot": "D:/Dev/kontora/static.ecs.template/GameClient/Game.Packages",
+  "baselineSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
+  "planningHead": "f529747ff64c9970e1359dffa230b8bdbddea2bd",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [
+    "Freeze cancellation or completion of an active failed transfer intent when local or remote Requested close requires Disconnect.",
+    "Distinguish queued resync cancellation from active attempted resync sequence preservation.",
+    "Track acknowledgements carried by independently ordered packets with monotonic max semantics."
+  ],
+  "validation": [
+    "The post-Replan proposal resolved transactional Capture exceptions, default-history allocator scope, and gameplay reliable-intent serialization.",
+    "Re-audited planning head f529747ff64c9970e1359dffa230b8bdbddea2bd against the frozen baseline and accepted contracts.",
+    "git diff --check and lemmings check --all passed."
+  ]
+}
