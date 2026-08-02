@@ -213,6 +213,66 @@ namespace UniGame.StaticEcs.Network.Tests
             }
         }
 
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        public void ActiveResyncRequestedCloseCancelsRetryAndReusesReliableSequence(int closeMode)
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, true, false, true);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, true, false, true);
+            var authority = World<ServerWorld>.NewEntityInChunk<TestEntity>(Chunk);
+            authority.Set<ReplicatedTag>();
+            authority.Set(new TransferValue { Value = 1 });
+            WireTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            using var client = new Session<ClientWorld>(ClientConfig(), ValueSchema<ClientWorld>(), clientTransport);
+            using var server = new Session<ServerWorld>(ServerConfig(), ValueSchema<ServerWorld>(), serverTransport);
+            try
+            {
+                PumpEstablished(client, server);
+                server.Capture(0);
+                World<ClientWorld>.NewEntityByGID<TestEntity>(authority.GID);
+                server.Step(3);
+                clientTransport.ReturnFalseNextSend = true;
+                AssertFlag(client.Step(3), StepResult.Received);
+                var failedResync = clientTransport.Attempts.Last();
+                Assert.That(Header(failedResync.Bytes).Kind, Is.EqualTo(PacketKind.ResyncRequest));
+                Assert.That(Header(failedResync.Bytes).PacketSequence, Is.EqualTo(3));
+
+                if (closeMode != 1) client.Close();
+                if (closeMode != 0) server.Close();
+
+                if (closeMode == 0)
+                {
+                    AssertFlag(client.Step(4), StepResult.Sent);
+                    var disconnect = Header(clientTransport.Attempts.Last().Bytes);
+                    Assert.That(disconnect.Kind, Is.EqualTo(PacketKind.Disconnect));
+                    Assert.That(disconnect.PacketSequence, Is.EqualTo(3));
+                }
+                else
+                {
+                    AssertFlag(server.Step(4), StepResult.Sent);
+                    var attempts = clientTransport.Attempts.Count;
+                    var clientStep = client.Step(4);
+                    AssertFlag(clientStep, StepResult.Received);
+                    Assert.That(clientTransport.Attempts.Count, Is.GreaterThanOrEqualTo(attempts));
+                    Assert.That(clientTransport.Attempts.Count(attempt =>
+                        Header(attempt.Bytes).Kind == PacketKind.ResyncRequest), Is.EqualTo(1));
+                    if (closeMode == 2)
+                    {
+                        var disconnect = Header(clientTransport.Attempts.Last().Bytes);
+                        Assert.That(disconnect.Kind, Is.EqualTo(PacketKind.Disconnect));
+                        Assert.That(disconnect.PacketSequence, Is.EqualTo(3));
+                    }
+                }
+                Assert.That(failedResync.Alias.IsValid, Is.False);
+            }
+            finally
+            {
+                DestroyWorld<ClientWorld>();
+                DestroyWorld<ServerWorld>();
+            }
+        }
+
         [Test]
         public void ServerDispatcherConstructionFailureDoesNotTakeTransportOwnership()
         {
@@ -267,10 +327,91 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
+        public void CaptureThrowPreservesOlderPendingSnapshotAndRetryReplacesIt()
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, true, false, true);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, true, false, true);
+            var authority = World<ServerWorld>.NewEntityInChunk<TestEntity>(Chunk);
+            authority.Set<ReplicatedTag>();
+            authority.Set(new TransferValue { Value = 1 });
+            WireTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            using var client = new Session<ClientWorld>(ClientConfig(), ValueSchema<ClientWorld>(), clientTransport);
+            using var server = new Session<ServerWorld>(ServerConfig(), ValueSchema<ServerWorld>(), serverTransport);
+            try
+            {
+                PumpEstablished(client, server);
+                Assert.That(server.Capture(0), Is.EqualTo(CaptureResult.Success));
+                authority.Set(new TransferValue { Value = 2 });
+                TransferValueCodec.ThrowWrite = true;
+                Assert.Throws<TransferTestException>(() => server.Capture(1));
+                Assert.That(server.History.TryGet(0, out _), Is.EqualTo(HistoryLookup.Found));
+                Assert.That(server.History.TryGet(1, out _), Is.EqualTo(HistoryLookup.NotYetSeen));
+                TransferValueCodec.ThrowWrite = false;
+                AssertFlag(server.Step(3), StepResult.Sent);
+                Assert.That(Header(serverTransport.Attempts.Last().Bytes).ServerTick, Is.EqualTo(0));
+                AssertFlag(client.Step(3), StepResult.Received);
+                Assert.That(client.History.TryGet(0, out _), Is.EqualTo(HistoryLookup.Found));
+                Assert.That(server.Capture(1), Is.EqualTo(CaptureResult.Success));
+                AssertFlag(server.Step(4), StepResult.Sent);
+                Assert.That(Header(serverTransport.Attempts.Last().Bytes).ServerTick, Is.EqualTo(1));
+            }
+            finally
+            {
+                TransferValueCodec.ThrowWrite = false;
+                DestroyWorld<ClientWorld>();
+                DestroyWorld<ServerWorld>();
+            }
+        }
+
+        [TestCase(1)]
+        [TestCase(2)]
+        public void DispatchThrowCommitsOnlyEarlierCommandsAndNeverRetries(int throwOnCall)
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, false);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, true, true);
+            var accepted = World<ServerWorld>.RegisterEventReceiver<CommandAcceptedEvent<TransferCommand>>();
+            WireTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            using var client = new Session<ClientWorld>(ClientConfig(), CommandSchema<ClientWorld, ClientAuthorizer>(), clientTransport);
+            using var server = new Session<ServerWorld>(ServerConfig(), CommandSchema<ServerWorld, ThrowAuthorizer>(), serverTransport);
+            try
+            {
+                PumpEstablished(client, server);
+                ThrowAuthorizer.Calls = 0;
+                ThrowAuthorizer.ThrowOnCall = throwOnCall;
+                var first = new TransferCommand { Value = 1 };
+                var second = new TransferCommand { Value = 2 };
+                client.Enqueue(in first, 1);
+                client.Enqueue(in second, 2);
+                client.Step(3);
+                var sentBefore = serverTransport.Attempts.Count;
+                Assert.Throws<TransferTestException>(() => server.Step(3));
+                Assert.That(server.State, Is.EqualTo(SessionState.Faulted));
+                Assert.That(server.Error, Is.EqualTo(SessionError.Topology));
+                Assert.That(server.Reason, Is.Null);
+                var acceptedCount = 0;
+                foreach (var _ in accepted) acceptedCount++;
+                Assert.That(acceptedCount, Is.EqualTo(throwOnCall - 1));
+                Assert.That(serverTransport.Attempts.Count, Is.EqualTo(sentBefore));
+                Assert.That(serverTransport.LastReceiveAlias.IsValid, Is.False);
+                Assert.That(server.Step(4), Is.EqualTo(StepResult.None));
+                Assert.That(ThrowAuthorizer.Calls, Is.EqualTo(throwOnCall));
+            }
+            finally
+            {
+                ThrowAuthorizer.Calls = 0;
+                ThrowAuthorizer.ThrowOnCall = 0;
+                World<ServerWorld>.DeleteEventReceiver(ref accepted);
+                DestroyWorld<ClientWorld>();
+                DestroyWorld<ServerWorld>();
+            }
+        }
+
+        [Test]
         public void CommandRetryIsByteIdenticalAndRequestedCloseReusesItsSequence()
         {
             CreateWorld<ClientWorld>(ChunkOwnerType.Other, false);
             CreateWorld<ServerWorld>(ChunkOwnerType.Self, true, true);
+            var receiver = World<ServerWorld>.RegisterEventReceiver<CommandAcceptedEvent<TransferCommand>>();
             WireTransport.CreatePair(8, out var clientTransport, out var serverTransport);
             using var client = new Session<ClientWorld>(ClientConfig(), CommandSchema<ClientWorld, ClientAuthorizer>(), clientTransport);
             using var server = new Session<ServerWorld>(ServerConfig(), CommandSchema<ServerWorld, ServerAuthorizer>(), serverTransport);
@@ -297,6 +438,7 @@ namespace UniGame.StaticEcs.Network.Tests
             }
             finally
             {
+                World<ServerWorld>.DeleteEventReceiver(ref receiver);
                 DestroyWorld<ClientWorld>();
                 DestroyWorld<ServerWorld>();
             }
@@ -417,6 +559,131 @@ namespace UniGame.StaticEcs.Network.Tests
         }
 
         [Test]
+        public void ServerSnapshotPreemptsFrozenAckWithoutRewritingItsReliableIntent()
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, false);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, true, true);
+            var receiver = World<ServerWorld>.RegisterEventReceiver<CommandAcceptedEvent<TransferCommand>>();
+            WireTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            using var client = new Session<ClientWorld>(ClientConfig(), CommandSchema<ClientWorld, ClientAuthorizer>(), clientTransport);
+            using var server = new Session<ServerWorld>(ServerConfig(), CommandSchema<ServerWorld, ServerAuthorizer>(), serverTransport);
+            try
+            {
+                PumpEstablished(client, server);
+                var command = new TransferCommand { Value = 5 };
+                client.Enqueue(in command, 2);
+                client.Step(3);
+                serverTransport.ReturnFalseNextSend = true;
+                AssertFlag(server.Step(3), StepResult.Received);
+                var failedAck = serverTransport.Attempts.Last();
+                Assert.That(Header(failedAck.Bytes).Kind, Is.EqualTo(PacketKind.Ack));
+                Assert.That(Header(failedAck.Bytes).PacketSequence, Is.EqualTo(3));
+
+                server.Capture(0);
+                AssertFlag(server.Step(4), StepResult.Sent);
+                var snapshot = Header(serverTransport.Attempts.Last().Bytes);
+                Assert.That(snapshot.Kind, Is.EqualTo(PacketKind.FullSnapshot));
+                Assert.That(snapshot.PacketSequence, Is.EqualTo(1));
+                AssertFlag(client.Step(4), StepResult.Received);
+                var retry = server.Step(5);
+                AssertFlag(retry, StepResult.Received);
+                AssertFlag(retry, StepResult.Sent);
+                Assert.That(serverTransport.Attempts.Last().Bytes, Is.EqualTo(failedAck.Bytes));
+                Assert.That(failedAck.Alias.IsValid, Is.False);
+            }
+            finally
+            {
+                World<ServerWorld>.DeleteEventReceiver(ref receiver);
+                DestroyWorld<ClientWorld>();
+                DestroyWorld<ServerWorld>();
+            }
+        }
+
+        [Test]
+        public void FailedClientAckQueuesCommandAndFreezesStaleTickAcrossNewerSnapshot()
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, false);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, true, true);
+            var receiver = World<ServerWorld>.RegisterEventReceiver<CommandAcceptedEvent<TransferCommand>>();
+            WireTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            using var client = new Session<ClientWorld>(ClientConfig(), CommandSchema<ClientWorld, ClientAuthorizer>(), clientTransport);
+            using var server = new Session<ServerWorld>(ServerConfig(), CommandSchema<ServerWorld, ServerAuthorizer>(), serverTransport);
+            try
+            {
+                PumpEstablished(client, server);
+                server.Capture(0);
+                server.Step(3);
+                clientTransport.ReturnFalseNextSend = true;
+                AssertFlag(client.Step(3), StepResult.Received);
+                var staleAck = clientTransport.Attempts.Last();
+                Assert.That(Header(staleAck.Bytes).Kind, Is.EqualTo(PacketKind.Ack));
+                Assert.That(Header(staleAck.Bytes).AcknowledgedSnapshotTick, Is.EqualTo(0));
+
+                var command = new TransferCommand { Value = 8 };
+                client.Enqueue(in command, 3);
+                server.Capture(1);
+                server.Step(4);
+                var receiveAndRetry = client.Step(4);
+                AssertFlag(receiveAndRetry, StepResult.Received);
+                AssertFlag(receiveAndRetry, StepResult.Sent);
+                Assert.That(clientTransport.Attempts.Last().Bytes, Is.EqualTo(staleAck.Bytes));
+
+                AssertFlag(client.Step(5), StepResult.Sent);
+                var commandHeader = Header(clientTransport.Attempts.Last().Bytes);
+                Assert.That(commandHeader.Kind, Is.EqualTo(PacketKind.CommandBatch));
+                Assert.That(commandHeader.AcknowledgedSnapshotTick, Is.EqualTo(1));
+                AssertFlag(server.Step(5), StepResult.Received);
+                AssertFlag(server.Step(6), StepResult.Received);
+                AssertFlag(client.Step(6), StepResult.Received);
+            }
+            finally
+            {
+                World<ServerWorld>.DeleteEventReceiver(ref receiver);
+                DestroyWorld<ClientWorld>();
+                DestroyWorld<ServerWorld>();
+            }
+        }
+
+        [Test]
+        public void ActiveResyncRemainsByteFrozenAfterARepairingSnapshot()
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, true, false, true);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, true, false, true);
+            var authority = World<ServerWorld>.NewEntityInChunk<TestEntity>(Chunk);
+            authority.Set<ReplicatedTag>();
+            authority.Set(new TransferValue { Value = 1 });
+            WireTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            using var client = new Session<ClientWorld>(ClientConfig(), ValueSchema<ClientWorld>(), clientTransport);
+            using var server = new Session<ServerWorld>(ServerConfig(), ValueSchema<ServerWorld>(), serverTransport);
+            try
+            {
+                PumpEstablished(client, server);
+                server.Capture(0);
+                var conflict = World<ClientWorld>.NewEntityByGID<TestEntity>(authority.GID);
+                server.Step(3);
+                clientTransport.ReturnFalseNextSend = true;
+                client.Step(3);
+                var failedResync = clientTransport.Attempts.Last();
+                Assert.That(Header(failedResync.Bytes).Kind, Is.EqualTo(PacketKind.ResyncRequest));
+
+                conflict.Destroy();
+                authority.Set(new TransferValue { Value = 2 });
+                server.Capture(1);
+                server.Step(4);
+                var repaired = client.Step(4);
+                AssertFlag(repaired, StepResult.Received);
+                AssertFlag(repaired, StepResult.Sent);
+                Assert.That(clientTransport.Attempts.Last().Bytes, Is.EqualTo(failedResync.Bytes));
+                Assert.That(client.History.TryGet(1, out _), Is.EqualTo(HistoryLookup.Found));
+            }
+            finally
+            {
+                DestroyWorld<ClientWorld>();
+                DestroyWorld<ServerWorld>();
+            }
+        }
+
+        [Test]
         public void FutureCommandAcknowledgementFaultsBeforeOutboxMutation()
         {
             CreateWorld<ClientWorld>(ChunkOwnerType.Other, false);
@@ -441,6 +708,158 @@ namespace UniGame.StaticEcs.Network.Tests
             }
             finally
             {
+                DestroyWorld<ClientWorld>();
+                DestroyWorld<ServerWorld>();
+            }
+        }
+
+        [Test]
+        public void SequenceBoundariesRejectExhaustionAndAcceptUnreliableGapsButNotStalePackets()
+        {
+            var domains = new SequenceDomains
+            {
+                ReliableTransmit = uint.MaxValue,
+                UnreliableTransmit = uint.MaxValue
+            };
+            Assert.That(domains.TryNextReliableTransmit(out var reliable), Is.False);
+            Assert.That(reliable, Is.Zero);
+            Assert.That(domains.TryNextUnreliableTransmit(out var unreliable), Is.False);
+            Assert.That(unreliable, Is.Zero);
+
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, false);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, true);
+            WireTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            using var client = new Session<ClientWorld>(ClientConfig(), EmptySchema<ClientWorld>(), clientTransport);
+            using var server = new Session<ServerWorld>(ServerConfig(), EmptySchema<ServerWorld>(), serverTransport);
+            try
+            {
+                PumpEstablished(client, server);
+                server.Capture(0);
+                Assert.That(server.History.TryGet(0, out var captured), Is.EqualTo(HistoryLookup.Found));
+                PacketLease gap = default;
+                Assert.That(SessionProtocol.TryEncodeTransfer(PacketKind.FullSnapshot, Channel.UnreliableSequenced,
+                    server.Epoch, 5, 0, EmptySchema<ServerWorld>().Hash, PacketHeader.NoneTick, 0,
+                    captured.Generated.Span, EmptySchema<ServerWorld>(), out gap), Is.True);
+                serverTransport.TrySend(Channel.UnreliableSequenced, ref gap);
+                AssertFlag(client.Step(3), StepResult.Received);
+                Assert.That(client.State, Is.EqualTo(SessionState.Established));
+                Assert.That(client.History.TryGet(0, out _), Is.EqualTo(HistoryLookup.Found));
+                var attempts = clientTransport.Attempts.Count;
+
+                PacketLease stale = default;
+                Assert.That(SessionProtocol.TryEncodeTransfer(PacketKind.FullSnapshot, Channel.UnreliableSequenced,
+                    server.Epoch, 4, 1, EmptySchema<ServerWorld>().Hash, PacketHeader.NoneTick, 0,
+                    captured.Generated.Span, EmptySchema<ServerWorld>(), out stale), Is.True);
+                serverTransport.TrySend(Channel.UnreliableSequenced, ref stale);
+                AssertFlag(client.Step(4), StepResult.Received);
+                Assert.That(client.State, Is.EqualTo(SessionState.Faulted));
+                Assert.That(client.Error, Is.EqualTo(SessionError.Protocol));
+                Assert.That(clientTransport.Attempts.Count, Is.EqualTo(attempts));
+            }
+            finally
+            {
+                DestroyWorld<ClientWorld>();
+                DestroyWorld<ServerWorld>();
+            }
+        }
+
+        [Test]
+        public void SnapshotAcknowledgementTreatsNoneAsBottomAndRejectsOnlyFutureValues()
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, false);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, true);
+            WireTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            using var client = new Session<ClientWorld>(ClientConfig(), EmptySchema<ClientWorld>(), clientTransport);
+            using var server = new Session<ServerWorld>(ServerConfig(), EmptySchema<ServerWorld>(), serverTransport);
+            try
+            {
+                PumpEstablished(client, server);
+                server.Capture(0);
+                server.Step(3);
+                client.Step(3);
+                Assert.That(Header(clientTransport.Attempts.Last().Bytes).AcknowledgedSnapshotTick, Is.EqualTo(0));
+                AssertFlag(server.Step(4), StepResult.Received);
+
+                server.Capture(5);
+                server.Step(5);
+                client.Step(4);
+                Assert.That(Header(clientTransport.Attempts.Last().Bytes).AcknowledgedSnapshotTick, Is.EqualTo(5));
+                AssertFlag(server.Step(6), StepResult.Received);
+
+                SendSnapshotAck(clientTransport, server.Epoch, 5, 0);
+                AssertFlag(server.Step(7), StepResult.Received);
+                Assert.That(server.State, Is.EqualTo(SessionState.Established));
+                SendSnapshotAck(clientTransport, server.Epoch, 6, 6);
+                AssertFlag(server.Step(8), StepResult.Received);
+                Assert.That(server.State, Is.EqualTo(SessionState.Faulted));
+                Assert.That(server.Error, Is.EqualTo(SessionError.Protocol));
+            }
+            finally
+            {
+                DestroyWorld<ClientWorld>();
+                DestroyWorld<ServerWorld>();
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void FailedCommandKeepsPriorityOverQueuedResyncAndRepairCanCancelOnlyTheQueue(bool repairBeforeCommit)
+        {
+            CreateWorld<ClientWorld>(ChunkOwnerType.Other, true, true, true);
+            CreateWorld<ServerWorld>(ChunkOwnerType.Self, true, true, true);
+            var accepted = World<ServerWorld>.RegisterEventReceiver<CommandAcceptedEvent<TransferCommand>>();
+            var authority = World<ServerWorld>.NewEntityInChunk<TestEntity>(Chunk);
+            authority.Set<ReplicatedTag>();
+            authority.Set(new TransferValue { Value = 1 });
+            WireTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+            using var client = new Session<ClientWorld>(ClientConfig(), ValueCommandSchema<ClientWorld, ClientAuthorizer>(), clientTransport);
+            using var server = new Session<ServerWorld>(ServerConfig(), ValueCommandSchema<ServerWorld, ServerAuthorizer>(), serverTransport);
+            try
+            {
+                PumpEstablished(client, server);
+                var command = new TransferCommand { Value = 7 };
+                client.Enqueue(in command, 1);
+                clientTransport.ReturnFalseNextSend = true;
+                client.Step(3);
+                var failedCommand = clientTransport.Attempts.Last().Bytes;
+
+                server.Capture(0);
+                var conflict = World<ClientWorld>.NewEntityByGID<TestEntity>(authority.GID);
+                server.Step(3);
+                clientTransport.ReturnFalseNextSend = true;
+                AssertFlag(client.Step(4), StepResult.Received);
+                Assert.That(clientTransport.Attempts.Last().Bytes, Is.EqualTo(failedCommand));
+
+                if (repairBeforeCommit)
+                {
+                    conflict.Destroy();
+                    authority.Set(new TransferValue { Value = 2 });
+                    server.Capture(1);
+                    server.Step(4);
+                    clientTransport.ReturnFalseNextSend = true;
+                    AssertFlag(client.Step(5), StepResult.Received);
+                    Assert.That(clientTransport.Attempts.Last().Bytes, Is.EqualTo(failedCommand));
+                    AssertFlag(client.Step(6), StepResult.Sent);
+                    Assert.That(Header(clientTransport.Attempts.Last().Bytes).Kind, Is.EqualTo(PacketKind.CommandBatch));
+                    AssertFlag(client.Step(7), StepResult.Sent);
+                    Assert.That(Header(clientTransport.Attempts.Last().Bytes).Kind, Is.EqualTo(PacketKind.Ack));
+                    var attempts = clientTransport.Attempts.Count;
+                    Assert.That(client.Step(8), Is.EqualTo(StepResult.None));
+                    Assert.That(clientTransport.Attempts.Count, Is.EqualTo(attempts));
+                    Assert.That(clientTransport.Attempts.Count(attempt =>
+                        Header(attempt.Bytes).Kind == PacketKind.ResyncRequest), Is.Zero);
+                }
+                else
+                {
+                    AssertFlag(client.Step(5), StepResult.Sent);
+                    Assert.That(Header(clientTransport.Attempts.Last().Bytes).Kind, Is.EqualTo(PacketKind.CommandBatch));
+                    AssertFlag(client.Step(6), StepResult.Sent);
+                    Assert.That(Header(clientTransport.Attempts.Last().Bytes).Kind, Is.EqualTo(PacketKind.ResyncRequest));
+                }
+            }
+            finally
+            {
+                World<ServerWorld>.DeleteEventReceiver(ref accepted);
                 DestroyWorld<ClientWorld>();
                 DestroyWorld<ServerWorld>();
             }
@@ -558,7 +977,10 @@ namespace UniGame.StaticEcs.Network.Tests
                 Assert.That(client.Error, Is.EqualTo(SessionError.Topology));
                 Assert.That(client.Reason, Is.Null);
                 Assert.That(history.Count, Is.Zero);
+                Assert.That(clientTransport.LastReceiveAlias.IsValid, Is.False);
+                var attempts = clientTransport.Attempts.Count;
                 Assert.That(client.Step(4), Is.EqualTo(StepResult.None));
+                Assert.That(clientTransport.Attempts.Count, Is.EqualTo(attempts));
             }
             finally
             {
@@ -651,6 +1073,26 @@ namespace UniGame.StaticEcs.Network.Tests
                     new CodecId(new Guid(405, 0, 0, new byte[8])), 4)
                 .Freeze();
 
+        private static Schema ValueCommandSchema<TWorld, TAuthorizer>()
+            where TWorld : struct, IWorldType
+            where TAuthorizer : struct, ICommandAuthorizer<TWorld, TransferCommand> =>
+            new SchemaBuilder<TWorld>()
+                .EntityKind<TestEntity>(new TypeId(new Guid(403, 0, 0, new byte[8])))
+                .Component<TransferValue, TransferValueCodec>(
+                    new TypeId(new Guid(404, 0, 0, new byte[8])), 1,
+                    new CodecId(new Guid(405, 0, 0, new byte[8])), 4)
+                .Command<TransferCommand, TransferCommandCodec, TAuthorizer>(CommandId, 1, CommandCodecId, 4)
+                .Freeze();
+
+        private static void SendSnapshotAck(WireTransport transport, uint epoch, uint sequence, uint tick)
+        {
+            PacketLease packet = default;
+            Assert.That(SessionProtocol.TryEncodeTransfer(PacketKind.Ack, Channel.ReliableOrdered,
+                epoch, sequence, PacketHeader.NoneTick, default, tick, 0,
+                ReadOnlySpan<byte>.Empty, null, out packet), Is.True);
+            Assert.That(transport.TrySend(Channel.ReliableOrdered, ref packet), Is.True);
+        }
+
         private static PacketHeader Header(byte[] bytes)
         {
             Assert.That(PacketHeader.TryRead(bytes, out var header), Is.True);
@@ -673,6 +1115,17 @@ namespace UniGame.StaticEcs.Network.Tests
         private struct RejectAuthorizer : ICommandAuthorizer<ServerWorld, TransferCommand>
         {
             public bool Authorize(in CommandContext context, in TransferCommand command) => false;
+        }
+        private struct ThrowAuthorizer : ICommandAuthorizer<ServerWorld, TransferCommand>
+        {
+            internal static int Calls;
+            internal static int ThrowOnCall;
+            public bool Authorize(in CommandContext context, in TransferCommand command)
+            {
+                Calls++;
+                if (Calls == ThrowOnCall) throw new TransferTestException();
+                return true;
+            }
         }
         private struct TransferCommandCodec : ICodec<TransferCommand>
         {
@@ -750,6 +1203,7 @@ namespace UniGame.StaticEcs.Network.Tests
             internal bool ReturnFalseNextSend;
             internal bool ThrowNextSend;
             internal bool TransferThenThrowNextSend;
+            internal PacketLease LastReceiveAlias;
             internal int DisposeCount;
 
             public TransportState State { get; private set; }
@@ -808,6 +1262,7 @@ namespace UniGame.StaticEcs.Network.Tests
                 var queued = _incoming.Dequeue();
                 channel = queued.Channel;
                 packet = queued.Take();
+                LastReceiveAlias = packet;
                 return true;
             }
 
