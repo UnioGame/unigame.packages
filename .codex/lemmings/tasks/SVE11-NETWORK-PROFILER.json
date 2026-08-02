@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-PROFILER",
   "mode": "strict",
-  "state": "Review",
-  "previousState": "Active",
+  "state": "Accepted",
+  "previousState": "Review",
   "role": "complex-worker",
   "branch": "codex/sve11-network-profiler",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-profiler",
@@ -52,7 +52,8 @@
       "Repair 06a4b4ad2caebef15fc3f6827b20cc7f5567b82e adds deterministic static initialization and exact completed-marker evidence for transport and callback exceptions plus sentinels.",
       "Post-integration Unity compilation exposed a test-only missing direct reference to unigame.staticecs.network.protocol for TypeId and CodecId; runtime profiler assembly compiled.",
       "Independent gpt-5.6-sol:high cycle-3 review accepted the full range through 6993ddc99f04b309ea821644601ccbda372f288b with no findings.",
-      "Unity EditMode integration run compiled and executed all five profiler tests: four passed and RealSessionsPublishExactPositiveCounterDeltas exposed a test schedule error at replica lookup because a reliable command acknowledgement precedes the queued unreliable snapshot."
+      "Unity EditMode integration run compiled and executed all five profiler tests: four passed and RealSessionsPublishExactPositiveCounterDeltas exposed a test schedule error at replica lookup because a reliable command acknowledgement precedes the queued unreliable snapshot.",
+      "Independent gpt-5.6-sol:high cycle-4 review accepted the full range through c9f20087ba0507481ad44b472f52c557b61ef9e2 with no findings."
     ]
   },
   "baseSha": "56b3672539eea260f17ec100ff42841d8f161124",
@@ -92,10 +93,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-PROFILER",
     "base": "56b3672539eea260f17ec100ff42841d8f161124",
-    "status": "Pending",
+    "status": "Accepted",
     "cycle": 4,
     "head": "c9f20087ba0507481ad44b472f52c557b61ef9e2",
-    "evidence": null
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-PROFILER-V1.accepted.c9f2008.json"
   },
   "close": null
 }
