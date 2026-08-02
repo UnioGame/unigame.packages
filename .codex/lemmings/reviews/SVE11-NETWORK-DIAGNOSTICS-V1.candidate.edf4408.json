@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-DIAGNOSTICS-V1",
+  "repoRoot": "D:/Dev/kontora/static.ecs.template/GameClient/Game.Packages",
+  "baseSha": "14459a615b46826269751f034c3eb53071614a33",
+  "headSha": "edf4408982fdd2e9f6cbae10d784fbc17e52ba27",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [
+    "Validate TrySend/TryReceive record steps against the most recent successful BeginStep both during Load and replay.",
+    "Detect unconsumed records on ReplayTransport.Dispose even when a consumed record exposed TransportState.Faulted; distinguish local mismatch from recorded state.",
+    "Emit State points only for actual transitions during simultaneous close.",
+    "Expand focused acceptance tests across required Session seams/stats and trace/replay corruption, exception, lifecycle and transcript variants."
+  ],
+  "validation": [
+    "Allowed-path ownership and Unity metas are compliant.",
+    "The base asmdef is unchanged and Unity-free; forbidden-name, privacy, diff-check and lemmings scans are clean.",
+    "Independent review inspected exact range 14459a615b46826269751f034c3eb53071614a33..edf4408982fdd2e9f6cbae10d784fbc17e52ba27."
+  ]
+}
