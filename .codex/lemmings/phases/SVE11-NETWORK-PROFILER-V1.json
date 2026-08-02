@@ -3,15 +3,15 @@
   "phaseId": "SVE11-NETWORK-PROFILER-V1",
   "baselineSha": "56b3672539eea260f17ec100ff42841d8f161124",
   "integrationBranch": "codex/sve11-network-package",
-  "contractsFrozen": false,
+  "contractsFrozen": true,
   "contracts": [
     ".codex/lemmings/contracts/SVE11-network-profiler.md",
     ".codex/lemmings/contracts/SVE11-network-diagnostics.md"
   ],
   "baselineReview": {
-    "status": "Pending",
+    "status": "Accepted",
     "reviewerModel": "gpt-5.6-sol:high",
-    "evidence": null
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-PROFILER-V1.baseline.accepted.json"
   },
   "leases": [
     {

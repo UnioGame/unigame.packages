@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-PROFILER",
   "mode": "strict",
-  "state": "Refining",
-  "previousState": "Draft",
+  "state": "Ready",
+  "previousState": "Refining",
   "role": "complex-worker",
   "branch": "codex/sve11-network-profiler",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-profiler",
@@ -37,15 +37,16 @@
   },
   "models": {
     "requested": null,
-    "assigned": null,
+    "assigned": "gpt-5.6-sol:medium",
     "actual": null
   },
   "execution": {
-    "handoff": null,
+    "handoff": "Implement the frozen optional profiler package from exact code baseline 56b3672539eea260f17ec100ff42841d8f161124; change only the new package root and create one candidate commit.",
     "validationEvidence": [
       "Read-only profiler discovery and independent API audit completed at exact baseline 56b3672539eea260f17ec100ff42841d8f161124.",
       "Unity 6000.3.20f1 and com.unity.profiling.core 1.0.3 locally confirm the required marker, counter and recorder APIs.",
-      "The draft rejects a synthetic Drops metric and freezes honest Declines semantics without changing core diagnostics."
+      "The draft rejects a synthetic Drops metric and freezes honest Declines semantics without changing core diagnostics.",
+      "Independent gpt-5.6-sol:high baseline review accepted the frozen contract at planning head f9e625a."
     ]
   },
   "baseSha": "56b3672539eea260f17ec100ff42841d8f161124",
