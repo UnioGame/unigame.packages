@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-PROFILER",
   "mode": "strict",
-  "state": "Active",
-  "previousState": "Ready",
+  "state": "Review",
+  "previousState": "Active",
   "role": "complex-worker",
   "branch": "codex/sve11-network-profiler",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-profiler",
@@ -38,7 +38,7 @@
   "models": {
     "requested": null,
     "assigned": "gpt-5.6-sol:medium",
-    "actual": null
+    "actual": "gpt-5.6-sol:medium"
   },
   "execution": {
     "handoff": "Implement the frozen optional profiler package from exact code baseline 56b3672539eea260f17ec100ff42841d8f161124; change only the new package root and create one candidate commit.",
@@ -46,12 +46,14 @@
       "Read-only profiler discovery and independent API audit completed at exact baseline 56b3672539eea260f17ec100ff42841d8f161124.",
       "Unity 6000.3.20f1 and com.unity.profiling.core 1.0.3 locally confirm the required marker, counter and recorder APIs.",
       "The draft rejects a synthetic Drops metric and freezes honest Declines semantics without changing core diagnostics.",
-      "Independent gpt-5.6-sol:high baseline review accepted the frozen contract at planning head f9e625a."
+      "Independent gpt-5.6-sol:high baseline review accepted the frozen contract at planning head f9e625a.",
+      "Candidate c725199fc0f1010b518fb18e5d2b3d594d91b060 changes only the new profiler package root and compiles runtime plus tests with zero Roslyn diagnostics against Unity references.",
+      "Static scans find exactly eight markers, ten counters, one public runtime type, complete Unity metas, clean whitespace and no forbidden names."
     ]
   },
   "baseSha": "56b3672539eea260f17ec100ff42841d8f161124",
   "commits": {
-    "candidate": null,
+    "candidate": "c725199fc0f1010b518fb18e5d2b3d594d91b060",
     "fix": []
   },
   "validation": {
@@ -84,7 +86,7 @@
     "base": "56b3672539eea260f17ec100ff42841d8f161124",
     "status": "Pending",
     "cycle": 1,
-    "head": null,
+    "head": "c725199fc0f1010b518fb18e5d2b3d594d91b060",
     "evidence": null
   },
   "close": null
