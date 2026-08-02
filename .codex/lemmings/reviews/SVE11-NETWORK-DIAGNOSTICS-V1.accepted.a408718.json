@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-DIAGNOSTICS-V1",
+  "repoRoot": "D:/Dev/kontora/static.ecs.template/GameClient/Game.Packages",
+  "baseSha": "14459a615b46826269751f034c3eb53071614a33",
+  "headSha": "a4087181e9f0945d373796a79f602436f9621a63",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "validation": [
+    "ReplayTape.Save lifecycle precedence and replay step, truncation and State-transition invariants are closed.",
+    "Success, failure and exception seams, observer isolation, exact counters, fingerprints and both resync roles are covered.",
+    "The complete 40/24-byte binary golden and systematic malformed-record matrix pass.",
+    "Public API, ownership, privacy, documentation, Unity-free asmdef, diff-check, forbidden-name and lemmings scans are clean.",
+    "Focused diagnostics/replay tests pass 43/43 and the full standalone package reflection harness passes 186/186 with warnings-as-errors compilation clean."
+  ],
+  "blockers": []
+}
