@@ -12,6 +12,8 @@ Transport-neutral protocol and replication foundations for deterministic Static 
 - Captures deterministic full snapshots from tagged authority entities and applies them through retained AOT-safe invokers to an exact replica ledger.
 - Preflights the complete snapshot, mapped topology, physical occupants, segment kinds, schema records, flags, codecs, and relation targets before any ECS mutation.
 - Negotiates schema, tick rate, payload limits, epoch, peer identity, and canonical chunk topology through a deterministic stepped session handshake.
+- Transfers ordered client commands, complete server snapshots, cumulative acknowledgements, and bounded resynchronization requests after admission.
+- Retains independent canonical server-capture and client-apply records in bounded tick histories.
 
 ## Usage
 
@@ -84,8 +86,23 @@ if (client.State == SessionState.Established)
 {
     var epoch = client.Epoch;
     var trustedPeer = client.PeerId;
+
+    var move = new MoveCommand { X = 1 };
+    client.Enqueue(in move, clientTick);
 }
 ```
+
+An established client retains enqueued commands until the server cumulatively acknowledges deterministic dispatch. An established server starts with `NeedsSnapshot` set and sets it again after a valid resynchronization request. Call `Capture` with strictly increasing authoritative ticks; each successful capture replaces any older unsent snapshot while history keeps an independent canonical copy.
+
+```csharp
+if (server.NeedsSnapshot)
+    server.Capture(serverTick);
+
+client.Step(stepIndex);
+server.Step(stepIndex);
+```
+
+Each step receives at most one packet and attempts at most one send. Client send priority is resynchronization, command batch, then acknowledgement. Server send priority is full snapshot, then acknowledgement. A failed reliable send freezes the complete packet intent and retries byte-identically; a local or remote requested close cancels that transfer intent and reuses its uncommitted sequence for the orderly disconnect. Full snapshots use an independent unreliable-sequenced domain and may skip stale packets.
 
 Servers use `SessionConfig.Server` with a non-zero epoch, trusted peer id, exact tick rate, and canonical authority chunk map. A rejecting server remains `Handshaking` while a false send retries the same `HelloAck`. After the rejection is queued it enters `Closing` with a null public result. The client must consume and publish that result, then dispose its session; a later server step observes `RemoteClosed`, publishes the same result, and closes. Do not dispose the rejecting server immediately after enqueue because `MemoryTransport` would drain the queued rejection. `Close()` requests an orderly disconnect. A session validates its scope again at send, receive, and established-step seams, so chunk ownership changes become terminal topology failures before replication work proceeds.
 
@@ -122,7 +139,10 @@ On a replica world, stage the decoded `FullSnapshot` with the equivalent replica
 - Session wire and decoded limits are negotiated independently. Packet framing is checked against local configured limits before payload decode, and the accepted limits cannot exceed either endpoint's advertisement.
 - Session transports must be connected, error-free, and implement `ISteppedTransport`; a successfully constructed session owns and disposes the transport.
 - Session step indices are strictly increasing. Each step begins the transport exactly once, receives at most one packet, and sends at most one packet. Failed sends retry the same semantic control packet and sequence.
-- Only control packets are accepted during the handshake. Established sessions reserve gameplay packet kinds for later orchestration and do not capture snapshots, apply replicas, or dispatch commands automatically.
+- Only control packets are accepted during the handshake. Established sessions dispatch authorized commands, apply complete snapshots, exchange cumulative acknowledgements, and request full resynchronization without delta compression, prediction, rollback, or replay.
+- `Enqueue` is available only to established clients. `Capture` is available only to established servers with valid authority collaborators; zero is a valid first tick and `NoneTick` is reserved.
+- Acknowledgements are cumulative and may be stale or duplicated. Future command or snapshot acknowledgements are protocol failures and do not mutate retained state.
+- Returned local snapshot conflicts queue a bounded resynchronization request. Terminal schema, protocol, or topology apply failures do not advance snapshot history or acknowledgement state.
 - Version one supplies deterministic framing, not security. Nonces, epoch, CRC32, and xxHash do not authenticate peers, provide confidentiality, or prevent replay, and the client nonce is not echoed by the wire layout. Use a dedicated authenticated and integrity-protected transport across an untrusted boundary, and generate non-zero server nonce and epoch values that are not reused across live or restarted sessions.
 - Packet ownership handoffs must be serialized; the handle does not permit concurrent mutation through borrowed aliases.
 - Version one accepts only `NoOpTransform` with transform id zero.

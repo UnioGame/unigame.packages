@@ -56,8 +56,24 @@ namespace UniGame.StaticEcs.Network
         internal bool IsNextReliableReceive(uint sequence) =>
             ReliableReceive != uint.MaxValue && sequence == ReliableReceive + 1;
 
+        internal bool TryNextUnreliableTransmit(out uint sequence)
+        {
+            if (UnreliableTransmit == uint.MaxValue)
+            {
+                sequence = 0;
+                return false;
+            }
+            sequence = UnreliableTransmit + 1;
+            return true;
+        }
+
+        internal bool IsNewerUnreliableReceive(uint sequence) =>
+            sequence != 0 && sequence > UnreliableReceive;
+
         internal void CommitReliableTransmit(uint sequence) => ReliableTransmit = sequence;
         internal void CommitReliableReceive(uint sequence) => ReliableReceive = sequence;
+        internal void CommitUnreliableTransmit(uint sequence) => UnreliableTransmit = sequence;
+        internal void CommitUnreliableReceive(uint sequence) => UnreliableReceive = sequence;
     }
 
     internal readonly struct PendingControl
@@ -191,6 +207,34 @@ namespace UniGame.StaticEcs.Network
             {
                 ArrayPool<byte>.Shared.Return(rented);
             }
+        }
+
+        internal static bool TryEncodeTransfer(
+            PacketKind kind,
+            Channel channel,
+            uint epoch,
+            uint sequence,
+            uint serverTick,
+            TypeId schemaHash,
+            uint acknowledgedSnapshotTick,
+            uint acknowledgedCommandSequence,
+            ReadOnlySpan<byte> payload,
+            Schema schema,
+            out PacketLease packet)
+        {
+            var header = new PacketHeader
+            {
+                Kind = kind,
+                Flags = channel == Channel.ReliableOrdered ? PacketFlags.ReliableOrdered : (PacketFlags)0,
+                SessionEpoch = epoch,
+                PacketSequence = sequence,
+                ServerTick = serverTick,
+                BaselineTick = PacketHeader.NoneTick,
+                AcknowledgedSnapshotTick = acknowledgedSnapshotTick,
+                SchemaHash = schemaHash,
+                AcknowledgedCommandSequence = acknowledgedCommandSequence
+            };
+            return PacketFraming.TryEncode(header, payload, ControlTransform, schema, out packet);
         }
 
         internal static TransportTerminalKind MapTransport(TransportState state, TransportError error)

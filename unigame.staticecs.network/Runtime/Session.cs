@@ -51,15 +51,19 @@ namespace UniGame.StaticEcs.Network
 
             ReplicaScope<TWorld> scope = null;
             Replicator<TWorld> replicator = null;
+            TickHistory history = null;
             try
             {
                 if (config.Role == SessionRole.Server)
                 {
+                    _dispatcher = new CommandDispatcher<TWorld>(schema);
                     scope = new ReplicaScope<TWorld>(ScopeRole.Authority, config.Chunks);
                     if (!scope.ValidateCurrent())
                         throw new InvalidOperationException("Server authority topology is not currently valid.");
                     replicator = new Replicator<TWorld>(schema, scope);
                 }
+
+                history = new TickHistory();
 
                 _config = config;
                 _schema = schema;
@@ -67,8 +71,10 @@ namespace UniGame.StaticEcs.Network
                 _steppedTransport = stepped;
                 _scope = scope;
                 _replicator = replicator;
+                _history = history;
                 scope = null;
                 replicator = null;
+                history = null;
                 _state = SessionState.Handshaking;
                 _error = SessionError.None;
                 _stage = config.Role == SessionRole.Client
@@ -86,6 +92,7 @@ namespace UniGame.StaticEcs.Network
             {
                 replicator?.Dispose();
                 scope?.Dispose();
+                history?.Dispose();
             }
         }
 
@@ -139,7 +146,10 @@ namespace UniGame.StaticEcs.Network
                 if (received.IsValid) received.Dispose();
             }
 
-            if (!IsTerminal && TryGetPending(out var pending))
+            if (!IsTerminal && _state == SessionState.Established && TrySendTransfer(ref result))
+            {
+            }
+            else if (!IsTerminal && TryGetPending(out var pending))
             {
                 if (!_sequences.TryNextReliableTransmit(out var sequence))
                 {
@@ -181,6 +191,7 @@ namespace UniGame.StaticEcs.Network
                 return;
             }
             if (_state != SessionState.Established) return;
+            CancelTransferIntent();
             _state = SessionState.Closing;
             _stage = SessionStage.RequestedClose;
             _requestedIntent = true;
@@ -203,6 +214,7 @@ namespace UniGame.StaticEcs.Network
 
         private void ProcessReceived(Channel channel, in PacketLease packet)
         {
+            if (_state == SessionState.Established && TryProcessTransfer(channel, in packet)) return;
             if (channel != Channel.ReliableOrdered)
             {
                 Fault(SessionError.Protocol, DisconnectReason.ProtocolViolation);
@@ -408,6 +420,7 @@ namespace UniGame.StaticEcs.Network
             var reason = staged.Disconnect.Reason;
             if (reason == DisconnectReason.Requested)
             {
+                CancelTransferIntent();
                 _requestedReceived = true;
                 if (_requestedSent)
                 {
@@ -537,27 +550,33 @@ namespace UniGame.StaticEcs.Network
             _result = ConnectResult.Accepted;
             _reason = null;
             _wasEstablished = true;
+            OnTransferEstablished();
         }
 
         private bool TryCreateReplicaScope(ReadOnlySpan<ChunkMapping> chunks)
         {
             ReplicaScope<TWorld> scope = null;
             Replicator<TWorld> replicator = null;
+            CommandOutbox<TWorld> outbox = null;
             try
             {
                 scope = new ReplicaScope<TWorld>(ScopeRole.Replica, chunks);
                 if (!scope.ValidateCurrent()) return false;
                 replicator = new Replicator<TWorld>(_schema, scope);
+                outbox = new CommandOutbox<TWorld>(_schema);
                 _scope = scope;
                 _replicator = replicator;
+                _outbox = outbox;
                 scope = null;
                 replicator = null;
+                outbox = null;
                 return true;
             }
             finally
             {
                 replicator?.Dispose();
                 scope?.Dispose();
+                outbox?.Dispose();
             }
         }
 
@@ -643,6 +662,7 @@ namespace UniGame.StaticEcs.Network
 
         private void ReleaseCollaborators()
         {
+            ReleaseTransferCollaborators();
             var replicator = _replicator;
             var scope = _scope;
             _replicator = null;
