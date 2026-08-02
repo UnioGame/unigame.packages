@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-PROFILER-V1",
+  "baseSha": "56b3672539eea260f17ec100ff42841d8f161124",
+  "headSha": "06a4b4ad2caebef15fc3f6827b20cc7f5567b82e",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "validation": [
+    "Explicit type initialization guarantees registration of all eight markers and ten counters before first observer construction completes.",
+    "Exact completed sample counts cover transport false/throw, callback throw, success and sentinel operations after frame finalization.",
+    "Runtime allocation/shared-state shape, package dependencies, public API, documentation, metas and ownership conform to the frozen contract.",
+    "Unity-reference overlay compilation reports zero diagnostics and git diff --check is clean."
+  ],
+  "blockers": []
+}
