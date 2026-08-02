@@ -3,6 +3,7 @@
   "rootNamespace": "UniGame.StaticEcs.Network.Profiler.Tests",
   "references": [
     "unigame.staticecs.network.profiler",
+    "unigame.staticecs.network.protocol",
     "unigame.staticecs.network",
     "FFS.StaticEcs",
     "Unity.Profiling.Core"
