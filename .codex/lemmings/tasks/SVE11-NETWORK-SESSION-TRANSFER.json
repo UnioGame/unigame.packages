@@ -116,10 +116,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-SESSION-TRANSFER",
     "base": "ee5968c3001c35353df45035916e9ea0f660a42e",
-    "status": "Pending",
+    "status": "ChangesRequested",
     "cycle": 1,
     "head": "e2f25f2fb95a56934ec8aefe338a946501748c0d",
-    "evidence": null
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-SESSION-TRANSFER-V1.candidate.e2f25f2.json"
   },
   "close": null
 }
