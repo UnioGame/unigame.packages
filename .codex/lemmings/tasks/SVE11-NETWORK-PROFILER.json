@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-PROFILER",
   "mode": "strict",
-  "state": "ChangesRequested",
-  "previousState": "Review",
+  "state": "Active",
+  "previousState": "ChangesRequested",
   "role": "complex-worker",
   "branch": "codex/sve11-network-profiler",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-profiler",
@@ -84,10 +84,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-PROFILER",
     "base": "56b3672539eea260f17ec100ff42841d8f161124",
-    "status": "ChangesRequested",
-    "cycle": 1,
+    "status": "Pending",
+    "cycle": 2,
     "head": "c725199fc0f1010b518fb18e5d2b3d594d91b060",
-    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-PROFILER-V1.candidate.c725199.json"
+    "evidence": null
   },
   "close": null
 }
