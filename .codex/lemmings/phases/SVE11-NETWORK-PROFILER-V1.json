@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-PROFILER-V1",
+  "baselineSha": "56b3672539eea260f17ec100ff42841d8f161124",
+  "integrationBranch": "codex/sve11-network-package",
+  "contractsFrozen": false,
+  "contracts": [
+    ".codex/lemmings/contracts/SVE11-network-profiler.md",
+    ".codex/lemmings/contracts/SVE11-network-diagnostics.md"
+  ],
+  "baselineReview": {
+    "status": "Pending",
+    "reviewerModel": "gpt-5.6-sol:high",
+    "evidence": null
+  },
+  "leases": [
+    {
+      "resource": "Game.Packages integration branch",
+      "owner": "orchestrator",
+      "scope": "Only the orchestrator integrates an Accepted profiler candidate",
+      "status": "Active"
+    },
+    {
+      "resource": "sve11-network-profiler worktree",
+      "owner": "SVE11-NETWORK-PROFILER",
+      "scope": "Only the new optional profiler package",
+      "status": "Pending"
+    }
+  ],
+  "close": {
+    "mergeCommits": [],
+    "phaseValidation": []
+  }
+}

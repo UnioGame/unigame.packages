@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-PROFILER",
+  "mode": "strict",
+  "state": "Refining",
+  "previousState": "Draft",
+  "role": "complex-worker",
+  "branch": "codex/sve11-network-profiler",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-profiler",
+  "plan": {
+    "goal": "Add an optional allocation-free Unity Profiler observer package over the accepted network diagnostics stream.",
+    "acceptance": [
+      "Keep the base network assemblies Unity-free and expose only the frozen ProfilerObserver API.",
+      "Publish exact Network-category operation markers with source metadata and honest delta counters.",
+      "Prove marker balance and exact counter mappings through real Session paths and ProfilerRecorder.",
+      "Pass independent review and post-integration Unity EditMode validation."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-profiler.md",
+      ".codex/lemmings/contracts/SVE11-network-diagnostics.md",
+      "56b3672539eea260f17ec100ff42841d8f161124"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network.profiler/**"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network/**",
+      "unigame.staticecs/**",
+      "unigame.staticecs.unity/**",
+      "../Packages/**",
+      "unigame.ai.lemmings/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": null,
+    "actual": null
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": [
+      "Read-only profiler discovery and independent API audit completed at exact baseline 56b3672539eea260f17ec100ff42841d8f161124.",
+      "Unity 6000.3.20f1 and com.unity.profiling.core 1.0.3 locally confirm the required marker, counter and recorder APIs.",
+      "The draft rejects a synthetic Drops metric and freezes honest Declines semantics without changing core diagnostics."
+    ]
+  },
+  "baseSha": "56b3672539eea260f17ec100ff42841d8f161124",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "Profiler Begin/End scopes leak or cross when an observed operation fails",
+        "test": "Real success/failure/exception Session streams followed by sentinel marker samples"
+      },
+      {
+        "risk": "Counters mislabel idle polling, retries or packet loss",
+        "test": "Exact positive/zero delta matrix with separate Retry and Decline semantics"
+      },
+      {
+        "risk": "The adapter contaminates the Unity-free base assembly",
+        "test": "Exact owned-path/asmdef/package dependency scan"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Focused Unity EditMode profiler tests after orchestrator manifest integration",
+      "Exact ownership/meta/XML/no-Sample scans",
+      "lemmings check --all",
+      "Independent gpt-5.6-sol:high review"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "review": {
+    "taskId": "SVE11-NETWORK-PROFILER",
+    "base": "56b3672539eea260f17ec100ff42841d8f161124",
+    "status": "Pending",
+    "cycle": 1,
+    "head": null,
+    "evidence": null
+  },
+  "close": null
+}
