@@ -48,9 +48,11 @@ namespace UniGame.StaticEcs.Network
         public EnqueueResult Enqueue<T>(in T command, uint clientTick) where T : unmanaged
         {
             if (_disposed) throw new ObjectDisposedException(nameof(Session<TWorld>));
-            return _config.Role == SessionRole.Client && _state == SessionState.Established && _outbox != null
+            var result = _config.Role == SessionRole.Client && _state == SessionState.Established && _outbox != null
                 ? _outbox.Enqueue(in command, clientTick)
                 : EnqueueResult.Unavailable;
+            if (result == EnqueueResult.Queued) _statsCommandsQueued++;
+            return result;
         }
 
         /// <summary>Captures and schedules one complete authoritative snapshot.</summary>
@@ -66,12 +68,21 @@ namespace UniGame.StaticEcs.Network
             PacketLease captured = default;
             PacketLease historyCopy = default;
             TickRecord record = null;
+            var captureStarted = ObserveBegin(SessionEventKind.Capture, tick: serverTick);
+            var captureResult = CaptureResult.ScopeInvalid;
+            var committed = false;
+            var capturedHash = 0UL;
+            var capturedBytes = 0;
+            var captureEnded = 0L;
             try
             {
-                var result = _replicator.Capture(out captured);
-                if (result != CaptureResult.Success) return result;
+                captureResult = _replicator.Capture(out captured);
+                captureEnded = ObservationTimestamp();
+                if (captureResult != CaptureResult.Success) return captureResult;
+                capturedBytes = captured.Length;
                 historyCopy = captured.Copy();
                 var hash = Hashing.XxHash64(captured.Span);
+                capturedHash = hash;
                 PacketLease received = default;
                 PacketLease postApply = default;
                 record = new TickRecord(serverTick, ref historyCopy, ref received, ref postApply,
@@ -83,13 +94,19 @@ namespace UniGame.StaticEcs.Network
                 _pendingSnapshot = PacketLease.Transfer(ref captured);
                 _pendingSnapshotTick = serverTick;
                 _pendingSnapshotFrozen = false;
+                _snapshotSendAttempts = 0;
                 _lastCapturedTick = serverTick;
                 _hasCapturedTick = true;
                 _needsSnapshot = false;
-                return result;
+                committed = true;
+                _statsSnapshotsCaptured++;
+                return captureResult;
             }
             finally
             {
+                ObserveEnd(SessionEventKind.Capture, captureStarted, committed, tick: serverTick,
+                    decodedBytes: capturedBytes, code: (ushort)captureResult,
+                    hash: committed ? capturedHash : 0, ended: captureEnded);
                 record?.Dispose();
                 DisposeOwned(ref historyCopy);
                 DisposeOwned(ref captured);
@@ -185,6 +202,7 @@ namespace UniGame.StaticEcs.Network
                         schemaMismatch ? DisconnectReason.SchemaMismatch : DisconnectReason.ProtocolViolation);
                     return true;
                 }
+                RecordDecoded(in decoded);
 
                 bool consumed;
                 try
@@ -230,9 +248,25 @@ namespace UniGame.StaticEcs.Network
                 }
                 for (var i = 0; i < commands.Length; i++)
                 {
-                    var dispatch = _dispatcher.Dispatch(staged, i, _peerId);
+                    var dispatchStarted = ObserveBegin(SessionEventKind.Dispatch);
+                    var dispatch = DispatchResult.InvalidCommand;
+                    var dispatchReturned = false;
+                    try
+                    {
+                        dispatch = _dispatcher.Dispatch(staged, i, _peerId);
+                        dispatchReturned = true;
+                    }
+                    finally
+                    {
+                        var dispatchSuccess = dispatchReturned &&
+                                              (dispatch == DispatchResult.Accepted || dispatch == DispatchResult.Rejected);
+                        ObserveEnd(SessionEventKind.Dispatch, dispatchStarted, dispatchSuccess,
+                            count: 1, code: (ushort)dispatch);
+                    }
                     if (dispatch == DispatchResult.Accepted || dispatch == DispatchResult.Rejected)
                     {
+                        if (dispatch == DispatchResult.Accepted) _statsCommandsAccepted++;
+                        else _statsCommandsRejected++;
                         _lastProcessedCommand = commands[i].Sequence;
                         continue;
                     }
@@ -260,6 +294,9 @@ namespace UniGame.StaticEcs.Network
                 DisposeOwned(ref _pendingSnapshot);
                 _pendingSnapshotFrozen = false;
                 _needsSnapshot = true;
+                _statsResyncs++;
+                ObservePoint(SessionEventKind.Resync, tick: staged.ResyncRequest.LastAcceptedTick,
+                    reason: (ushort)staged.ResyncRequest.Reason);
                 return true;
             }
             return ProtocolFailure();
@@ -278,6 +315,11 @@ namespace UniGame.StaticEcs.Network
 
             PacketLease received = default;
             TickRecord record = null;
+            long applyStarted = 0;
+            var applyObserved = false;
+            var applyEnded = false;
+            var apply = ApplyResult.ScopeInvalid;
+            var applyCallbackEnded = 0L;
             try
             {
                 received = PacketLease.Rent(staged.Payload.Length);
@@ -287,9 +329,17 @@ namespace UniGame.StaticEcs.Network
                 PacketLease postApply = default;
                 record = new TickRecord(header.ServerTick, ref generated, ref received, ref postApply,
                     0, header.PayloadHash, header.PayloadHash, 0, 0, Array.Empty<PacketLease>());
-                var apply = _replicator.Apply(staged);
+                applyStarted = ObserveBegin(SessionEventKind.Apply, tick: header.ServerTick,
+                    packet: PacketKind.FullSnapshot, sequence: header.PacketSequence);
+                applyObserved = true;
+                apply = _replicator.Apply(staged);
+                applyCallbackEnded = ObservationTimestamp();
                 if (apply != ApplyResult.Success)
                 {
+                    ObserveEnd(SessionEventKind.Apply, applyStarted, false, tick: header.ServerTick,
+                        packet: PacketKind.FullSnapshot, sequence: header.PacketSequence,
+                        decodedBytes: staged.Payload.Length, code: (ushort)apply, ended: applyCallbackEnded);
+                    applyEnded = true;
                     record.Dispose();
                     record = null;
                     if (TryMapApplyFailure(apply, out var error, out var reason, out var resync))
@@ -305,11 +355,21 @@ namespace UniGame.StaticEcs.Network
                 record = null;
                 _lastAcceptedSnapshotTick = header.ServerTick;
                 _hasAcceptedSnapshot = true;
+                _statsSnapshotsApplied++;
+                ObserveEnd(SessionEventKind.Apply, applyStarted, true, tick: header.ServerTick,
+                    packet: PacketKind.FullSnapshot, sequence: header.PacketSequence,
+                    decodedBytes: staged.Payload.Length, code: (ushort)apply, hash: header.PayloadHash,
+                    ended: applyCallbackEnded);
+                applyEnded = true;
                 if (_reliableIntent != ReliableIntentKind.ResyncRequest) _queuedResync = false;
                 return true;
             }
             finally
             {
+                if (applyObserved && !applyEnded)
+                    ObserveEnd(SessionEventKind.Apply, applyStarted, false, tick: header.ServerTick,
+                        packet: PacketKind.FullSnapshot, sequence: header.PacketSequence,
+                        decodedBytes: staged.Payload.Length, code: (ushort)apply);
                 record?.Dispose();
                 DisposeOwned(ref received);
             }
@@ -361,6 +421,8 @@ namespace UniGame.StaticEcs.Network
             _queuedResync = true;
             _queuedResyncReason = reason;
             _queuedResyncTick = _hasAcceptedSnapshot ? _lastAcceptedSnapshotTick : PacketHeader.NoneTick;
+            _statsResyncs++;
+            ObservePoint(SessionEventKind.Resync, tick: _queuedResyncTick, reason: (ushort)reason);
         }
 
         private bool TrySendTransfer(ref StepResult result)
@@ -438,14 +500,28 @@ namespace UniGame.StaticEcs.Network
             PacketLease packet = default;
             try
             {
-                if (!SessionProtocol.TryEncodeTransfer(kind, Channel.ReliableOrdered, _epoch, _reliableSequence,
-                        PacketHeader.NoneTick, schema, snapshotAck, commandAck, payload,
-                        kind == PacketKind.CommandBatch ? _schema : null, out packet))
+                var encodeStarted = ObserveBegin(SessionEventKind.Encode, packet: kind,
+                    channel: Channel.ReliableOrdered, sequence: _reliableSequence);
+                var encoded = false;
+                try
+                {
+                    encoded = SessionProtocol.TryEncodeTransfer(kind, Channel.ReliableOrdered, _epoch,
+                        _reliableSequence, PacketHeader.NoneTick, schema, snapshotAck, commandAck, payload,
+                        kind == PacketKind.CommandBatch ? _schema : null, out packet);
+                }
+                finally
+                {
+                    ObserveEnd(SessionEventKind.Encode, encodeStarted, encoded, packet: kind,
+                        channel: Channel.ReliableOrdered, sequence: _reliableSequence,
+                        wireBytes: encoded ? packet.Length : 0);
+                }
+                if (!encoded)
                 {
                     Fault(SessionError.Protocol, DisconnectReason.ProtocolViolation);
                     return true;
                 }
-                if (!_transport.TrySend(Channel.ReliableOrdered, ref packet)) return true;
+                if (!ObservedSend(Channel.ReliableOrdered, ref packet, kind, _reliableSequence,
+                        _reliableSendAttempts++ != 0)) return true;
                 result |= StepResult.Sent;
                 _sequences.CommitReliableTransmit(_reliableSequence);
                 if (_reliableIntent == ReliableIntentKind.CommandBatch) _outbox.MarkSent(_reliableCommandThrough);
@@ -475,14 +551,30 @@ namespace UniGame.StaticEcs.Network
             PacketLease packet = default;
             try
             {
-                if (!SessionProtocol.TryEncodeTransfer(PacketKind.FullSnapshot, Channel.UnreliableSequenced,
-                        _epoch, _pendingSnapshotSequence, _pendingSnapshotTick, _schema.Hash,
-                        PacketHeader.NoneTick, _pendingSnapshotCommandAck, _pendingSnapshot.Span, _schema, out packet))
+                var encodeStarted = ObserveBegin(SessionEventKind.Encode, tick: _pendingSnapshotTick,
+                    packet: PacketKind.FullSnapshot, channel: Channel.UnreliableSequenced,
+                    sequence: _pendingSnapshotSequence);
+                var encoded = false;
+                try
+                {
+                    encoded = SessionProtocol.TryEncodeTransfer(PacketKind.FullSnapshot,
+                        Channel.UnreliableSequenced, _epoch, _pendingSnapshotSequence, _pendingSnapshotTick,
+                        _schema.Hash, PacketHeader.NoneTick, _pendingSnapshotCommandAck,
+                        _pendingSnapshot.Span, _schema, out packet);
+                }
+                finally
+                {
+                    ObserveEnd(SessionEventKind.Encode, encodeStarted, encoded, tick: _pendingSnapshotTick,
+                        packet: PacketKind.FullSnapshot, channel: Channel.UnreliableSequenced,
+                        sequence: _pendingSnapshotSequence, wireBytes: encoded ? packet.Length : 0);
+                }
+                if (!encoded)
                 {
                     Fault(SessionError.Protocol, DisconnectReason.ProtocolViolation);
                     return true;
                 }
-                if (!_transport.TrySend(Channel.UnreliableSequenced, ref packet)) return true;
+                if (!ObservedSend(Channel.UnreliableSequenced, ref packet, PacketKind.FullSnapshot,
+                        _pendingSnapshotSequence, _snapshotSendAttempts++ != 0)) return true;
                 result |= StepResult.Sent;
                 _sequences.CommitUnreliableTransmit(_pendingSnapshotSequence);
                 _lastSnapshotSentTick = _pendingSnapshotTick;
@@ -491,6 +583,7 @@ namespace UniGame.StaticEcs.Network
                     _lastCarriedCommandAck = _pendingSnapshotCommandAck;
                 DisposeOwned(ref _pendingSnapshot);
                 _pendingSnapshotFrozen = false;
+                _snapshotSendAttempts = 0;
                 return true;
             }
             finally
@@ -529,6 +622,7 @@ namespace UniGame.StaticEcs.Network
             _reliableSnapshotAck = PacketHeader.NoneTick;
             _reliableCommandAck = 0;
             _reliableCommandThrough = 0;
+            _reliableSendAttempts = 0;
         }
 
         private void ReleaseTransferCollaborators()

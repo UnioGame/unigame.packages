@@ -14,6 +14,8 @@ Transport-neutral protocol and replication foundations for deterministic Static 
 - Negotiates schema, tick rate, payload limits, epoch, peer identity, and canonical chunk topology through a deterministic stepped session handshake.
 - Transfers ordered client commands, complete server snapshots, cumulative acknowledgements, and bounded resynchronization requests after admission.
 - Retains independent canonical server-capture and client-apply records in bounded tick histories.
+- Publishes optional privacy-safe operation events, cumulative session statistics, and retained canonical tick fingerprints without changing protocol behavior.
+- Provides bounded strict NDJSON export plus explicit opt-in transport trace and deterministic replay.
 
 ## Usage
 
@@ -133,11 +135,52 @@ if (replicator.Capture(out var snapshot) == CaptureResult.Success)
 
 On a replica world, stage the decoded `FullSnapshot` with the equivalent replica-world schema and pass it to `Replicator<TWorld>.Apply`. The scope ledger owns only exact entity GIDs created by successful applies. Missing ledger entities are despawned by later complete snapshots; unrelated entities never enter the ledger.
 
+Pass an `ISessionObserver` when operation timing and structured diagnostics are required. The observer is caller-owned and is never disposed by the session. Observer exceptions are isolated and counted in `SessionStats.ObserverErrors`. Ordinary `SessionEvent` values contain bounded numeric metadata only: they never contain packet payloads, command or world bytes, nonces, epochs, peer identities, schema identities, exception text, or paths.
+
+```csharp
+using var output = File.Create(logPath);
+using var log = new NdjsonLog(output, capacity: 4096, source: endpointId);
+using var session = new Session<ClientWorld>(clientConfig, schema, transport, log);
+
+session.Step(stepIndex);
+log.Flush();
+
+var stats = session.Stats;
+if (session.TryGetFingerprint(serverTick, out var fingerprint) == HistoryLookup.Found)
+{
+    // Compare tick, canonical hash, and canonical byte length across endpoints.
+}
+```
+
+`NdjsonLog.Observe` performs no I/O and retains a fixed SPSC ring. Call `Observe` from one producer and `Flush` from one consumer. Overflow drops newest events and writes one explicit gap after the retained prefix. A stream failure is terminal for that logger and is never allowed to affect the session.
+
+Transport tracing is a different privacy boundary. `ReplayTape` records complete packet bytes and therefore can contain nonces, peer identities, commands, and replicated world state. Enable it only through an explicit diagnostic decision. Store tapes in access-controlled encrypted storage, enforce a small byte budget and retention window, and explicitly delete them when the investigation ends. Never attach raw tapes to ordinary telemetry or logs.
+
+```csharp
+using var tape = new ReplayTape(16 * 1024 * 1024);
+using (var traced = new TraceTransport(connectedTransport, tape))
+{
+    // The session owns traced after successful construction.
+}
+
+using var protectedOutput = OpenProtectedTrace(tracePath);
+tape.Save(protectedOutput);
+
+using var replay = new ReplayTransport(tape);
+// Replay requires the exact recorded BeginStep, receive, and send call sequence.
+```
+
+`TraceTransport` owns its wrapped transport but never the tape. A complete trace seals when the wrapper is disposed. Overflow or a wrapped transport exception makes the tape incomplete; incomplete tapes cannot be saved or replayed. `ReplayTransport` borrows a sealed complete tape, returns independently owned receive leases, and faults on any step, channel, byte, truncation, or transcript-end mismatch.
+
 ## Configuration
 
 - Runtime limits may lower, but never raise, the constants in `ProtocolLimits`.
 - Session wire and decoded limits are negotiated independently. Packet framing is checked against local configured limits before payload decode, and the accepted limits cannot exceed either endpoint's advertisement.
 - Session transports must be connected, error-free, and implement `ISteppedTransport`; a successfully constructed session owns and disposes the transport.
+- Session observers are optional, caller-owned, and must keep their own work bounded. Session event timestamps use `Stopwatch` ticks; strict NDJSON writes integer nanoseconds and stable lowercase tokens.
+- `NdjsonLog` supports one producer and one consumer only. Its capacity is fixed, overflow is visible, and a faulted or disposed logger never resumes output.
+- Replay tape byte capacity charges every 24-byte call record header plus payload. Saving requires a sealed complete unborrowed tape; loading validates the complete little-endian format, bounds, reserved bytes, and checksum before exposing a tape.
+- Raw replay tapes are sensitive data. Protect storage, bound retention, restrict access, and explicitly delete files after use.
 - Session step indices are strictly increasing. Each step begins the transport exactly once, receives at most one packet, and sends at most one packet. Failed sends retry the same semantic control packet and sequence.
 - Only control packets are accepted during the handshake. Established sessions dispatch authorized commands, apply complete snapshots, exchange cumulative acknowledgements, and request full resynchronization without delta compression, prediction, rollback, or replay.
 - `Enqueue` is available only to established clients. `Capture` is available only to established servers with valid authority collaborators; zero is a valid first tick and `NoneTick` is reserved.

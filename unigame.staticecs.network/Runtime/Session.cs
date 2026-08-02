@@ -35,6 +35,12 @@ namespace UniGame.StaticEcs.Network
 
         /// <summary>Creates a control-only session and takes transport ownership only after complete validation.</summary>
         public Session(SessionConfig config, Schema schema, ITransport transport)
+            : this(config, schema, transport, null)
+        {
+        }
+
+        /// <summary>Creates a session with an optional caller-owned observer and takes transport ownership after validation.</summary>
+        public Session(SessionConfig config, Schema schema, ITransport transport, ISessionObserver observer)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
             if (schema == null) throw new ArgumentNullException(nameof(schema));
@@ -69,6 +75,7 @@ namespace UniGame.StaticEcs.Network
                 _schema = schema;
                 _transport = transport;
                 _steppedTransport = stepped;
+                _observer = observer;
                 _scope = scope;
                 _replicator = replicator;
                 _history = history;
@@ -120,6 +127,23 @@ namespace UniGame.StaticEcs.Network
         public StepResult Step(ulong stepIndex)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(Session<TWorld>));
+            var started = ObserveBegin(SessionEventKind.Step, eventStep: stepIndex);
+            var success = false;
+            try
+            {
+                var result = StepCore(stepIndex);
+                success = true;
+                return result;
+            }
+            finally
+            {
+                _statsSteps++;
+                ObserveEnd(SessionEventKind.Step, started, success, eventStep: stepIndex);
+            }
+        }
+
+        private StepResult StepCore(ulong stepIndex)
+        {
             if (_state == SessionState.Closed || _state == SessionState.Faulted) return StepResult.None;
             if (_hasStep && stepIndex <= _lastStep) throw new ArgumentOutOfRangeException(nameof(stepIndex));
             _hasStep = true;
@@ -133,12 +157,30 @@ namespace UniGame.StaticEcs.Network
             if (_wasEstablished && !ValidateScope()) return Finish(result, initialState);
 
             PacketLease received = default;
+            var receiveStarted = ObserveBegin(SessionEventKind.Receive);
+            var receiveSuccess = false;
+            var receiveChannel = default(Channel);
+            var receiveBytes = 0;
             try
             {
-                if (_transport.TryReceive(out var channel, out received))
+                try
                 {
+                    receiveSuccess = _transport.TryReceive(out receiveChannel, out received);
+                    if (receiveSuccess) receiveBytes = received.Length;
+                }
+                finally
+                {
+                    ObserveEnd(SessionEventKind.Receive, receiveStarted, receiveSuccess, channel: receiveChannel,
+                        wireBytes: receiveBytes, code: receiveSuccess ? (ushort)1 : (ushort)0);
+                }
+                if (receiveSuccess)
+                {
+                    _statsReceivedPackets++;
+                    _statsReceivedBytes += (ulong)receiveBytes;
                     result |= StepResult.Received;
-                    ProcessReceived(channel, in received);
+                    BeginDecodeObservation(receiveChannel);
+                    try { ProcessReceived(receiveChannel, in received); }
+                    finally { EndDecodeFailureIfOpen(); }
                 }
             }
             finally
@@ -160,14 +202,26 @@ namespace UniGame.StaticEcs.Network
                     PacketLease packet = default;
                     try
                     {
-                        if (!SessionProtocol.TryEncode(in pending, sequence, out packet))
+                        var encodeStarted = ObserveBegin(SessionEventKind.Encode, packet: pending.Kind,
+                            channel: Channel.ReliableOrdered, sequence: sequence);
+                        var encoded = false;
+                        try { encoded = SessionProtocol.TryEncode(in pending, sequence, out packet); }
+                        finally
+                        {
+                            ObserveEnd(SessionEventKind.Encode, encodeStarted, encoded, packet: pending.Kind,
+                                channel: Channel.ReliableOrdered, sequence: sequence,
+                                wireBytes: encoded ? packet.Length : 0);
+                        }
+                        if (!encoded)
                         {
                             Fault(SessionError.Protocol, DisconnectReason.ProtocolViolation);
                         }
-                        else if (_transport.TrySend(Channel.ReliableOrdered, ref packet))
+                        else if (ObservedSend(Channel.ReliableOrdered, ref packet, pending.Kind, sequence,
+                                     _controlSendAttempts++ != 0))
                         {
                             result |= StepResult.Sent;
                             _sequences.CommitReliableTransmit(sequence);
+                            _controlSendAttempts = 0;
                             OnSendSucceeded();
                         }
                     }
@@ -185,6 +239,7 @@ namespace UniGame.StaticEcs.Network
         /// <summary>Requests an orderly local close without synthesizing handshake traffic.</summary>
         public void Close()
         {
+            var initialState = _state;
             if (_state == SessionState.Handshaking)
             {
                 CloseTerminal(DisconnectReason.Requested);
@@ -195,6 +250,7 @@ namespace UniGame.StaticEcs.Network
             _state = SessionState.Closing;
             _stage = SessionStage.RequestedClose;
             _requestedIntent = true;
+            if (_state != initialState) ObservePoint(SessionEventKind.State);
         }
 
         /// <summary>Immediately releases collaborators and disposes the exclusively owned transport.</summary>
@@ -204,6 +260,7 @@ namespace UniGame.StaticEcs.Network
             _disposed = true;
             ReleaseCollaborators();
             _state = SessionState.Disposed;
+            ObservePoint(SessionEventKind.State);
             _transport.Dispose();
         }
 
@@ -243,6 +300,7 @@ namespace UniGame.StaticEcs.Network
                     Fault(SessionError.Protocol, DisconnectReason.ProtocolViolation);
                     return;
                 }
+                RecordDecoded(in decodedHeader);
 
                 var accepted = _config.Role == SessionRole.Client
                     ? ProcessClientPacket(in header, staged)
@@ -381,6 +439,7 @@ namespace UniGame.StaticEcs.Network
             _error = SessionError.None;
             _reason = null;
             ReleaseCollaborators();
+            ObservePoint(SessionEventKind.State);
             return true;
         }
 
@@ -429,6 +488,7 @@ namespace UniGame.StaticEcs.Network
                 else
                 {
                     _state = SessionState.Closing;
+                    ObservePoint(SessionEventKind.State);
                     _stage = SessionStage.RequestedClose;
                     _requestedIntent = true;
                 }
@@ -528,6 +588,7 @@ namespace UniGame.StaticEcs.Network
                     {
                         _stage = SessionStage.RejectionBarrier;
                         _state = SessionState.Closing;
+                        ObservePoint(SessionEventKind.State);
                         _rejectionSent = true;
                     }
                     break;
@@ -551,6 +612,7 @@ namespace UniGame.StaticEcs.Network
             _reason = null;
             _wasEstablished = true;
             OnTransferEstablished();
+            ObservePoint(SessionEventKind.State);
         }
 
         private bool TryCreateReplicaScope(ReadOnlySpan<ChunkMapping> chunks)
@@ -620,6 +682,7 @@ namespace UniGame.StaticEcs.Network
                         _error = SessionError.None;
                         _reason = null;
                         ReleaseCollaborators();
+                        ObservePoint(SessionEventKind.State);
                     }
                     else if (_requestedSent || _requestedReceived)
                     {
@@ -650,6 +713,9 @@ namespace UniGame.StaticEcs.Network
             _error = error;
             _reason = reason;
             ReleaseCollaborators();
+            _statsFaults++;
+            ObservePoint(SessionEventKind.Fault, false, reason: reason.HasValue ? (ushort)reason.Value : (ushort)0);
+            ObservePoint(SessionEventKind.State);
         }
 
         private void CloseTerminal(DisconnectReason reason)
@@ -658,6 +724,7 @@ namespace UniGame.StaticEcs.Network
             _error = SessionError.None;
             _reason = reason;
             ReleaseCollaborators();
+            ObservePoint(SessionEventKind.State, reason: (ushort)reason);
         }
 
         private void ReleaseCollaborators()
