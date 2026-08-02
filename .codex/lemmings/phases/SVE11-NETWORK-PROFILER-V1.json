@@ -18,17 +18,26 @@
       "resource": "Game.Packages integration branch",
       "owner": "orchestrator",
       "scope": "Only the orchestrator integrates an Accepted profiler candidate",
-      "status": "Active"
+      "status": "Released"
     },
     {
       "resource": "sve11-network-profiler worktree",
       "owner": "SVE11-NETWORK-PROFILER",
       "scope": "Only the new optional profiler package",
-      "status": "Active"
+      "status": "Released"
     }
   ],
   "close": {
-    "mergeCommits": [],
-    "phaseValidation": []
+    "mergeCommits": [
+      "eb1aedc4becd9797c567050c0c0b5fd2b29aa26b",
+      "446d017869e9e474e064d87e354f7f12ff2f6133",
+      "f7aaf5aaca12b17a63f531bd1a8d1002c6c02e5b",
+      "fa276c5a85d9a7ffdd41afcf68590eeafd308db0"
+    ],
+    "phaseValidation": [
+      "Independent gpt-5.6-sol:high full-range review accepted 56b3672539eea260f17ec100ff42841d8f161124..c9f20087ba0507481ad44b472f52c557b61ef9e2.",
+      "Post-integration Unity EditMode UniGame.StaticEcs.Network.Profiler.Tests passed 5/5 in 0.4424785 seconds with zero failures.",
+      "Final lemmings check --all passed with zero findings."
+    ]
   }
 }

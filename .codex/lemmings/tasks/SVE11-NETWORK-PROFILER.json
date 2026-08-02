@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-PROFILER",
   "mode": "strict",
-  "state": "Accepted",
-  "previousState": "Review",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "complex-worker",
   "branch": "codex/sve11-network-profiler",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-profiler",
@@ -53,7 +53,9 @@
       "Post-integration Unity compilation exposed a test-only missing direct reference to unigame.staticecs.network.protocol for TypeId and CodecId; runtime profiler assembly compiled.",
       "Independent gpt-5.6-sol:high cycle-3 review accepted the full range through 6993ddc99f04b309ea821644601ccbda372f288b with no findings.",
       "Unity EditMode integration run compiled and executed all five profiler tests: four passed and RealSessionsPublishExactPositiveCounterDeltas exposed a test schedule error at replica lookup because a reliable command acknowledgement precedes the queued unreliable snapshot.",
-      "Independent gpt-5.6-sol:high cycle-4 review accepted the full range through c9f20087ba0507481ad44b472f52c557b61ef9e2 with no findings."
+      "Independent gpt-5.6-sol:high cycle-4 review accepted the full range through c9f20087ba0507481ad44b472f52c557b61ef9e2 with no findings.",
+      "Post-integration Unity EditMode UniGame.StaticEcs.Network.Profiler.Tests passed 5/5 in 0.4424785 seconds with zero failures, skips or inconclusive results.",
+      "Final lemmings check --all passed in strict idle mode with zero errors, warnings or findings."
     ]
   },
   "baseSha": "56b3672539eea260f17ec100ff42841d8f161124",
@@ -98,5 +100,13 @@
     "head": "c9f20087ba0507481ad44b472f52c557b61ef9e2",
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-PROFILER-V1.accepted.c9f2008.json"
   },
-  "close": null
+  "close": {
+    "mergeCommit": "fa276c5a85d9a7ffdd41afcf68590eeafd308db0",
+    "integrationValidationPassed": true,
+    "evidence": [
+      "Accepted profiler candidate and repairs integrated as eb1aedc4becd9797c567050c0c0b5fd2b29aa26b, 446d017869e9e474e064d87e354f7f12ff2f6133, f7aaf5aaca12b17a63f531bd1a8d1002c6c02e5b and fa276c5a85d9a7ffdd41afcf68590eeafd308db0.",
+      "Unity compiled the integrated optional package and completed the filtered EditMode run with exit code 0.",
+      "Unity EditMode UniGame.StaticEcs.Network.Profiler.Tests passed 5/5 in 0.4424785 seconds."
+    ]
+  }
 }
