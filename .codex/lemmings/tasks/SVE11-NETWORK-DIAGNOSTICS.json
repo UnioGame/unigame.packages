@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-DIAGNOSTICS",
   "mode": "strict",
-  "state": "Active",
-  "previousState": "ChangesRequested",
+  "state": "Review",
+  "previousState": "Active",
   "role": "complex-worker",
   "branch": "codex/sve11-network-diagnostics",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-diagnostics",
@@ -72,14 +72,17 @@
       "Focused diagnostics/replay tests pass 18/18 and the full standalone package harness passes 161 tests; only the known baseline Mono allocation-counter anomaly was excluded.",
       "Ownership, Unity meta, ordinary-log privacy, forbidden-name, whitespace and lemmings check --all scans are clean.",
       "Strict repair 722d93ed325c028a914bf0f7a0bff26fde3bc5d4 fixes replay step/truncation validation, simultaneous-close State cardinality, and expands the focused acceptance matrix to 31 passing tests.",
-      "The repaired full standalone package reflection harness passes 174/174; the known baseline Mono allocation-counter defect remains the only excluded test."
+      "The repaired full standalone package reflection harness passes 174/174; the known baseline Mono allocation-counter defect remains the only excluded test.",
+      "Verification repair a4087181e9f0945d373796a79f602436f9621a63 fixes ReplayTape.Save lifecycle precedence and completes exact binary-malformation plus Session seam/stat/fingerprint evidence.",
+      "The final focused harness passes 43/43 and the full standalone package reflection harness passes 186/186 with warnings-as-errors compilation clean."
     ]
   },
   "baseSha": "14459a615b46826269751f034c3eb53071614a33",
   "commits": {
     "candidate": "edf4408982fdd2e9f6cbae10d784fbc17e52ba27",
     "fix": [
-      "722d93ed325c028a914bf0f7a0bff26fde3bc5d4"
+      "722d93ed325c028a914bf0f7a0bff26fde3bc5d4",
+      "a4087181e9f0945d373796a79f602436f9621a63"
     ]
   },
   "validation": {
@@ -117,7 +120,7 @@
     "base": "14459a615b46826269751f034c3eb53071614a33",
     "status": "Pending",
     "cycle": 4,
-    "head": "722d93ed325c028a914bf0f7a0bff26fde3bc5d4",
+    "head": "a4087181e9f0945d373796a79f602436f9621a63",
     "evidence": null
   },
   "close": null
