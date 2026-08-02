@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-TRANSFER",
   "mode": "strict",
-  "state": "Replan Required",
-  "previousState": "Planned",
+  "state": "Planned",
+  "previousState": "Replan Required",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-transfer",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-transfer",
@@ -60,7 +60,8 @@
     "handoff": null,
     "validationEvidence": [
       "Baseline review cycle 1 requested exact retry-ack freezing, reachable history/apply tests, callback exception semantics, and public/protocol precedence refinements.",
-      "Baseline review cycle 2 resolved the original blockers but requires reliable-intent serialization and exact Capture/history exception scope."
+      "Baseline review cycle 2 resolved the original blockers but requires reliable-intent serialization and exact Capture/history exception scope.",
+      "Replan serializes one active reliable intent, freezes transactional Capture exceptions, and excludes process-level allocator failure recovery from the Session protocol contract."
     ]
   },
   "baseSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
@@ -73,6 +74,10 @@
       {
         "risk": "Retries or piggyback acknowledgements advance ownership before transport acceptance",
         "test": "Receive-between-retries, capacity-one and throwing transports with frozen byte-identical intents and later Ack assertions"
+      },
+      {
+        "risk": "A new higher-priority reliable intent steals the uncommitted sequence of a failed send",
+        "test": "Failed batch then resync and failed Ack then command/resync retain one active reliable intent until commit"
       },
       {
         "risk": "Malformed direction, sequence, tick, schema or future acknowledgement mutates ECS or retention",
