@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-DIAGNOSTICS",
   "mode": "strict",
-  "state": "Review",
-  "previousState": "Active",
+  "state": "ChangesRequested",
+  "previousState": "Review",
   "role": "complex-worker",
   "branch": "codex/sve11-network-diagnostics",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-diagnostics",
@@ -115,10 +115,10 @@
   "review": {
     "taskId": "SVE11-NETWORK-DIAGNOSTICS",
     "base": "14459a615b46826269751f034c3eb53071614a33",
-    "status": "Pending",
+    "status": "ChangesRequested",
     "cycle": 3,
     "head": "722d93ed325c028a914bf0f7a0bff26fde3bc5d4",
-    "evidence": null
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-DIAGNOSTICS-V1.rereview.722d93e.json"
   },
   "close": null
 }
