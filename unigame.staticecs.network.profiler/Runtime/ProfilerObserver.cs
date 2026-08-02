@@ -39,6 +39,10 @@ namespace UniGame.StaticEcs.Network.Profiler
         private static readonly ProfilerCounter<int> ResyncsCounter =
             Counter<int>("SECS.Net.Resyncs", ProfilerMarkerDataUnit.Count);
 
+        static ProfilerObserver()
+        {
+        }
+
         /// <summary>Creates an observer for a caller-selected privacy-safe numeric source lane.</summary>
         public ProfilerObserver(uint source = 0)
         {

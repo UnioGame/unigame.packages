@@ -155,7 +155,8 @@ namespace UniGame.StaticEcs.Network.Profiler.Tests
             Assert.That(recorders.Declines.LastValue, Is.EqualTo(1));
             Assert.That(recorders.Faults.LastValue, Is.EqualTo(1));
             Assert.That(recorders.Resyncs.LastValue, Is.EqualTo(2));
-            Assert.That(sendMarker.Count, Is.GreaterThan(0));
+            Assert.That(CompletedSamples(sendMarker),
+                Is.EqualTo((long)(clientStats.SentPackets + serverStats.SentPackets + 1)));
         }
 
         [UnityTest]
@@ -191,7 +192,7 @@ namespace UniGame.StaticEcs.Network.Profiler.Tests
 
             yield return null;
             Assert.That(recorder.Valid, Is.True);
-            Assert.That(recorder.Count, Is.GreaterThan(0));
+            Assert.That(CompletedSamples(recorder), Is.EqualTo(2));
         }
 
         [UnityTest]
@@ -216,7 +217,66 @@ namespace UniGame.StaticEcs.Network.Profiler.Tests
 
             yield return null;
             Assert.That(recorder.Valid, Is.True);
-            Assert.That(recorder.Count, Is.GreaterThan(0));
+            Assert.That(CompletedSamples(recorder), Is.EqualTo(2));
+        }
+
+        [UnityTest]
+        public IEnumerator DispatchMarkerRemainsBalancedAfterAuthorizerException()
+        {
+            var observer = new ProfilerObserver(10);
+            using var recorder = Start("SECS.Net.Dispatch");
+            CreateWorld<DispatchThrowClientWorld>(ChunkOwnerType.Other);
+            CreateWorld<DispatchThrowServerWorld>(ChunkOwnerType.Self);
+            var throwReceiver = World<DispatchThrowServerWorld>
+                .RegisterEventReceiver<CommandAcceptedEvent<NetCommand>>();
+            try
+            {
+                MemoryTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+                using var client = new Session<DispatchThrowClientWorld>(ClientConfig(),
+                    Schema<DispatchThrowClientWorld, DispatchThrowClientAuthorizer>(), clientTransport, observer);
+                using var server = new Session<DispatchThrowServerWorld>(ServerConfig(),
+                    Schema<DispatchThrowServerWorld, DispatchThrowServerAuthorizer>(), serverTransport, observer);
+                PumpEstablished(client, server, 0, 3);
+                var command = new NetCommand { Value = 21 };
+                Assert.That(client.Enqueue(in command, 2), Is.EqualTo(EnqueueResult.Queued));
+                client.Step(3);
+                Assert.Throws<InvalidOperationException>(() => server.Step(3));
+            }
+            finally
+            {
+                World<DispatchThrowServerWorld>.DeleteEventReceiver(ref throwReceiver);
+                DestroyWorld<DispatchThrowClientWorld>();
+                DestroyWorld<DispatchThrowServerWorld>();
+            }
+
+            CreateWorld<DispatchSentinelClientWorld>(ChunkOwnerType.Other);
+            CreateWorld<DispatchSentinelServerWorld>(ChunkOwnerType.Self);
+            var sentinelReceiver = World<DispatchSentinelServerWorld>
+                .RegisterEventReceiver<CommandAcceptedEvent<NetCommand>>();
+            try
+            {
+                MemoryTransport.CreatePair(8, out var clientTransport, out var serverTransport);
+                using var client = new Session<DispatchSentinelClientWorld>(ClientConfig(),
+                    Schema<DispatchSentinelClientWorld, DispatchSentinelClientAuthorizer>(), clientTransport, observer);
+                using var server = new Session<DispatchSentinelServerWorld>(ServerConfig(),
+                    Schema<DispatchSentinelServerWorld, DispatchSentinelServerAuthorizer>(), serverTransport, observer);
+                PumpEstablished(client, server, 0, 3);
+                var command = new NetCommand { Value = 22 };
+                Assert.That(client.Enqueue(in command, 2), Is.EqualTo(EnqueueResult.Queued));
+                client.Step(3);
+                Assert.DoesNotThrow(() => server.Step(3));
+                Assert.That(server.Stats.CommandsAccepted, Is.EqualTo(1));
+            }
+            finally
+            {
+                World<DispatchSentinelServerWorld>.DeleteEventReceiver(ref sentinelReceiver);
+                DestroyWorld<DispatchSentinelClientWorld>();
+                DestroyWorld<DispatchSentinelServerWorld>();
+            }
+
+            yield return null;
+            Assert.That(recorder.Valid, Is.True);
+            Assert.That(CompletedSamples(recorder), Is.EqualTo(2));
         }
 
         private static ProfilerRecorder Start(string name) => ProfilerRecorder.StartNew(
@@ -226,6 +286,14 @@ namespace UniGame.StaticEcs.Network.Profiler.Tests
             ProfilerRecorderOptions.StartImmediately |
             ProfilerRecorderOptions.WrapAroundWhenCapacityReached |
             ProfilerRecorderOptions.SumAllSamplesInFrame);
+
+        private static long CompletedSamples(ProfilerRecorder recorder)
+        {
+            long count = 0;
+            for (var i = 0; i < recorder.Count; i++)
+                count += recorder.GetSample(i).Count;
+            return count;
+        }
 
         private static void PumpEstablished<TClient, TServer>(
             Session<TClient> client,
@@ -406,6 +474,14 @@ namespace UniGame.StaticEcs.Network.Profiler.Tests
             internal static bool Reject = true;
             public bool Authorize(in CommandContext context, in NetCommand command) => !Reject;
         }
+        private struct DispatchThrowClientAuthorizer : ICommandAuthorizer<DispatchThrowClientWorld, NetCommand>
+        { public bool Authorize(in CommandContext context, in NetCommand command) => true; }
+        private struct DispatchThrowServerAuthorizer : ICommandAuthorizer<DispatchThrowServerWorld, NetCommand>
+        { public bool Authorize(in CommandContext context, in NetCommand command) => throw new InvalidOperationException("authorize"); }
+        private struct DispatchSentinelClientAuthorizer : ICommandAuthorizer<DispatchSentinelClientWorld, NetCommand>
+        { public bool Authorize(in CommandContext context, in NetCommand command) => true; }
+        private struct DispatchSentinelServerAuthorizer : ICommandAuthorizer<DispatchSentinelServerWorld, NetCommand>
+        { public bool Authorize(in CommandContext context, in NetCommand command) => true; }
         private struct NetEntity : IEntityType { public byte Id() => 27; }
         private struct NetValue : IComponent { public int Value; }
         private struct NetValueCodec : ICodec<NetValue>
@@ -428,5 +504,9 @@ namespace UniGame.StaticEcs.Network.Profiler.Tests
         private struct ThrowWorld : IWorldType { }
         private struct SentinelWorld : IWorldType { }
         private struct SendWorld : IWorldType { }
+        private struct DispatchThrowClientWorld : IWorldType { }
+        private struct DispatchThrowServerWorld : IWorldType { }
+        private struct DispatchSentinelClientWorld : IWorldType { }
+        private struct DispatchSentinelServerWorld : IWorldType { }
     }
 }
