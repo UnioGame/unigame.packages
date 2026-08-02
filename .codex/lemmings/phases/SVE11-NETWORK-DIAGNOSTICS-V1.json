@@ -18,17 +18,25 @@
       "resource": "Game.Packages integration branch",
       "owner": "orchestrator",
       "scope": "Only the orchestrator integrates an Accepted diagnostics candidate",
-      "status": "Active"
+      "status": "Released"
     },
     {
       "resource": "sve11-network-diagnostics worktree",
       "owner": "SVE11-NETWORK-DIAGNOSTICS",
       "scope": "Only the frozen diagnostics files and bounded Session instrumentation",
-      "status": "Active"
+      "status": "Released"
     }
   ],
   "close": {
-    "mergeCommits": [],
-    "phaseValidation": []
+    "mergeCommits": [
+      "35ceac951a4f418c3358aa7052682a3e11d3481c",
+      "1bb7805098ffd0276b4381e019eac0b1b4930822",
+      "815287c04c17edd686594eda6f0846df5616c370"
+    ],
+    "phaseValidation": [
+      "Independent gpt-5.6-sol:high full-range review accepted 14459a615b46826269751f034c3eb53071614a33..a4087181e9f0945d373796a79f602436f9621a63.",
+      "Focused diagnostics/replay tests passed 43/43 and full standalone package reflection tests passed 186/186.",
+      "Post-integration Unity EditMode UniGame.StaticEcs.Network.Tests passed 187/187 in 5.66 seconds with zero failures."
+    ]
   }
 }

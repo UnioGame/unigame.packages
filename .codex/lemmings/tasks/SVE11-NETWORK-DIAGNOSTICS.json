@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-DIAGNOSTICS",
   "mode": "strict",
-  "state": "Accepted",
-  "previousState": "Review",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "complex-worker",
   "branch": "codex/sve11-network-diagnostics",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-diagnostics",
@@ -74,7 +74,8 @@
       "Strict repair 722d93ed325c028a914bf0f7a0bff26fde3bc5d4 fixes replay step/truncation validation, simultaneous-close State cardinality, and expands the focused acceptance matrix to 31 passing tests.",
       "The repaired full standalone package reflection harness passes 174/174; the known baseline Mono allocation-counter defect remains the only excluded test.",
       "Verification repair a4087181e9f0945d373796a79f602436f9621a63 fixes ReplayTape.Save lifecycle precedence and completes exact binary-malformation plus Session seam/stat/fingerprint evidence.",
-      "The final focused harness passes 43/43 and the full standalone package reflection harness passes 186/186 with warnings-as-errors compilation clean."
+      "The final focused harness passes 43/43 and the full standalone package reflection harness passes 186/186 with warnings-as-errors compilation clean.",
+      "Post-integration Unity EditMode namespace UniGame.StaticEcs.Network.Tests passed 187/187 in 5.66 seconds with zero failures, skips or inconclusive results."
     ]
   },
   "baseSha": "14459a615b46826269751f034c3eb53071614a33",
@@ -123,5 +124,13 @@
     "head": "a4087181e9f0945d373796a79f602436f9621a63",
     "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-DIAGNOSTICS-V1.accepted.a408718.json"
   },
-  "close": null
+  "close": {
+    "mergeCommit": "815287c04c17edd686594eda6f0846df5616c370",
+    "integrationValidationPassed": true,
+    "evidence": [
+      "Accepted candidate and repairs integrated as 35ceac951a4f418c3358aa7052682a3e11d3481c, 1bb7805098ffd0276b4381e019eac0b1b4930822 and 815287c04c17edd686594eda6f0846df5616c370.",
+      "Unity compiled the integrated package and completed the filtered EditMode run with exit code 0.",
+      "Unity EditMode UniGame.StaticEcs.Network.Tests passed 187/187 in 5.66 seconds."
+    ]
+  }
 }
