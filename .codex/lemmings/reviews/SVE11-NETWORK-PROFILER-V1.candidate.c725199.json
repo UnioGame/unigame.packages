@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-PROFILER-V1",
+  "baseSha": "56b3672539eea260f17ec100ff42841d8f161124",
+  "headSha": "c725199fc0f1010b518fb18e5d2b3d594d91b060",
+  "status": "ChangesRequested",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [
+    "Add an explicit static constructor so ProfilerObserver construction deterministically initializes every static marker and counter before immediate recorder creation.",
+    "Replace Count-greater-than-zero marker assertions with exact completed-sample counts across frames and add callback-exception plus successful Dispatch sentinel coverage."
+  ],
+  "validation": [
+    "Runtime mappings, allocation and shared-state shape, package dependencies, public API, documentation, metas, ownership and compile evidence are otherwise clean.",
+    "The accepted diagnostics Apply-conflict path makes both role-specific Resync assertions reachable."
+  ]
+}
