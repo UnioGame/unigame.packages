@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-TRANSFER",
   "mode": "strict",
-  "state": "Planned",
-  "previousState": "Replan Required",
+  "state": "Replan Required",
+  "previousState": "Planned",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-transfer",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-transfer",
@@ -62,7 +62,8 @@
       "Baseline review cycle 1 requested exact retry-ack freezing, reachable history/apply tests, callback exception semantics, and public/protocol precedence refinements.",
       "Baseline review cycle 2 resolved the original blockers but requires reliable-intent serialization and exact Capture/history exception scope.",
       "Replan serializes one active reliable intent, freezes transactional Capture exceptions, and excludes process-level allocator failure recovery from the Session protocol contract.",
-      "Post-Replan review requires Requested-close interlock, queued versus active resync distinction, and monotonic cross-domain acknowledgement tracking."
+      "Post-Replan review requires Requested-close interlock, queued versus active resync distinction, and monotonic cross-domain acknowledgement tracking.",
+      "Post-Replan cycle 2 found that snapshot acknowledgement ordering must treat NoneTick as a logical bottom sentinel instead of numeric uint max."
     ]
   },
   "baseSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
