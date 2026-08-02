@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-PROFILER",
+  "cycle": 3,
+  "base": "56b3672539eea260f17ec100ff42841d8f161124",
+  "head": "6993ddc99f04b309ea821644601ccbda372f288b",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "findings": [],
+  "summary": "The direct protocol reference is necessary and sufficient for TypeId and CodecId in the test assembly. Production package boundaries and the previously accepted runtime behavior remain unchanged; the full range is ownership-clean and passes git diff --check."
+}
