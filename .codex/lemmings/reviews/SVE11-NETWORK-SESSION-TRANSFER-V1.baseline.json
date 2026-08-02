@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-SESSION-TRANSFER-V1",
+  "repoRoot": "D:/Dev/kontora/static.ecs.template/GameClient/Game.Packages",
+  "baselineSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
+  "planningHead": "e5071746f6e5e97145ba35a4436e82fc45f00604",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "blockers": [],
+  "validation": [
+    "Reviewed planning head e5071746f6e5e97145ba35a4436e82fc45f00604 against the frozen code baseline and all referenced accepted contracts.",
+    "Snapshot NoneTick and command zero acknowledgement domains are exact and every successful carrier updates monotonically.",
+    "Requested-close cancellation, queued versus active resync, one active reliable intent, independent snapshot preemption, transactional Capture and callback exception semantics are coherent.",
+    "The implementation is bounded to the declared owned files.",
+    "git diff --check and lemmings check --all passed with zero findings."
+  ]
+}

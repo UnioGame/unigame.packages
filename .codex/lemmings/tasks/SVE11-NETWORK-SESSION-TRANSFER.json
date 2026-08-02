@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-SESSION-TRANSFER",
   "mode": "strict",
-  "state": "Planned",
-  "previousState": "Replan Required",
+  "state": "Ready",
+  "previousState": "Planned",
   "role": "complex-worker",
   "branch": "codex/sve11-network-session-transfer",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-session-transfer",
@@ -64,7 +64,8 @@
       "Replan serializes one active reliable intent, freezes transactional Capture exceptions, and excludes process-level allocator failure recovery from the Session protocol contract.",
       "Post-Replan review requires Requested-close interlock, queued versus active resync distinction, and monotonic cross-domain acknowledgement tracking.",
       "Post-Replan cycle 2 found that snapshot acknowledgement ordering must treat NoneTick as a logical bottom sentinel instead of numeric uint max.",
-      "Replan freezes domain-aware acknowledgement ordering: NoneTick and command zero are bottom sentinels, then real values advance monotonically."
+      "Replan freezes domain-aware acknowledgement ordering: NoneTick and command zero are bottom sentinels, then real values advance monotonically.",
+      "The restarted Strict baseline review was accepted by gpt-5.6-sol:high at planning head e5071746f6e5e97145ba35a4436e82fc45f00604."
     ]
   },
   "baseSha": "ee5968c3001c35353df45035916e9ea0f660a42e",
