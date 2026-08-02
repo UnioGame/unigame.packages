@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-DIAGNOSTICS",
+  "mode": "strict",
+  "state": "Draft",
+  "previousState": null,
+  "role": "complex-worker",
+  "branch": "codex/sve11-network-diagnostics",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-diagnostics",
+  "plan": {
+    "goal": "Add optional Unity-free Session observation, statistics, fingerprints, strict NDJSON, and privacy-sensitive trace/replay.",
+    "acceptance": [
+      "Preserve every integrated Session and transport semantic with null, recording and throwing observers.",
+      "Expose only the frozen short diagnostics API with ordinary-log privacy and caller-owned observers/tapes.",
+      "Implement bounded allocation-free Observe, deterministic strict NDJSON and explicit loss records.",
+      "Implement exact bounded call-and-byte trace/replay without changing wrapped transport behavior.",
+      "Pass focused, full package, independent review and post-integration Unity validation."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-diagnostics.md",
+      ".codex/lemmings/contracts/SVE11-network-session-transfer.md",
+      "14459a615b46826269751f034c3eb53071614a33"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/Runtime/Diagnostics/**",
+      "unigame.staticecs.network/Runtime/SessionDiagnostics.cs",
+      "unigame.staticecs.network/Runtime/SessionDiagnostics.cs.meta",
+      "unigame.staticecs.network/Runtime/Session.cs",
+      "unigame.staticecs.network/Runtime/SessionTransfer.cs",
+      "unigame.staticecs.network/Tests/Editor/DiagnosticsTests.cs",
+      "unigame.staticecs.network/Tests/Editor/DiagnosticsTests.cs.meta",
+      "unigame.staticecs.network/Tests/Editor/ReplayTests.cs",
+      "unigame.staticecs.network/Tests/Editor/ReplayTests.cs.meta",
+      "unigame.staticecs.network/README.md"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network/Protocol/**",
+      "unigame.staticecs.network/Runtime/Replication/**",
+      "unigame.staticecs.network/Runtime/BuffersTransport.cs",
+      "unigame.staticecs.network/Runtime/CommandOutbox.cs",
+      "unigame.staticecs.network/Runtime/CommandDispatcher.cs",
+      "unigame.staticecs.network/Runtime/Framing.cs",
+      "unigame.staticecs.network/Runtime/Staging.cs",
+      "unigame.staticecs.network/Runtime/Schema.cs",
+      "unigame.staticecs.network/Runtime/SchemaInvokers.cs",
+      "unigame.staticecs.network/Runtime/History.cs",
+      "unigame.staticecs.network/Runtime/*.asmdef",
+      "unigame.staticecs.network/package.json",
+      "unigame.staticecs.network.profiler/**",
+      "unigame.ai.lemmings/**",
+      "unigame.staticecs.unity/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": null,
+    "actual": null
+  },
+  "execution": {
+    "handoff": null,
+    "validationEvidence": [
+      "Read-only diagnostics and profiler discovery completed at exact baseline 14459a615b46826269751f034c3eb53071614a33.",
+      "The base diagnostics phase is intentionally Unity-free; the Unity Profiler adapter is a later dependent package."
+    ]
+  },
+  "baseSha": "14459a615b46826269751f034c3eb53071614a33",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "Observation changes retry, exception or lease ownership semantics",
+        "test": "Null/recording/throwing observer equivalence at every paired seam"
+      },
+      {
+        "risk": "Ordinary logs leak packet or identity data or silently lose events",
+        "test": "Known-secret privacy scan plus deterministic NDJSON overflow gap golden"
+      },
+      {
+        "risk": "Tracing changes transport behavior or replays an incomplete transcript",
+        "test": "True/false/throw/transfer-then-throw equivalence, overflow and replay refusal"
+      },
+      {
+        "risk": "Replay accepts a different call order or outbound packet",
+        "test": "Exact step/channel/bytes matching and mismatch/truncation/end fault matrix"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "Focused warnings-as-errors diagnostics and replay tests",
+      "Full available package harness",
+      "Exact ownership/meta/privacy/no-Sample scans",
+      "lemmings check --all",
+      "Unity EditMode unigame.staticecs.network.tests after integration"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "review": {
+    "taskId": "SVE11-NETWORK-DIAGNOSTICS",
+    "base": "14459a615b46826269751f034c3eb53071614a33",
+    "status": "Pending",
+    "cycle": 0,
+    "head": null,
+    "evidence": null
+  },
+  "close": null
+}
