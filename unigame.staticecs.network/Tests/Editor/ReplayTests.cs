@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.IO;
+using System.Reflection;
 using NUnit.Framework;
 
 namespace UniGame.StaticEcs.Network.Tests
@@ -179,6 +181,127 @@ namespace UniGame.StaticEcs.Network.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => new ReplayTape((long)int.MaxValue + 1));
         }
 
+        [Test]
+        public void LoadRejectsCallStepDifferentFromLastBarrierWithValidChecksum()
+        {
+            var inner = new ScriptTransport { SendMode = SendMode.Accept };
+            using var tape = new ReplayTape(1024);
+            using (var trace = new TraceTransport(inner, tape))
+            {
+                trace.BeginStep(5);
+                var packet = Lease(1);
+                trace.TrySend(Channel.ReliableOrdered, ref packet);
+            }
+            using var output = new MemoryStream();
+            tape.Save(output);
+            var bytes = output.ToArray();
+            Write64(bytes, 72, 6);
+            Write64(bytes, 24, XxHash64(bytes.AsSpan(40)));
+            Assert.Throws<InvalidDataException>(() => ReplayTape.Load(new MemoryStream(bytes), 1024));
+        }
+
+        [Test]
+        public void ReplayIndependentlyRejectsInMemoryStepCorruptionWithoutConsumingSend()
+        {
+            var inner = new ScriptTransport { SendMode = SendMode.Accept };
+            using var tape = new ReplayTape(1024);
+            using (var trace = new TraceTransport(inner, tape))
+            {
+                trace.BeginStep(5);
+                var packet = Lease(1);
+                trace.TrySend(Channel.ReliableOrdered, ref packet);
+            }
+            SetRecordStep(tape, 1, 6);
+            var replay = new ReplayTransport(tape);
+            replay.BeginStep(5);
+            var send = Lease(1);
+            Assert.Throws<InvalidOperationException>(() => replay.TrySend(Channel.ReliableOrdered, ref send));
+            Assert.That(send.IsValid, Is.True);
+            send.Dispose();
+            Assert.DoesNotThrow(replay.Dispose);
+        }
+
+        [Test]
+        public void RecordedFaultedStateWithRemainingCallsStillReportsEarlyDisposeTruncation()
+        {
+            var inner = new ScriptTransport { SendMode = SendMode.Reject, FaultAfterSend = true };
+            using var tape = new ReplayTape(1024);
+            using (var trace = new TraceTransport(inner, tape))
+            {
+                var first = Lease(1); trace.TrySend(Channel.ReliableOrdered, ref first); first.Dispose();
+                var second = Lease(2); trace.TrySend(Channel.ReliableOrdered, ref second); second.Dispose();
+            }
+            var replay = new ReplayTransport(tape);
+            var packet = Lease(1);
+            Assert.That(replay.TrySend(Channel.ReliableOrdered, ref packet), Is.False);
+            Assert.That(replay.State, Is.EqualTo(TransportState.Faulted));
+            packet.Dispose();
+            Assert.Throws<InvalidOperationException>(replay.Dispose);
+            Assert.DoesNotThrow(replay.Dispose);
+        }
+
+        [Test]
+        public void FalseReceiveAndBothChannelMismatchesAreExact()
+        {
+            var inner = new ScriptTransport();
+            using var tape = new ReplayTape(1024);
+            using (var trace = new TraceTransport(inner, tape))
+                Assert.That(trace.TryReceive(out _, out _), Is.False);
+            using (var replay = new ReplayTransport(tape))
+                Assert.That(replay.TryReceive(out _, out _), Is.False);
+
+            using var sendTape = RecordSingleSend(new byte[] { 3 }, true);
+            var wrongChannel = new ReplayTransport(sendTape);
+            var send = Lease(3);
+            Assert.Throws<InvalidOperationException>(() => wrongChannel.TrySend(Channel.UnreliableSequenced, ref send));
+            Assert.That(send.IsValid, Is.True);
+            send.Dispose();
+            wrongChannel.Dispose();
+        }
+
+        [Test]
+        public void CallAfterTranscriptEndFaultsAndDoesNotConsumeSend()
+        {
+            using var tape = RecordSingleSend(new byte[] { 1 }, true);
+            var replay = new ReplayTransport(tape);
+            var first = Lease(1); replay.TrySend(Channel.ReliableOrdered, ref first);
+            var extra = Lease(2);
+            Assert.Throws<InvalidOperationException>(() => replay.TrySend(Channel.ReliableOrdered, ref extra));
+            Assert.That(extra.IsValid, Is.True);
+            extra.Dispose();
+            replay.Dispose();
+        }
+
+        [Test]
+        public void TracePreservesBeginReceiveAndDisposeExceptionsAndAlwaysReleasesClaim()
+        {
+            var beginInner = new ScriptTransport { BeginThrow = true };
+            using (var beginTape = new ReplayTape(1024))
+            {
+                var trace = new TraceTransport(beginInner, beginTape);
+                Assert.Throws<InvalidOperationException>(() => trace.BeginStep(1));
+                trace.Dispose();
+                Assert.That(beginTape.IsComplete, Is.False);
+            }
+
+            var receiveInner = new ScriptTransport { ReceiveThrow = true, ReceiveLeaseThenThrow = true };
+            using (var receiveTape = new ReplayTape(1024))
+            {
+                var trace = new TraceTransport(receiveInner, receiveTape);
+                Assert.Throws<InvalidOperationException>(() => trace.TryReceive(out _, out _));
+                Assert.That(receiveInner.LastReceiveAlias.IsValid, Is.False);
+                trace.Dispose();
+                Assert.That(receiveTape.IsComplete, Is.False);
+            }
+
+            var disposeInner = new ScriptTransport { DisposeThrow = true };
+            using var disposeTape = new ReplayTape(1024);
+            var disposeTrace = new TraceTransport(disposeInner, disposeTape);
+            Assert.Throws<InvalidOperationException>(disposeTrace.Dispose);
+            Assert.That(disposeTape.IsSealed, Is.True);
+            Assert.That(disposeTape.IsComplete, Is.False);
+        }
+
         private static ReplayTape RecordSingleSend(byte[] bytes, bool accepted)
         {
             var tape = new ReplayTape(1024);
@@ -203,6 +326,50 @@ namespace UniGame.StaticEcs.Network.Tests
         private static uint Read32(byte[] bytes, int offset) =>
             (uint)(bytes[offset] | bytes[offset + 1] << 8 | bytes[offset + 2] << 16 | bytes[offset + 3] << 24);
 
+        private static void SetRecordStep(ReplayTape tape, int index, ulong step)
+        {
+            var field = typeof(ReplayTape).GetField("_records", BindingFlags.Instance | BindingFlags.NonPublic);
+            var records = (IList)field.GetValue(tape);
+            var record = records[index];
+            var stepField = record.GetType().GetField("<Step>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+            stepField.SetValue(record, step);
+        }
+
+        private static void Write64(byte[] bytes, int offset, ulong value)
+        {
+            for (var i = 0; i < 8; i++) bytes[offset + i] = (byte)(value >> (i * 8));
+        }
+
+        private static ulong XxHash64(ReadOnlySpan<byte> data)
+        {
+            const ulong p1 = 11400714785074694791UL, p2 = 14029467366897019727UL;
+            const ulong p3 = 1609587929392839161UL, p4 = 9650029242287828579UL, p5 = 2870177450012600261UL;
+            var index = 0; ulong hash;
+            ulong Round(ulong value, ulong input) { value += input * p2; value = value << 31 | value >> 33; return value * p1; }
+            if (data.Length >= 32)
+            {
+                var a = unchecked(p1 + p2); var b = p2; var c = 0UL; var d = unchecked(0UL - p1);
+                var limit = data.Length - 32;
+                do { a = Round(a, Read64(data, index)); index += 8; b = Round(b, Read64(data, index)); index += 8; c = Round(c, Read64(data, index)); index += 8; d = Round(d, Read64(data, index)); index += 8; } while (index <= limit);
+                hash = (a << 1 | a >> 63) + (b << 7 | b >> 57) + (c << 12 | c >> 52) + (d << 18 | d >> 46);
+                hash ^= Round(0, a); hash = hash * p1 + p4; hash ^= Round(0, b); hash = hash * p1 + p4;
+                hash ^= Round(0, c); hash = hash * p1 + p4; hash ^= Round(0, d); hash = hash * p1 + p4;
+            }
+            else hash = p5;
+            hash += (ulong)data.Length;
+            while (index <= data.Length - 8) { var value = Round(0, Read64(data, index)); hash ^= value; hash = (hash << 27 | hash >> 37) * p1 + p4; index += 8; }
+            if (index <= data.Length - 4) { hash ^= Read32(data, index) * p1; hash = (hash << 23 | hash >> 41) * p2 + p3; index += 4; }
+            while (index < data.Length) { hash ^= data[index] * p5; hash = (hash << 11 | hash >> 53) * p1; index++; }
+            hash ^= hash >> 33; hash *= p2; hash ^= hash >> 29; hash *= p3; hash ^= hash >> 32;
+            return hash;
+        }
+
+        private static uint Read32(ReadOnlySpan<byte> bytes, int offset) =>
+            (uint)(bytes[offset] | bytes[offset + 1] << 8 | bytes[offset + 2] << 16 | bytes[offset + 3] << 24);
+
+        private static ulong Read64(ReadOnlySpan<byte> bytes, int offset) =>
+            Read32(bytes, offset) | (ulong)Read32(bytes, offset + 4) << 32;
+
         public enum SendMode { Accept, Reject, Throw, TransferThenThrow }
 
         private sealed class ScriptTransport : ITransport, ISteppedTransport
@@ -211,8 +378,14 @@ namespace UniGame.StaticEcs.Network.Tests
             public TransportError Error { get; set; } = TransportError.None;
             public SendMode SendMode { get; set; } = SendMode.Reject;
             public byte[] Inbound { get; set; }
+            public bool BeginThrow { get; set; }
+            public bool ReceiveThrow { get; set; }
+            public bool ReceiveLeaseThenThrow { get; set; }
+            public bool DisposeThrow { get; set; }
+            public bool FaultAfterSend { get; set; }
+            public PacketLease LastReceiveAlias { get; private set; }
             public int DisposeCount { get; private set; }
-            public void BeginStep(ulong stepIndex) { }
+            public void BeginStep(ulong stepIndex) { if (BeginThrow) throw new InvalidOperationException("begin"); }
             public bool TrySend(Channel channel, ref PacketLease packet)
             {
                 if (SendMode == SendMode.Throw) throw new InvalidOperationException("send");
@@ -221,19 +394,30 @@ namespace UniGame.StaticEcs.Network.Tests
                     var owned = PacketLease.Transfer(ref packet); owned.Dispose();
                     throw new InvalidOperationException("send");
                 }
-                if (SendMode == SendMode.Reject) return false;
+                if (SendMode == SendMode.Reject)
+                {
+                    if (FaultAfterSend) { State = TransportState.Faulted; Error = TransportError.InvalidPacket; }
+                    return false;
+                }
                 var accepted = PacketLease.Transfer(ref packet); accepted.Dispose();
                 return true;
             }
             public bool TryReceive(out Channel channel, out PacketLease packet)
             {
+                if (ReceiveThrow)
+                {
+                    channel = default;
+                    packet = ReceiveLeaseThenThrow ? Lease(9) : default;
+                    LastReceiveAlias = packet;
+                    throw new InvalidOperationException("receive");
+                }
                 if (Inbound == null) { channel = default; packet = default; return false; }
                 channel = Channel.UnreliableSequenced;
                 packet = Lease(Inbound);
                 Inbound = null;
                 return true;
             }
-            public void Dispose() { if (State == TransportState.Disposed) return; DisposeCount++; State = TransportState.Disposed; Error = TransportError.Disposed; }
+            public void Dispose() { if (State == TransportState.Disposed) return; DisposeCount++; State = TransportState.Disposed; Error = TransportError.Disposed; if (DisposeThrow) throw new InvalidOperationException("dispose"); }
         }
     }
 }

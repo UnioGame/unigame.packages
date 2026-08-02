@@ -100,11 +100,15 @@ namespace UniGame.StaticEcs.Network
             if (count > int.MaxValue) throw new InvalidDataException("Replay record count is too large.");
             var records = new List<Record>((int)count);
             var offset = 0;
+            var currentStep = ulong.MaxValue;
             try
             {
                 for (uint i = 0; i < count; i++)
                 {
                     var record = ReadRecord(section, ref offset);
+                    if (record.Tag == 1) currentStep = record.Step;
+                    else if (record.Step != currentStep)
+                        throw new InvalidDataException("Replay call step does not match the last successful barrier.");
                     records.Add(record);
                 }
                 if (offset != section.Length) throw new InvalidDataException("Replay section length mismatch.");

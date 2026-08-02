@@ -7,6 +7,8 @@ namespace UniGame.StaticEcs.Network
     {
         private readonly ReplayTape _tape;
         private int _index;
+        private ulong _currentStep = ulong.MaxValue;
+        private bool _mismatched;
         private bool _disposed;
 
         /// <summary>Atomically borrows a sealed complete tape.</summary>
@@ -31,6 +33,7 @@ namespace UniGame.StaticEcs.Network
             var record = Peek();
             if (record.Tag != 1 || record.Step != stepIndex) Mismatch();
             Consume(record);
+            _currentStep = stepIndex;
         }
 
         /// <summary>Consumes one exactly matching recorded outbound call and packet.</summary>
@@ -38,7 +41,8 @@ namespace UniGame.StaticEcs.Network
         {
             EnsureActive();
             var record = Peek();
-            if (record.Tag != 2 || record.Channel != (byte)channel || !packet.Span.SequenceEqual(record.Payload))
+            if (record.Tag != 2 || record.Step != _currentStep || record.Channel != (byte)channel ||
+                !packet.Span.SequenceEqual(record.Payload))
                 Mismatch();
             if (record.Flags == 1)
             {
@@ -54,7 +58,7 @@ namespace UniGame.StaticEcs.Network
         {
             EnsureActive();
             var record = Peek();
-            if (record.Tag != 3) Mismatch();
+            if (record.Tag != 3 || record.Step != _currentStep) Mismatch();
             Consume(record);
             if (record.Flags == 0)
             {
@@ -83,7 +87,7 @@ namespace UniGame.StaticEcs.Network
         {
             if (_disposed) return;
             _disposed = true;
-            var truncated = State != TransportState.Faulted && _tape.RecordAt(_index) != null;
+            var truncated = !_mismatched && _tape.RecordAt(_index) != null;
             try
             {
                 if (truncated)
@@ -117,6 +121,7 @@ namespace UniGame.StaticEcs.Network
 
         private void Mismatch()
         {
+            _mismatched = true;
             State = TransportState.Faulted;
             Error = TransportError.InvalidPacket;
             throw new InvalidOperationException("The replay call does not match the transcript.");

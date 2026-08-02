@@ -487,8 +487,11 @@ namespace UniGame.StaticEcs.Network
                 }
                 else
                 {
-                    _state = SessionState.Closing;
-                    ObservePoint(SessionEventKind.State);
+                    if (_state != SessionState.Closing)
+                    {
+                        _state = SessionState.Closing;
+                        ObservePoint(SessionEventKind.State);
+                    }
                     _stage = SessionStage.RequestedClose;
                     _requestedIntent = true;
                 }
