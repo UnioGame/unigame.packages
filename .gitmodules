@@ -109,3 +109,9 @@
 [submodule "unigame.ai.lemmings"]
 	path = unigame.ai.lemmings
 	url = https://github.com/UnioGame/unigame.ai.lemmings.git
+[submodule "unigame.staticecs.network"]
+	path = unigame.staticecs.network
+	url = https://github.com/UnioGame/unigame.staticecs.network.git
+[submodule "unigame.staticecs.network.profiler"]
+	path = unigame.staticecs.network.profiler
+	url = https://github.com/UnioGame/unigame.staticecs.network.profiler.git
