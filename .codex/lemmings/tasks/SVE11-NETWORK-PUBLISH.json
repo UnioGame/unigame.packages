@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "taskId": "SVE11-NETWORK-PUBLISH",
+  "mode": "strict",
+  "state": "Ready",
+  "previousState": "Planned",
+  "role": "complex-worker",
+  "branch": "codex/sve11-network-publish",
+  "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-publish",
+  "plan": {
+    "goal": "Publish two snapshot package repositories and replace their embedded Game.Packages directories with pinned submodules.",
+    "acceptance": [
+      "Change only the two README titles before snapshot publication.",
+      "Publish atomic main and annotated 2026.0.1 refs to both empty GitHub repositories without force.",
+      "Replace both directories with HTTPS submodules at the published commits and add no branch properties.",
+      "Preserve Unity meta policy, root user changes and all unrelated module content.",
+      "Pass recursive clone, Unity tests, independent review and Strict lifecycle validation."
+    ],
+    "dependencies": [
+      ".codex/lemmings/contracts/SVE11-network-package-publication.md",
+      "f19cf1528de8e7d15ea1befb0243de3903c55fe0"
+    ]
+  },
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/**",
+      "unigame.staticecs.network.profiler/**",
+      ".gitmodules"
+    ],
+    "shared": [],
+    "forbidden": [
+      ".codex/**",
+      "unigame.staticecs.network.meta",
+      "unigame.staticecs.network.profiler.meta",
+      "**/ProjectSettings/**",
+      "lemmings-worktrees/**"
+    ]
+  },
+  "models": {
+    "requested": null,
+    "assigned": "gpt-5.6-sol:medium",
+    "actual": null
+  },
+  "execution": {
+    "handoff": "Work only in the isolated publication worktree from exact baseline f19cf152; normalize the two README titles, preserve all other package bytes and replace the directories with the two already-published pinned submodules. The orchestrator alone owns remote publication and root gitlink integration.",
+    "validationEvidence": [
+      "Independent gpt-5.6-sol:high baseline review accepted the refined publication contract.",
+      "Both exact GitHub remotes returned zero refs immediately before phase preparation."
+    ]
+  },
+  "baseSha": "f19cf1528de8e7d15ea1befb0243de3903c55fe0",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "Published snapshot differs from the reviewed package trees",
+        "test": "Exact path, mode and blob hash manifest with only two allowed README blobs"
+      },
+      {
+        "risk": "Remote refs race or tags target a different commit",
+        "test": "Atomic push and exact post-push ref allowlist with peeled tag equality"
+      },
+      {
+        "risk": "Submodule conversion loses Unity metadata or is not reproducible",
+        "test": "Meta byte comparison, mode-160000 checks and local recursive clone"
+      },
+      {
+        "risk": "Root dirty user settings are staged",
+        "test": "Exact staged path inspection before every root commit"
+      }
+    ],
+    "commands": [
+      "git diff --check",
+      "git ls-remote --symref plus heads and tags",
+      "local git clone --recurse-submodules",
+      "focused Unity EditMode and PlayMode tests",
+      "lemmings check --all",
+      "independent gpt-5.6-sol:high review"
+    ],
+    "allowedOutputs": [
+      "temporary snapshot repositories and recursive clone outside tracked trees"
+    ],
+    "debt": []
+  },
+  "review": {
+    "taskId": "SVE11-NETWORK-PUBLISH",
+    "base": "f19cf1528de8e7d15ea1befb0243de3903c55fe0",
+    "status": "Pending",
+    "cycle": 0,
+    "head": null,
+    "evidence": null
+  },
+  "close": null
+}

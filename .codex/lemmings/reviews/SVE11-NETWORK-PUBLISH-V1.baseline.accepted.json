@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-PUBLISH-V1",
+  "planningHead": "f19cf1528de8e7d15ea1befb0243de3903c55fe0",
+  "baseSha": "f19cf1528de8e7d15ea1befb0243de3903c55fe0",
+  "status": "Accepted",
+  "reviewerModel": "gpt-5.6-sol:high",
+  "validation": [
+    "Both exact GitHub remotes returned zero refs immediately before phase preparation.",
+    "Atomic publication and an exact post-push ref allowlist close the remote race window before submodule replacement.",
+    "The core folder meta remains intentionally absent and the profiler sibling meta remains byte-identical.",
+    "Snapshot fidelity, tag peeling, gitlink modes, dirty-root preservation and local recursive clone evidence are frozen."
+  ],
+  "blockers": []
+}

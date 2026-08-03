@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "SVE11-NETWORK-PUBLISH-V1",
+  "baselineSha": "f19cf1528de8e7d15ea1befb0243de3903c55fe0",
+  "integrationBranch": "codex/sve11-network-package",
+  "contractsFrozen": true,
+  "contracts": [
+    ".codex/lemmings/contracts/SVE11-network-package-publication.md"
+  ],
+  "baselineReview": {
+    "status": "Accepted",
+    "reviewerModel": "gpt-5.6-sol:high",
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-PUBLISH-V1.baseline.accepted.json"
+  },
+  "leases": [
+    {
+      "resource": "unigame.staticecs.network GitHub repository",
+      "owner": "orchestrator",
+      "scope": "Atomic first publication of main and 2026.0.1",
+      "status": "Active"
+    },
+    {
+      "resource": "unigame.staticecs.network.profiler GitHub repository",
+      "owner": "orchestrator",
+      "scope": "Atomic first publication of main and 2026.0.1",
+      "status": "Active"
+    },
+    {
+      "resource": "network package publication worktree",
+      "owner": "SVE11-NETWORK-PUBLISH",
+      "scope": "Two package READMEs, package directories and .gitmodules",
+      "status": "Active"
+    },
+    {
+      "resource": "root Game.Packages gitlink",
+      "owner": "orchestrator",
+      "scope": "Selective local integration without ProjectSettings",
+      "status": "Active"
+    }
+  ],
+  "close": null
+}
