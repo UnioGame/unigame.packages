@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-PUBLISH",
   "mode": "strict",
-  "state": "Ready",
-  "previousState": "Planned",
+  "state": "Active",
+  "previousState": "Ready",
   "role": "complex-worker",
   "branch": "codex/sve11-network-publish",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-publish",
@@ -48,7 +48,7 @@
       "Both exact GitHub remotes returned zero refs immediately before phase preparation."
     ]
   },
-  "baseSha": "f19cf1528de8e7d15ea1befb0243de3903c55fe0",
+  "baseSha": "e4cfb436d0d2759fca97f8cb0e41a11d502801e3",
   "commits": {
     "candidate": null,
     "fix": []
@@ -87,7 +87,7 @@
   },
   "review": {
     "taskId": "SVE11-NETWORK-PUBLISH",
-    "base": "f19cf1528de8e7d15ea1befb0243de3903c55fe0",
+    "base": "e4cfb436d0d2759fca97f8cb0e41a11d502801e3",
     "status": "Pending",
     "cycle": 0,
     "head": null,
