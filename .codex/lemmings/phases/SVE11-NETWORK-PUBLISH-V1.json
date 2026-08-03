@@ -17,26 +17,38 @@
       "resource": "unigame.staticecs.network GitHub repository",
       "owner": "orchestrator",
       "scope": "Atomic first publication of main and 2026.0.1",
-      "status": "Active"
+      "status": "Released"
     },
     {
       "resource": "unigame.staticecs.network.profiler GitHub repository",
       "owner": "orchestrator",
       "scope": "Atomic first publication of main and 2026.0.1",
-      "status": "Active"
+      "status": "Released"
     },
     {
       "resource": "network package publication worktree",
       "owner": "SVE11-NETWORK-PUBLISH",
       "scope": "Two package READMEs, package directories and .gitmodules",
-      "status": "Active"
+      "status": "Released"
     },
     {
       "resource": "root Game.Packages gitlink",
       "owner": "orchestrator",
       "scope": "Selective local integration without ProjectSettings",
-      "status": "Active"
+      "status": "Released"
     }
   ],
-  "close": null
+  "close": {
+    "mergeCommits": [
+      "cb21068",
+      "4e674c1"
+    ],
+    "phaseValidation": [
+      "Independent high baseline and full-range reviews accepted the frozen publication and submodule conversion.",
+      "Atomic GitHub publication created exact main and annotated 2026.0.1 refs for both repositories.",
+      "Snapshot tree hashes, gitlinks, URLs, tag peeling and Unity metadata policy matched the frozen contract.",
+      "Unity EditMode passed network 187/187, profiler 5/5 and Game Network Core 17/17; NetworkSandbox PlayMode passed 6/6.",
+      "Fresh local clone proved both new submodules; an unrelated pre-existing unpublished google.api.v4 gitlink prevents an all-module recursive clone and is recorded as non-blocking debt."
+    ]
+  }
 }

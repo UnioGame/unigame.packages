@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "taskId": "SVE11-NETWORK-PUBLISH",
   "mode": "strict",
-  "state": "Active",
-  "previousState": "Ready",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "complex-worker",
   "branch": "codex/sve11-network-publish",
   "worktree": "D:/Dev/kontora/static.ecs.template/GameClient/lemmings-worktrees/sve11-network-publish",
@@ -39,19 +39,28 @@
   "models": {
     "requested": null,
     "assigned": "gpt-5.6-sol:medium",
-    "actual": null
+    "actual": "gpt-5.6-sol:medium"
   },
   "execution": {
     "handoff": "Work only in the isolated publication worktree from exact baseline f19cf152; normalize the two README titles, preserve all other package bytes and replace the directories with the two already-published pinned submodules. The orchestrator alone owns remote publication and root gitlink integration.",
     "validationEvidence": [
       "Independent gpt-5.6-sol:high baseline review accepted the refined publication contract.",
-      "Both exact GitHub remotes returned zero refs immediately before phase preparation."
+      "Both exact GitHub remotes returned zero refs immediately before phase preparation.",
+      "README candidate 07863df1992c373ace6de8708e99963a64d25261 changed exactly two owned title lines and passed independent high review.",
+      "Snapshot trees exactly matched the reviewed package trees: network be5302aff2cd50d3c9936dc1c4ac3d22a7db23af and profiler e8a9854f53cf5f776938d3cdc8539101218a1329.",
+      "Atomic pushes published network 185190a3d0f9c1a1a1cf27dce2e9c745623139e0 and profiler 50309df897578d56562b56caac52824642cc0cf9 as main plus annotated 2026.0.1.",
+      "Post-push refs contain only HEAD to main, main, annotated 2026.0.1 and its peeled commit; main equals the peeled tag for both repositories.",
+      "Submodule candidate 01b7a9c4a7f920bbe3ecd4d50dbb4d99b9e1e9ea passed independent high full-range review.",
+      "Post-integration Unity EditMode passed network 187/187, profiler 5/5 and Game Network Core 17/17; NetworkSandbox PlayMode passed 6/6.",
+      "Fresh local clone registered and fetched both new HTTPS submodules; exact targeted checkout is clean at both tagged SHAs."
     ]
   },
   "baseSha": "e4cfb436d0d2759fca97f8cb0e41a11d502801e3",
   "commits": {
-    "candidate": null,
-    "fix": []
+    "candidate": "07863df1992c373ace6de8708e99963a64d25261",
+    "fix": [
+      "01b7a9c4a7f920bbe3ecd4d50dbb4d99b9e1e9ea"
+    ]
   },
   "validation": {
     "riskToTest": [
@@ -83,15 +92,33 @@
     "allowedOutputs": [
       "temporary snapshot repositories and recursive clone outside tracked trees"
     ],
-    "debt": []
+    "debt": [
+      {
+        "reason": "A full all-module recursive clone stops at the pre-existing google.api.v4 gitlink 246db47c53a22e058349c4ea8aa933a82ac05afe because that unrelated commit is not present on its configured remote.",
+        "owner": "google.api.v4 maintainer",
+        "futureGate": "Publish the existing Google importer commit or repoint that gitlink before requiring an all-module recursive clone gate.",
+        "blocking": false
+      }
+    ]
   },
   "review": {
     "taskId": "SVE11-NETWORK-PUBLISH",
     "base": "e4cfb436d0d2759fca97f8cb0e41a11d502801e3",
-    "status": "Pending",
-    "cycle": 0,
-    "head": null,
-    "evidence": null
+    "status": "Accepted",
+    "cycle": 2,
+    "head": "01b7a9c4a7f920bbe3ecd4d50dbb4d99b9e1e9ea",
+    "evidence": ".codex/lemmings/reviews/SVE11-NETWORK-PUBLISH.01b7a9c.accepted.json"
   },
-  "close": null
+  "close": {
+    "mergeCommits": [
+      "cb21068",
+      "4e674c1"
+    ],
+    "integrationValidationPassed": true,
+    "evidence": [
+      "Both external repositories are published on main and tagged 2026.0.1 at the exact reviewed snapshot trees.",
+      "Game.Packages contains exact HTTPS gitlinks without branch properties and remains unpushed.",
+      "All owned fresh-clone, Unity test, metadata and review gates passed; the unrelated Google recursive-clone limitation is recorded as non-blocking debt."
+    ]
+  }
 }
