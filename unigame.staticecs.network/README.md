@@ -1,4 +1,4 @@
-# UniGame Static ECS Network
+# Static ECS Network
 
 Transport-neutral protocol and replication foundations for deterministic Static ECS sessions.
 

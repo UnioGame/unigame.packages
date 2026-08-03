@@ -1,4 +1,4 @@
-# UniGame Static ECS Network Profiler
+# Static ECS Network Profiler
 
 ## Capabilities
 
