@@ -11,5 +11,5 @@
   "overrideReferences": false,
   "precompiledReferences": [],
   "allowUnsafeCode": false,
-  "noEngineReferences": true
+  "noEngineReferences": false
 }
