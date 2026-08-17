@@ -83,9 +83,10 @@ namespace UniGame.StaticEcs.Network.UnityTransport
     internal sealed class UnityTransportDriver : IDisposable
     {
         private const int NetworkMessageSize = 1472;
-        // UTP 2.6 adds a 2-byte fragmentation header and a 12-byte reliable header
-        // (default 32-packet window). Keep that internal overhead outside the public 64 KiB limit.
-        private const int ReliableFragmentationPipelineHeaderBytes = 14;
+        private const int ReliableWindowSize = 64;
+        // UTP 2.6 adds a 2-byte fragmentation header and a 16-byte reliable header
+        // at window 64. Keep that internal overhead outside the public 64 KiB limit.
+        private const int ReliableFragmentationPipelineHeaderBytes = 18;
 
         private readonly Dictionary<NetworkConnection, UnityTransportEndpoint> _connections =
             new Dictionary<NetworkConnection, UnityTransportEndpoint>();
@@ -117,6 +118,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport
             try
             {
                 networkSettings.WithNetworkConfigParameters(maxMessageSize: NetworkMessageSize);
+                networkSettings.WithReliableStageParameters(windowSize: ReliableWindowSize);
                 networkSettings.WithFragmentationStageParameters(
                     payloadCapacity: UnityTransportSettings.MaximumReliableBytes +
                         ReliableFragmentationPipelineHeaderBytes);
