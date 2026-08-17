@@ -12,19 +12,20 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
 
             Assert.AreEqual("127.0.0.1", value.Address);
             Assert.AreEqual(UnityTransportSettings.DefaultPort, value.Port);
-            Assert.AreEqual(1400, value.MaximumUnreliableBytes);
+            Assert.AreEqual(UnityTransportLimits.MaximumUnreliableBytes,
+                value.MaximumUnreliableBytes);
             Assert.AreEqual(256, value.ReceiveQueueCapacity);
             Assert.AreEqual(128, value.MaximumConnections);
         }
 
-        /// <summary>Verifies the unreliable limit cannot exceed the adapter packet cap.</summary>
+        /// <summary>Verifies oversized unreliable settings normalize to the supported UTP limit.</summary>
         [Test]
-        public void NormalizeCapsUnreliablePacketsAtReliableLimit()
+        public void NormalizeCapsOversizedUnreliablePackets()
         {
             var value = UnityTransportSettings.Default;
-            value.MaximumUnreliableBytes = UnityTransportSettings.MaximumReliableBytes + 1;
+            value.MaximumUnreliableBytes = UnityTransportLimits.MaximumUnreliableBytes + 1;
 
-            Assert.AreEqual(UnityTransportSettings.MaximumReliableBytes,
+            Assert.AreEqual(UnityTransportLimits.MaximumUnreliableBytes,
                 value.Normalize(false).MaximumUnreliableBytes);
         }
 
