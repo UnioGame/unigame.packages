@@ -91,6 +91,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
             client.Flush();
             WaitUntil(() =>
             {
+                client.Update();
                 server.Update();
                 return server.CaptureDiagnostics().Connections == 0;
             }, "Server did not observe the disconnect.");

@@ -79,6 +79,8 @@ namespace UniGame.StaticEcs.Network.UnityTransport
 
     internal sealed class UnityTransportDriver : IDisposable
     {
+        private const int NetworkMessageSize = 1472;
+
         private readonly Dictionary<NetworkConnection, UnityTransportEndpoint> _connections =
             new Dictionary<NetworkConnection, UnityTransportEndpoint>();
         private readonly Queue<UnityTransportEndpoint> _accepted =
@@ -106,6 +108,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport
             var networkSettings = new NetworkSettings();
             try
             {
+                networkSettings.WithNetworkConfigParameters(maxMessageSize: NetworkMessageSize);
                 networkSettings.WithFragmentationStageParameters(
                     payloadCapacity: UnityTransportSettings.MaximumReliableBytes);
                 _driver = NetworkDriver.Create(networkSettings);
