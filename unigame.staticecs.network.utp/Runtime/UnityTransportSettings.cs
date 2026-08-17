@@ -42,6 +42,8 @@ namespace UniGame.StaticEcs.Network.UnityTransport
                 value.Port = DefaultPort;
             if (value.MaximumUnreliableBytes <= PacketHeader.Size)
                 value.MaximumUnreliableBytes = 1400;
+            if (value.MaximumUnreliableBytes > MaximumReliableBytes)
+                value.MaximumUnreliableBytes = MaximumReliableBytes;
             if (value.ReceiveQueueCapacity <= 0)
                 value.ReceiveQueueCapacity = 256;
             if (value.MaximumConnections <= 0)
@@ -65,5 +67,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport
         public long Disconnects;
         /// <summary>Number of currently queued receive packets.</summary>
         public int QueuedPackets;
+        /// <summary>Number of receive leases currently owned outside the transport pool.</summary>
+        public int OutstandingLeases;
     }
 }

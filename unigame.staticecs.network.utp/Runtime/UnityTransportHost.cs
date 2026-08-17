@@ -14,8 +14,18 @@ namespace UniGame.StaticEcs.Network.UnityTransport
         public UnityTransportClientHost(UnityTransportSettings settings)
         {
             var normalized = settings.Normalize(false);
-            _driver = new UnityTransportDriver(in normalized, false);
-            Endpoint = _driver.Connect(NetworkEndpoint.Parse(normalized.Address, normalized.Port));
+            UnityTransportDriver driver = null;
+            try
+            {
+                driver = new UnityTransportDriver(in normalized, false);
+                Endpoint = driver.Connect(NetworkEndpoint.Parse(normalized.Address, normalized.Port));
+                _driver = driver;
+            }
+            catch
+            {
+                driver?.Dispose();
+                throw;
+            }
         }
 
         /// <summary>Gets the protocol-facing client endpoint.</summary>
@@ -41,8 +51,18 @@ namespace UniGame.StaticEcs.Network.UnityTransport
         public UnityTransportServerHost(UnityTransportSettings settings)
         {
             var normalized = settings.Normalize(true);
-            _driver = new UnityTransportDriver(in normalized, true);
-            _driver.Listen(NetworkEndpoint.Parse(normalized.Address, normalized.Port));
+            UnityTransportDriver driver = null;
+            try
+            {
+                driver = new UnityTransportDriver(in normalized, true);
+                driver.Listen(NetworkEndpoint.Parse(normalized.Address, normalized.Port));
+                _driver = driver;
+            }
+            catch
+            {
+                driver?.Dispose();
+                throw;
+            }
         }
 
         /// <summary>Advances accept, disconnect and receive processing.</summary>
@@ -59,8 +79,10 @@ namespace UniGame.StaticEcs.Network.UnityTransport
 
     internal sealed class UnityTransportDriver : IDisposable
     {
-        private readonly Dictionary<int, UnityTransportEndpoint> _connections = new Dictionary<int, UnityTransportEndpoint>();
-        private readonly Queue<INetworkTransport> _accepted = new Queue<INetworkTransport>();
+        private readonly Dictionary<NetworkConnection, UnityTransportEndpoint> _connections =
+            new Dictionary<NetworkConnection, UnityTransportEndpoint>();
+        private readonly Queue<UnityTransportEndpoint> _accepted =
+            new Queue<UnityTransportEndpoint>();
         private readonly NetworkBufferPool _pool;
         private readonly UnityTransportSettings _settings;
         private NetworkDriver _driver;
@@ -82,10 +104,26 @@ namespace UniGame.StaticEcs.Network.UnityTransport
                 ? NetworkBufferPool.DefaultServerRetainedBytes
                 : NetworkBufferPool.DefaultClientRetainedBytes);
             var networkSettings = new NetworkSettings();
-            networkSettings.WithFragmentationStageParameters(payloadCapacity: UnityTransportSettings.MaximumReliableBytes);
-            _driver = NetworkDriver.Create(networkSettings);
-            _reliable = _driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));
-            _unreliable = _driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
+            try
+            {
+                networkSettings.WithFragmentationStageParameters(
+                    payloadCapacity: UnityTransportSettings.MaximumReliableBytes);
+                _driver = NetworkDriver.Create(networkSettings);
+                _reliable = _driver.CreatePipeline(typeof(FragmentationPipelineStage),
+                    typeof(ReliableSequencedPipelineStage));
+                _unreliable = _driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
+            }
+            catch
+            {
+                if (_driver.IsCreated)
+                    _driver.Dispose();
+                _pool.Dispose();
+                throw;
+            }
+            finally
+            {
+                networkSettings.Dispose();
+            }
         }
 
         internal bool Connected
@@ -103,6 +141,8 @@ namespace UniGame.StaticEcs.Network.UnityTransport
         {
             ThrowIfDisposed();
             var connection = _driver.Connect(address);
+            if (!connection.IsCreated)
+                throw new InvalidOperationException("Unable to create a Unity Transport connection.");
             return Add(connection, false);
         }
 
@@ -117,10 +157,14 @@ namespace UniGame.StaticEcs.Network.UnityTransport
 
         internal bool TryAccept(out INetworkTransport endpoint)
         {
-            if (_accepted.Count > 0)
+            while (_accepted.Count > 0)
             {
-                endpoint = _accepted.Dequeue();
-                return true;
+                var accepted = _accepted.Dequeue();
+                if (!accepted.IsDisposed && accepted.IsConnected)
+                {
+                    endpoint = accepted;
+                    return true;
+                }
             }
             endpoint = null;
             return false;
@@ -134,15 +178,24 @@ namespace UniGame.StaticEcs.Network.UnityTransport
             {
                 NetworkConnection connection;
                 while ((connection = _driver.Accept()) != default)
+                {
+                    if (_connections.Count >= _settings.MaximumConnections)
+                    {
+                        connection.Disconnect(_driver);
+                        _dropped++;
+                        continue;
+                    }
                     Add(connection, true);
+                }
             }
 
-            var removed = new List<int>();
+            var removed = new List<NetworkConnection>();
             foreach (var pair in _connections)
             {
                 var endpoint = pair.Value;
                 NetworkEvent.Type type;
-                while ((type = endpoint.NativeConnection.PopEvent(_driver, out var reader)) != NetworkEvent.Type.Empty)
+                while ((type = endpoint.NativeConnection.PopEvent(_driver, out var reader,
+                           out var pipeline)) != NetworkEvent.Type.Empty)
                 {
                     if (type == NetworkEvent.Type.Connect)
                     {
@@ -158,7 +211,8 @@ namespace UniGame.StaticEcs.Network.UnityTransport
                     }
                     if (type != NetworkEvent.Type.Data)
                         continue;
-                    if (reader.Length <= 0 || reader.Length > UnityTransportSettings.MaximumReliableBytes ||
+                    if (reader.Length <= 0 ||
+                        reader.Length > UnityTransportSettings.MaximumReliableBytes ||
                         endpoint.QueuedPackets >= _settings.ReceiveQueueCapacity)
                     {
                         _dropped++;
@@ -167,7 +221,25 @@ namespace UniGame.StaticEcs.Network.UnityTransport
                     var bytes = new byte[reader.Length];
                     for (var index = 0; index < bytes.Length; index++)
                         bytes[index] = reader.ReadByte();
-                    endpoint.Enqueue(_pool.Copy(bytes));
+                    var packet = _pool.Copy(bytes);
+                    if (!NetworkPacket.TryDecode(packet, out var header, out _))
+                    {
+                        packet.Dispose();
+                        _dropped++;
+                        continue;
+                    }
+                    var reliable = header.Flags == PacketFlags.ReliableOrdered;
+                    var expectedPipeline = reliable ? _reliable : _unreliable;
+                    var limit = reliable
+                        ? UnityTransportSettings.MaximumReliableBytes
+                        : _settings.MaximumUnreliableBytes;
+                    if (!pipeline.Equals(expectedPipeline) || packet.Length > limit)
+                    {
+                        packet.Dispose();
+                        _dropped++;
+                        continue;
+                    }
+                    endpoint.Enqueue(packet);
                     _received++;
                 }
             }
@@ -188,6 +260,11 @@ namespace UniGame.StaticEcs.Network.UnityTransport
             {
                 if (_disposed || !endpoint.IsConnected || packet.Length < PacketHeader.Size ||
                     !PacketHeader.TryRead(packet.Span, out var header))
+                {
+                    _dropped++;
+                    return false;
+                }
+                if (!NetworkPacket.TryDecode(packet, out header, out _))
                 {
                     _dropped++;
                     return false;
@@ -227,9 +304,10 @@ namespace UniGame.StaticEcs.Network.UnityTransport
         {
             if (_disposed)
                 return;
-            endpoint.NativeConnection.Disconnect(_driver);
+            _connections.Remove(endpoint.NativeConnection);
+            if (endpoint.NativeConnection.IsCreated)
+                endpoint.NativeConnection.Disconnect(_driver);
             endpoint.DisposeFromDriver();
-            _connections.Remove(endpoint.NativeConnection.GetHashCode());
         }
 
         internal void Flush()
@@ -243,6 +321,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport
             var queued = 0;
             foreach (var endpoint in _connections.Values)
                 queued += endpoint.QueuedPackets;
+            var buffers = _pool.CaptureDiagnostics();
             return new UnityTransportDiagnostics
             {
                 Connections = _connections.Count,
@@ -251,6 +330,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport
                 DroppedPackets = _dropped,
                 Disconnects = _disconnects,
                 QueuedPackets = queued,
+                OutstandingLeases = buffers.OutstandingLeases,
             };
         }
 
@@ -263,16 +343,23 @@ namespace UniGame.StaticEcs.Network.UnityTransport
                 endpoint.DisposeFromDriver();
             _connections.Clear();
             _accepted.Clear();
-            if (_driver.IsCreated)
-                _driver.Dispose();
-            _pool.Dispose();
+            try
+            {
+                if (_driver.IsCreated)
+                    _driver.Dispose();
+            }
+            finally
+            {
+                _pool.Dispose();
+            }
         }
 
         private UnityTransportEndpoint Add(NetworkConnection connection, bool accepted)
         {
             var id = checked(++_nextConnection);
             var endpoint = new UnityTransportEndpoint(this, connection, new ConnectionId(id), _settings.ReceiveQueueCapacity);
-            _connections.Add(connection.GetHashCode(), endpoint);
+            endpoint.IsConnected = accepted;
+            _connections.Add(connection, endpoint);
             if (accepted)
                 _accepted.Enqueue(endpoint);
             return endpoint;
@@ -303,6 +390,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport
         public ConnectionId Connection { get; }
         internal NetworkConnection NativeConnection { get; }
         internal bool IsConnected { get; set; }
+        internal bool IsDisposed => _disposed;
         internal int QueuedPackets => _incoming.Count;
 
         public bool TrySend(NetworkBufferLease packet) => _owner.TrySend(this, packet);
@@ -340,6 +428,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport
             if (_disposed)
                 return;
             _disposed = true;
+            IsConnected = false;
             while (_incoming.Count > 0)
                 _incoming.Dequeue().Dispose();
         }

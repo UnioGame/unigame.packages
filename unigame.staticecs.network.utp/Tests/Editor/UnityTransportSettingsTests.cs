@@ -2,8 +2,9 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
 {
     using NUnit.Framework;
 
-    public sealed class UnityTransportSettingsTests
+    internal sealed class UnityTransportSettingsTests
     {
+        /// <summary>Verifies optional values normalize to bounded client defaults.</summary>
         [Test]
         public void NormalizeAppliesBoundedDefaults()
         {
@@ -16,6 +17,18 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
             Assert.AreEqual(128, value.MaximumConnections);
         }
 
+        /// <summary>Verifies the unreliable limit cannot exceed the adapter packet cap.</summary>
+        [Test]
+        public void NormalizeCapsUnreliablePacketsAtReliableLimit()
+        {
+            var value = UnityTransportSettings.Default;
+            value.MaximumUnreliableBytes = UnityTransportSettings.MaximumReliableBytes + 1;
+
+            Assert.AreEqual(UnityTransportSettings.MaximumReliableBytes,
+                value.Normalize(false).MaximumUnreliableBytes);
+        }
+
+        /// <summary>Verifies rejected sends still consume the caller-owned lease.</summary>
         [Test]
         public void RejectedPacketLeaseIsConsumed()
         {
