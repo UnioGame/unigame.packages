@@ -67,7 +67,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport
         public long ReceivedPackets;
         /// <summary>Number of packets submitted to the driver.</summary>
         public long SentPackets;
-        /// <summary>Number of packets rejected by limits, queues, or UTP.</summary>
+        /// <summary>Number of packets or lifecycle notifications dropped by limits, queues, or UTP.</summary>
         public long DroppedPackets;
         /// <summary>Number of observed transport disconnects.</summary>
         public long Disconnects;

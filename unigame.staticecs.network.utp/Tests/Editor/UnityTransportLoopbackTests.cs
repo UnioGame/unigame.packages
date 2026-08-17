@@ -122,6 +122,27 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
             Assert.That(server.TryDequeueDisconnected(out _), Is.False);
         }
 
+        /// <summary>Verifies local server endpoint disposal does not publish a disconnect notification.</summary>
+        [Test]
+        public void LocalServerEndpointDisposeDoesNotPublishDisconnect()
+        {
+            var settings = Settings(ReservePort());
+            using var server = new UnityTransportServerHost(settings);
+            using var client = new UnityTransportClientHost(settings);
+            var accepted = WaitForConnection(server, client);
+
+            accepted.Dispose();
+            server.Flush();
+            WaitUntil(() =>
+            {
+                server.Update();
+                client.Update();
+                return !client.Connected;
+            }, "Client did not observe the locally disposed server endpoint.");
+
+            Assert.That(server.TryDequeueDisconnected(out _), Is.False);
+        }
+
         /// <summary>Verifies remote disconnect notifications preserve observation order.</summary>
         [Test]
         public void RemoteDisconnectsPreserveFifoOrderForTwoClients()
