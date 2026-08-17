@@ -3,8 +3,10 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
     using System;
     using System.Net;
     using System.Net.Sockets;
+    using System.Text.RegularExpressions;
     using System.Threading;
     using NUnit.Framework;
+    using UnityEngine.TestTools;
 
     internal sealed class UnityTransportLoopbackTests
     {
@@ -230,8 +232,12 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
         {
             var settings = Settings(ReservePort());
             using (var first = new UnityTransportServerHost(settings))
+            {
+                LogAssert.Expect(UnityEngine.LogType.Error,
+                    new Regex(@"^(Failed to bind UDP socket|Baselib operation failed\. Failed to create UDP socket)"));
                 Assert.Throws<InvalidOperationException>(() =>
                     new UnityTransportServerHost(settings));
+            }
             using var later = new UnityTransportServerHost(settings);
             Assert.That(later.CaptureDiagnostics().Connections, Is.Zero);
         }
