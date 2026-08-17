@@ -9,8 +9,8 @@
 
 ## Usage
 
-Create one `UnityTransportClientHost` or `UnityTransportServerHost`, call `Update` before the protocol receive systems and `Flush` after protocol send systems, and dispose the host at shutdown. Server endpoints returned by `TryAccept` are passed to `NetworkServer.AddConnection`.
+Create one `UnityTransportClientHost` or `UnityTransportServerHost`, call `Update` before the protocol receive systems and `Flush` after protocol send systems, and dispose the host at shutdown. Server endpoints returned by `TryAccept` are passed to `NetworkServer.AddConnection`; after each update, drain `TryDequeueDisconnected` and remove the matching server connections.
 
 ## Configuration
 
-`UnityTransportSettings.Default` uses port 7777, a 1400-byte unreliable packet limit, a 64 KiB reliable limit, and bounded receive queues. Application-level chunking above 64 KiB is intentionally not provided.
+`UnityTransportSettings.Default` uses port 7777, a 1400-byte unreliable packet limit, a 64 KiB reliable limit, and bounded receive queues. Remote disconnect notifications are FIFO and buffered up to `MaximumConnections`; if the caller does not drain them, the newest overflow is dropped and counted in `DroppedPackets`. Application-level chunking above 64 KiB is intentionally not provided.

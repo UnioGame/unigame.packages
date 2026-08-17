@@ -69,6 +69,9 @@ namespace UniGame.StaticEcs.Network.UnityTransport
         public void Update() => _driver.Update();
         /// <summary>Returns the next newly accepted protocol-facing endpoint.</summary>
         public bool TryAccept(out INetworkTransport endpoint) => _driver.TryAccept(out endpoint);
+        /// <summary>Returns the next remote connection observed as disconnected.</summary>
+        public bool TryDequeueDisconnected(out ConnectionId connection) =>
+            _driver.TryDequeueDisconnected(out connection);
         /// <summary>Completes pending send jobs.</summary>
         public void Flush() => _driver.Flush();
         /// <summary>Captures current counters.</summary>
@@ -85,6 +88,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport
             new Dictionary<NetworkConnection, UnityTransportEndpoint>();
         private readonly Queue<UnityTransportEndpoint> _accepted =
             new Queue<UnityTransportEndpoint>();
+        private readonly Queue<ConnectionId> _disconnected;
         private readonly NetworkBufferPool _pool;
         private readonly UnityTransportSettings _settings;
         private NetworkDriver _driver;
@@ -102,6 +106,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport
         {
             _settings = settings;
             _listener = listener;
+            _disconnected = new Queue<ConnectionId>(_settings.MaximumConnections);
             _pool = new NetworkBufferPool(listener
                 ? NetworkBufferPool.DefaultServerRetainedBytes
                 : NetworkBufferPool.DefaultClientRetainedBytes);
@@ -173,6 +178,17 @@ namespace UniGame.StaticEcs.Network.UnityTransport
             return false;
         }
 
+        internal bool TryDequeueDisconnected(out ConnectionId connection)
+        {
+            if (_disconnected.Count > 0)
+            {
+                connection = _disconnected.Dequeue();
+                return true;
+            }
+            connection = default;
+            return false;
+        }
+
         internal void Update()
         {
             ThrowIfDisposed();
@@ -209,6 +225,11 @@ namespace UniGame.StaticEcs.Network.UnityTransport
                     {
                         endpoint.IsConnected = false;
                         _disconnects++;
+                        // Preserve FIFO entries when the defensive bound is exceeded; drop the newest event.
+                        if (_disconnected.Count < _settings.MaximumConnections)
+                            _disconnected.Enqueue(endpoint.Connection);
+                        else
+                            _dropped++;
                         removed.Add(pair.Key);
                         break;
                     }
@@ -346,6 +367,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport
                 endpoint.DisposeFromDriver();
             _connections.Clear();
             _accepted.Clear();
+            _disconnected.Clear();
             try
             {
                 if (_driver.IsCreated)

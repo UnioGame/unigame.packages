@@ -99,6 +99,81 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
             Assert.That(server.TryAccept(out _), Is.False);
         }
 
+        /// <summary>Verifies a remote disconnect publishes its exact connection once.</summary>
+        [Test]
+        public void RemoteDisconnectPublishesExactConnectionOnce()
+        {
+            var settings = Settings(ReservePort());
+            using var server = new UnityTransportServerHost(settings);
+            using var client = new UnityTransportClientHost(settings);
+            var accepted = WaitForConnection(server, client);
+
+            client.Endpoint.Dispose();
+            client.Flush();
+            WaitUntil(() =>
+            {
+                client.Update();
+                server.Update();
+                return server.CaptureDiagnostics().Connections == 0;
+            }, "Server did not observe the disconnect.");
+
+            Assert.That(server.TryDequeueDisconnected(out var disconnected), Is.True);
+            Assert.That(disconnected, Is.EqualTo(accepted.Connection));
+            Assert.That(server.TryDequeueDisconnected(out _), Is.False);
+        }
+
+        /// <summary>Verifies remote disconnect notifications preserve observation order.</summary>
+        [Test]
+        public void RemoteDisconnectsPreserveFifoOrderForTwoClients()
+        {
+            var settings = Settings(ReservePort());
+            settings.MaximumConnections = 2;
+            using var server = new UnityTransportServerHost(settings);
+            using var firstClient = new UnityTransportClientHost(settings);
+            using var secondClient = new UnityTransportClientHost(settings);
+            var firstAccepted = WaitForConnection(server, firstClient);
+            var secondAccepted = WaitForConnection(server, secondClient);
+
+            DisconnectClient(server, firstClient, 1, 1);
+            DisconnectClient(server, secondClient, 0, 2);
+
+            Assert.That(server.TryDequeueDisconnected(out var firstDisconnected), Is.True);
+            Assert.That(firstDisconnected, Is.EqualTo(firstAccepted.Connection));
+            Assert.That(server.TryDequeueDisconnected(out var secondDisconnected), Is.True);
+            Assert.That(secondDisconnected, Is.EqualTo(secondAccepted.Connection));
+            Assert.That(server.TryDequeueDisconnected(out _), Is.False);
+        }
+
+        /// <summary>Verifies bounded disconnect storage drops newest overflow events diagnostically.</summary>
+        [Test]
+        public void DisconnectedQueueDropsNewestWhenBoundedStorageOverflows()
+        {
+            var settings = Settings(ReservePort());
+            settings.MaximumConnections = 1;
+            using var server = new UnityTransportServerHost(settings);
+            ConnectionId firstConnection;
+
+            using (var firstClient = new UnityTransportClientHost(settings))
+            {
+                var firstAccepted = WaitForConnection(server, firstClient);
+                firstConnection = firstAccepted.Connection;
+                DisconnectClient(server, firstClient, 0, 1);
+            }
+
+            var droppedBeforeSecondDisconnect = server.CaptureDiagnostics().DroppedPackets;
+            using (var secondClient = new UnityTransportClientHost(settings))
+            {
+                WaitForConnection(server, secondClient);
+                DisconnectClient(server, secondClient, 0, 2);
+            }
+
+            var diagnostics = server.CaptureDiagnostics();
+            Assert.That(diagnostics.DroppedPackets, Is.GreaterThan(droppedBeforeSecondDisconnect));
+            Assert.That(server.TryDequeueDisconnected(out var pending), Is.True);
+            Assert.That(pending, Is.EqualTo(firstConnection));
+            Assert.That(server.TryDequeueDisconnected(out _), Is.False);
+        }
+
         /// <summary>Verifies receive queues remain bounded and overflow is diagnosed.</summary>
         [Test]
         public void ReceiveQueueOverflowDropsExcessPacket()
@@ -166,6 +241,21 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
                 return endpoint.TryReceive(out received);
             }, "UTP loopback packet was not received.");
             return received;
+        }
+
+        private static void DisconnectClient(UnityTransportServerHost server,
+            UnityTransportClientHost client, int expectedConnections, long expectedDisconnects)
+        {
+            client.Endpoint.Dispose();
+            client.Flush();
+            WaitUntil(() =>
+            {
+                client.Update();
+                server.Update();
+                var diagnostics = server.CaptureDiagnostics();
+                return diagnostics.Connections == expectedConnections &&
+                    diagnostics.Disconnects >= expectedDisconnects;
+            }, "Server did not observe the disconnect.");
         }
 
         private static void WaitUntil(Func<bool> condition, string message)
