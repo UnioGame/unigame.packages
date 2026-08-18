@@ -40,6 +40,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
             Assert.IsFalse(host.Endpoint.TrySend(packet));
             Assert.AreEqual(0, packet.Length);
             Assert.AreEqual(0, pool.CaptureDiagnostics().OutstandingLeases);
+            Assert.That(host.CaptureDiagnostics().SendFailures, Is.GreaterThanOrEqualTo(1));
         }
     }
 }

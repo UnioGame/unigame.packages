@@ -65,10 +65,32 @@ namespace UniGame.StaticEcs.Network.UnityTransport
         public int Connections;
         /// <summary>Number of packets accepted from the driver.</summary>
         public long ReceivedPackets;
+        /// <summary>Number of reliable packets accepted from the driver.</summary>
+        public long ReliableReceivedPackets;
+        /// <summary>Number of reliable bytes accepted from the driver.</summary>
+        public long ReliableReceivedBytes;
+        /// <summary>Number of unreliable packets accepted from the driver.</summary>
+        public long UnreliableReceivedPackets;
+        /// <summary>Number of unreliable bytes accepted from the driver.</summary>
+        public long UnreliableReceivedBytes;
         /// <summary>Number of packets submitted to the driver.</summary>
         public long SentPackets;
+        /// <summary>Number of reliable packets submitted to the driver.</summary>
+        public long ReliableSentPackets;
+        /// <summary>Number of reliable bytes submitted to the driver.</summary>
+        public long ReliableSentBytes;
+        /// <summary>Number of unreliable packets submitted to the driver.</summary>
+        public long UnreliableSentPackets;
+        /// <summary>Number of unreliable bytes submitted to the driver.</summary>
+        public long UnreliableSentBytes;
         /// <summary>Number of packets or lifecycle notifications dropped by limits, queues, or UTP.</summary>
         public long DroppedPackets;
+        /// <summary>Number of received packets rejected because the bounded receive queue was full.</summary>
+        public long ReceiveQueueOverflows;
+        /// <summary>Number of packets rejected because they were malformed or used an invalid pipeline.</summary>
+        public long MalformedPackets;
+        /// <summary>Number of packets rejected while attempting to send.</summary>
+        public long SendFailures;
         /// <summary>Number of observed transport disconnects.</summary>
         public long Disconnects;
         /// <summary>Number of currently queued receive packets.</summary>

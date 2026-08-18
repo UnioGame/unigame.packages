@@ -14,3 +14,5 @@ Create one `UnityTransportClientHost` or `UnityTransportServerHost`, call `Updat
 ## Configuration
 
 `UnityTransportSettings.Default` uses port 7777, a 1400-byte unreliable packet limit, a 64 KiB reliable limit, and bounded receive queues. Remote disconnect notifications are FIFO and buffered up to `MaximumConnections`; if the caller does not drain them, the newest overflow is dropped and counted in `DroppedPackets`. Application-level chunking above 64 KiB is intentionally not provided.
+
+`UnityTransportDiagnostics` keeps cumulative reliable/unreliable packet and byte counters, receive queue overflows, malformed packet rejections, send failures, drops, disconnects, queued packets, and outstanding receive leases. Queue, malformed, and send-failure counters are additive diagnostics; `DroppedPackets` remains the aggregate rejection/drop counter.

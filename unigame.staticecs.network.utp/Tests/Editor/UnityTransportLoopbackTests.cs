@@ -6,6 +6,7 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
     using System.Text.RegularExpressions;
     using System.Threading;
     using NUnit.Framework;
+    using Unity.Networking.Transport;
     using UnityEngine.TestTools;
 
     internal sealed class UnityTransportLoopbackTests
@@ -25,10 +26,18 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
             Assert.That(client.Endpoint.TrySend(reliable), Is.True);
             Assert.That(reliable.Length, Is.Zero);
             client.Flush();
+            var reliableSent = client.CaptureDiagnostics();
+            Assert.That(reliableSent.ReliableSentPackets, Is.EqualTo(1));
+            Assert.That(reliableSent.ReliableSentBytes,
+                Is.EqualTo(UnityTransportSettings.MaximumReliableBytes));
             var receivedReliable = WaitForPacket(server, client, accepted);
             Assert.That(receivedReliable.Length,
                 Is.EqualTo(UnityTransportSettings.MaximumReliableBytes));
-            Assert.That(server.CaptureDiagnostics().OutstandingLeases, Is.EqualTo(1));
+            var reliableDiagnostics = server.CaptureDiagnostics();
+            Assert.That(reliableDiagnostics.OutstandingLeases, Is.EqualTo(1));
+            Assert.That(reliableDiagnostics.ReliableReceivedPackets, Is.EqualTo(1));
+            Assert.That(reliableDiagnostics.ReliableReceivedBytes,
+                Is.EqualTo(UnityTransportSettings.MaximumReliableBytes));
             receivedReliable.Dispose();
             Assert.That(server.CaptureDiagnostics().OutstandingLeases, Is.Zero);
 
@@ -37,10 +46,18 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
             Assert.That(accepted.TrySend(unreliable), Is.True);
             Assert.That(unreliable.Length, Is.Zero);
             server.Flush();
+            var unreliableSent = server.CaptureDiagnostics();
+            Assert.That(unreliableSent.UnreliableSentPackets, Is.EqualTo(1));
+            Assert.That(unreliableSent.UnreliableSentBytes,
+                Is.EqualTo(settings.MaximumUnreliableBytes));
             var receivedUnreliable = WaitForPacket(server, client, client.Endpoint);
             Assert.That(receivedUnreliable.Length,
                 Is.EqualTo(settings.MaximumUnreliableBytes));
-            Assert.That(client.CaptureDiagnostics().OutstandingLeases, Is.EqualTo(1));
+            var unreliableDiagnostics = client.CaptureDiagnostics();
+            Assert.That(unreliableDiagnostics.OutstandingLeases, Is.EqualTo(1));
+            Assert.That(unreliableDiagnostics.UnreliableReceivedPackets, Is.EqualTo(1));
+            Assert.That(unreliableDiagnostics.UnreliableReceivedBytes,
+                Is.EqualTo(settings.MaximumUnreliableBytes));
             receivedUnreliable.Dispose();
             Assert.That(client.CaptureDiagnostics().OutstandingLeases, Is.Zero);
         }
@@ -221,9 +238,44 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
             }, "Receive queue did not report overflow.");
 
             Assert.That(server.CaptureDiagnostics().QueuedPackets, Is.EqualTo(1));
+            Assert.That(server.CaptureDiagnostics().ReceiveQueueOverflows, Is.GreaterThanOrEqualTo(1));
             Assert.That(accepted.TryReceive(out var received), Is.True);
             received.Dispose();
             Assert.That(server.CaptureDiagnostics().OutstandingLeases, Is.Zero);
+        }
+
+        /// <summary>Verifies raw invalid transport data increments malformed and dropped counters.</summary>
+        [Test]
+        public void MalformedRawPacketIsRejectedAndDiagnosed()
+        {
+            var settings = Settings(ReservePort());
+            using var server = new UnityTransportServerHost(settings);
+            using var raw = NetworkDriver.Create();
+            var connection = raw.Connect(NetworkEndpoint.LoopbackIpv4.WithPort(settings.Port));
+
+            WaitUntil(() =>
+            {
+                raw.ScheduleUpdate().Complete();
+                server.Update();
+                return connection.GetState(raw) == NetworkConnection.State.Connected;
+            }, "Raw UTP connection was not established.");
+
+            raw.BeginSend(connection, out var writer);
+            writer.WriteByte(0xFF);
+            Assert.That(raw.EndSend(writer), Is.GreaterThanOrEqualTo(0));
+            raw.ScheduleFlushSend(default).Complete();
+
+            WaitUntil(() =>
+            {
+                raw.ScheduleUpdate().Complete();
+                server.Update();
+                return server.CaptureDiagnostics().MalformedPackets > 0;
+            }, "Malformed raw packet was not diagnosed.");
+
+            var diagnostics = server.CaptureDiagnostics();
+            Assert.That(diagnostics.MalformedPackets, Is.GreaterThanOrEqualTo(1));
+            Assert.That(diagnostics.DroppedPackets, Is.GreaterThanOrEqualTo(1));
+            Assert.That(diagnostics.OutstandingLeases, Is.Zero);
         }
 
         /// <summary>Verifies a failed listener construction releases native ownership.</summary>
