@@ -5,7 +5,8 @@
     "unigame.staticecs.network.utp",
     "unigame.staticecs.network",
     "unigame.staticecs.network.protocol",
-    "Unity.Networking.Transport"
+    "Unity.Networking.Transport",
+    "Unity.Collections"
   ],
   "includePlatforms": ["Editor"],
   "optionalUnityReferences": ["TestAssemblies"],
