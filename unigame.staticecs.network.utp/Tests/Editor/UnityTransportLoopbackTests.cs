@@ -276,6 +276,11 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
             Assert.That(diagnostics.MalformedPackets, Is.GreaterThanOrEqualTo(1));
             Assert.That(diagnostics.DroppedPackets, Is.GreaterThanOrEqualTo(1));
             Assert.That(diagnostics.OutstandingLeases, Is.Zero);
+
+            while (connection.PopEvent(raw, out _, out _) != NetworkEvent.Type.Empty)
+            {
+                // Drain the raw driver's pending disconnect/data events before disposal.
+            }
         }
 
         /// <summary>Verifies a failed listener construction releases native ownership.</summary>
