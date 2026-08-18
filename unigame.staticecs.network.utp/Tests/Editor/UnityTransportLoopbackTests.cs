@@ -260,6 +260,11 @@ namespace UniGame.StaticEcs.Network.UnityTransport.Tests
                 return connection.GetState(raw) == NetworkConnection.State.Connected;
             }, "Raw UTP connection was not established.");
 
+            while (connection.PopEvent(raw, out _, out _) != NetworkEvent.Type.Empty)
+            {
+                // Drain the raw driver's connect event before sending malformed data.
+            }
+
             raw.BeginSend(connection, out var writer);
             writer.WriteByte(0xFF);
             Assert.That(raw.EndSend(writer), Is.GreaterThanOrEqualTo(0));
