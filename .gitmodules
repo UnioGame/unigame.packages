@@ -115,3 +115,6 @@
 [submodule "unigame.staticecs.network.profiler"]
 	path = unigame.staticecs.network.profiler
 	url = https://github.com/UnioGame/unigame.staticecs.network.profiler.git
+[submodule "unigame.staticecs.network.utp"]
+	path = unigame.staticecs.network.utp
+	url = https://github.com/UnioGame/unigame.staticecs.network.utp.git
