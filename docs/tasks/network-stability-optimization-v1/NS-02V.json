@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 6,
+  "revision": 7,
   "taskId": "NS-02V",
   "goal": "Replan UTP delivery: adopt reviewed overflow/deferred notification implementation and correct test driver pumping; execute focused and complete UTP tests BEFORE immutable review.",
   "acceptance": [
@@ -134,8 +134,8 @@
     "mergeCommit": "d604bba4989f52a3bbe17fad72b2e61f8ec6444d",
     "integrationValidationPassed": true,
     "workspaceDisposition": {
-      "releaseAction": "released-to-pool",
-      "releaseReason": "Clean accepted workspace released after integrated gitlink and runtime tests"
+      "releaseAction": "removed",
+      "releaseReason": "Explicit user cleanup request2026-09-06 after integration. Clean worktree removed; commits/branches/reviews retained, NS02private UTP history also preserved in shared diagnostic ref and verified bundle."
     }
   }
 }

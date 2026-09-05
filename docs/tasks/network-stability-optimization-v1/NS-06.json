@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 10,
+  "revision": 11,
   "taskId": "NS-06",
   "goal": "Maintain peer counters at lifecycle transitions instead of per packet scans.",
   "acceptance": [
@@ -139,8 +139,8 @@
     "mergeCommit": "30f2025dc3ba0cd849ff92ff1569144384981c84",
     "integrationValidationPassed": true,
     "workspaceDisposition": {
-      "releaseAction": "released-to-pool",
-      "releaseReason": "Exact integrated source passed focused, Network and game Network/Prediction tests; immutable review accepted"
+      "releaseAction": "removed",
+      "releaseReason": "Explicit user cleanup request2026-09-06 after integration. Clean worktree removed; commits/branches/reviews retained, NS02private UTP history also preserved in shared diagnostic ref and verified bundle."
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 9,
+  "revision": 10,
   "taskId": "NS-08-P",
   "goal": "Document ACK/recovery and consuming lease ownership.",
   "acceptance": [
@@ -141,8 +141,8 @@
     "mergeCommit": "27869cbe652976469e2c8488ed4f83d60343267b",
     "integrationValidationPassed": true,
     "workspaceDisposition": {
-      "releaseAction": "released-to-pool",
-      "releaseReason": "Whole docs wave accepted; exact leaf links integrated; code differs only XML comment."
+      "releaseAction": "removed",
+      "releaseReason": "Explicit user cleanup request2026-09-06 after integration. Clean worktree removed; commits/branches/reviews retained, NS02private UTP history also preserved in shared diagnostic ref and verified bundle."
     }
   }
 }

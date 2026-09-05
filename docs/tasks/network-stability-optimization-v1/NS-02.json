@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 7,
+  "revision": 8,
   "taskId": "NS-02",
   "goal": "Disconnect only the peer whose reliable receive queue overflows, using deferred removal.",
   "acceptance": [
@@ -140,6 +140,9 @@
   "close": {
     "mergeCommit": null,
     "integrationValidationPassed": false,
-    "workspaceDisposition": null
+    "workspaceDisposition": {
+      "releaseAction": "removed",
+      "releaseReason": "Explicit user cleanup request2026-09-06 after integration. Clean worktree removed; commits/branches/reviews retained, NS02private UTP history also preserved in shared diagnostic ref and verified bundle."
+    }
   }
 }

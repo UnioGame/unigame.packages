@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 11,
+  "revision": 12,
   "taskId": "NS-04",
   "goal": "Handle each input validation outcome without discarding a fresh batch tail.",
   "acceptance": [
@@ -142,8 +142,8 @@
     "mergeCommit": "4cdab1ff0f221a0dd7b09cb8aa1e4925b4b43d05",
     "integrationValidationPassed": true,
     "workspaceDisposition": {
-      "releaseAction": "released-to-pool",
-      "releaseReason": "Exact integrated leaf compiled; focused and full Network passed; accepted immutable review"
+      "releaseAction": "removed",
+      "releaseReason": "Explicit user cleanup request2026-09-06 after integration. Clean worktree removed; commits/branches/reviews retained, NS02private UTP history also preserved in shared diagnostic ref and verified bundle."
     }
   }
 }

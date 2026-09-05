@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 15,
+  "revision": 16,
   "phaseId": "NETWORK-STABILITY-OPTIMIZATION-V1",
   "baselineSha": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
   "integrationHead": "27869cbe652976469e2c8488ed4f83d60343267b",
@@ -135,33 +135,34 @@
       "MPPM2>=336sec andMPPM3>=319sec after reconnect passed; errors/resync0. Final Network5407510/UTP96b12fa differ from tested runtime only README/XML.",
       "Every delivered runtime/docs candidate accepted by immutable Sol review; historical NS02/NS07 ReplanRequired superseded by NS02V/NS07V.",
       "Root NS09 records performance gate fail for32;1/16all6pass.64checks/profile explicitly deferred by user until thin client. Correctness integration permitted by approved plan; NS10Draft follow-up.",
-      "All5 package workspaces have no leases;2idle and3quarantined retained. Temporary integration worktrees removed. Root final-report.md owns full evidence."
+      "All5 package workspaces have no leases;2idle and3quarantined retained. Temporary integration worktrees removed. Root final-report.md owns full evidence.",
+      "2026-09-06 explicit cleanup: all6 phase worktrees and nested Network/UTP working copies removed; no phase registry entries/leases remain. Current branch and accepted leaf pointers preserved; historical unrelated worktrees untouched."
     ],
     "workspaceDispositions": [
       {
         "workspaceId": "ns-01-20260905",
-        "releaseAction": "retained",
-        "releaseReason": "No leases; quarantined diagnostic worktree preserved, no forced cleanup."
+        "releaseAction": "removed",
+        "releaseReason": "Explicit user cleanup request2026-09-06; clean exact task worktree and nested working copies removed, diagnostic commits retained."
       },
       {
         "workspaceId": "ns-02-20260905",
-        "releaseAction": "retained",
-        "releaseReason": "No leases; quarantined diagnostic worktree preserved, no forced cleanup."
+        "releaseAction": "removed",
+        "releaseReason": "Explicit user cleanup request2026-09-06; clean exact task worktree and nested working copies removed, diagnostic commits retained."
       },
       {
         "workspaceId": "ns-02v-20260905",
-        "releaseAction": "released-to-pool",
-        "releaseReason": "No leases; clean reusable pool."
+        "releaseAction": "removed",
+        "releaseReason": "Explicit user cleanup request2026-09-06; clean exact task worktree and nested working copies removed, diagnostic commits retained."
       },
       {
         "workspaceId": "ns-03-20260905",
-        "releaseAction": "retained",
-        "releaseReason": "No leases; quarantined diagnostic worktree preserved, no forced cleanup."
+        "releaseAction": "removed",
+        "releaseReason": "Explicit user cleanup request2026-09-06; clean exact task worktree and nested working copies removed, diagnostic commits retained."
       },
       {
         "workspaceId": "ns-07v-20260905",
-        "releaseAction": "released-to-pool",
-        "releaseReason": "No leases; clean reusable pool."
+        "releaseAction": "removed",
+        "releaseReason": "Explicit user cleanup request2026-09-06; clean exact task worktree and nested working copies removed, diagnostic commits retained."
       }
     ]
   }

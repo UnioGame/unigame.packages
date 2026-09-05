@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 9,
+  "revision": 10,
   "taskId": "NS-07",
   "goal": "Reuse an encoded delta for identical scope/baseline/target within CompleteTick.",
   "acceptance": [
@@ -143,6 +143,9 @@
   "close": {
     "mergeCommit": null,
     "integrationValidationPassed": false,
-    "workspaceDisposition": null
+    "workspaceDisposition": {
+      "releaseAction": "removed",
+      "releaseReason": "Explicit user cleanup request2026-09-06 after integration. Clean worktree removed; commits/branches/reviews retained, NS02private UTP history also preserved in shared diagnostic ref and verified bundle."
+    }
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 5,
+  "revision": 6,
   "taskId": "NS-07V",
   "goal": "Validate adopted tick delta cache with correct session epochs and executable success/error/disposal regressions.",
   "acceptance": [
@@ -146,8 +146,8 @@
     "mergeCommit": "46c861aa6af2a0beda3acd8c718de7df9c7cf6ab",
     "integrationValidationPassed": true,
     "workspaceDisposition": {
-      "releaseAction": "released-to-pool",
-      "releaseReason": "Exact accepted runtime and218 passing suite tests; clean workspace released after integration."
+      "releaseAction": "removed",
+      "releaseReason": "Explicit user cleanup request2026-09-06 after integration. Clean worktree removed; commits/branches/reviews retained, NS02private UTP history also preserved in shared diagnostic ref and verified bundle."
     }
   }
 }
