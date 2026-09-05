@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 9,
+  "revision": 10,
   "taskId": "NS-06",
   "goal": "Maintain peer counters at lifecycle transitions instead of per packet scans.",
   "acceptance": [
@@ -29,8 +29,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -136,8 +136,11 @@
     "docs/tasks/network-stability-optimization-v1/NS-06-review-2.json"
   ],
   "close": {
-    "mergeCommit": null,
-    "integrationValidationPassed": false,
-    "workspaceDisposition": null
+    "mergeCommit": "30f2025dc3ba0cd849ff92ff1569144384981c84",
+    "integrationValidationPassed": true,
+    "workspaceDisposition": {
+      "releaseAction": "released-to-pool",
+      "releaseReason": "Exact integrated source passed focused, Network and game Network/Prediction tests; immutable review accepted"
+    }
   }
 }
