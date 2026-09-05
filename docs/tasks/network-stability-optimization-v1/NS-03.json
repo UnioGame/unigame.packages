@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 0,
+  "revision": 2,
   "taskId": "NS-03",
   "goal": "Keep ACK cursor monotonic and recovery boundary fixed within an episode.",
   "acceptance": [
@@ -10,7 +10,7 @@
   ],
   "dependencies": [
     "NS-01",
-    "NS-02"
+    "NS-02V"
   ],
   "requestedMode": "auto",
   "resolvedMode": "strict",
@@ -39,6 +39,7 @@
   "telemetryCohort": null,
   "ownership": {
     "owned": [
+      "unigame.staticecs.network",
       "unigame.staticecs.network/Runtime/NetworkServer.cs",
       "unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs"
     ],
@@ -55,11 +56,11 @@
   "workingSet": [
     {
       "ref": "unigame.staticecs.network/Runtime/NetworkServer.cs",
-      "purpose": "Owning implementation or focused regression"
+      "purpose": "Owning source or focused test"
     },
     {
       "ref": "unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs",
-      "purpose": "Owning implementation or focused regression"
+      "purpose": "Owning source or focused test"
     }
   ],
   "models": {
@@ -82,7 +83,8 @@
   },
   "execution": {
     "interfaces": [
-      "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen"
+      "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen",
+      "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review."
     ],
     "tests": [
       "Old ACK ignored; exact/newer available valid baseline exits recovery.",

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 3,
-  "revision": 0,
+  "revision": 2,
   "phaseId": "NETWORK-STABILITY-OPTIMIZATION-V1",
   "baselineSha": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
-  "integrationHead": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
+  "integrationHead": "5ce199efe1c7f29c8b7f139658faf2d751426169",
   "integrationBranch": "task/network-stability-optimization-v1",
   "contractsFrozen": true,
   "contracts": [
@@ -12,7 +12,8 @@
     "Recovery boundary fixed once per episode; no full-history ACK requirement",
     "Reliable overflow disconnects one connection; leases consumed once",
     "No AOI/auth/economy/session ECS rewrite",
-    "Root NS-00 preflight gates first dispatch; root NS-05 follows NS-02; root NS-09 follows package NS-08-P"
+    "Root NS-00 preflight gates first dispatch; root NS-05 follows NS-02; root NS-09 follows package NS-08-P",
+    "Replan: NS-02V replaces exhausted NS-02 delivery gate; frozen runtime contracts unchanged. Runtime tests precede candidate review."
   ],
   "baselineReviewRef": "docs/tasks/network-stability-optimization-v1/baseline-review.json",
   "taskDag": [
@@ -25,10 +26,14 @@
       "dependencies": []
     },
     {
+      "taskId": "NS-02V",
+      "dependencies": []
+    },
+    {
       "taskId": "NS-03",
       "dependencies": [
         "NS-01",
-        "NS-02"
+        "NS-02V"
       ]
     },
     {
@@ -61,7 +66,23 @@
       ]
     }
   ],
-  "leases": [],
+  "leases": [
+    {
+      "resource": "workspace:ns01",
+      "owner": "NS-01",
+      "active": true
+    },
+    {
+      "resource": "workspace:ns02",
+      "owner": "NS-02",
+      "active": false
+    },
+    {
+      "resource": "workspace:ns02v",
+      "owner": "NS-02V",
+      "active": true
+    }
+  ],
   "close": {
     "mergeCommits": [],
     "phaseValidation": [],

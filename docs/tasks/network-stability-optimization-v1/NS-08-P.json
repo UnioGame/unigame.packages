@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 0,
+  "revision": 1,
   "taskId": "NS-08-P",
   "goal": "Document ACK/recovery and consuming lease ownership.",
   "acceptance": [
@@ -40,10 +40,12 @@
   "telemetryCohort": null,
   "ownership": {
     "owned": [
+      "unigame.staticecs.network",
+      "unigame.staticecs.network.utp",
       "unigame.staticecs.network/README.md",
       "unigame.staticecs.network.utp/README.md",
-      "unigame.staticecs.network/Runtime/INetworkTransport.cs",
-      "unigame.staticecs.network.utp/Runtime/UnityTransportEndpoint.cs"
+      "unigame.staticecs.network/Runtime/MemoryNetworkTransport.cs",
+      "unigame.staticecs.network.utp/Runtime/UnityTransportHost.cs"
     ],
     "shared": [],
     "forbidden": [
@@ -58,15 +60,15 @@
   "workingSet": [
     {
       "ref": "unigame.staticecs.network/README.md",
-      "purpose": "Owning implementation or focused regression"
+      "purpose": "Owning source or focused test"
     },
     {
       "ref": "unigame.staticecs.network.utp/README.md",
-      "purpose": "Owning implementation or focused regression"
+      "purpose": "Owning source or focused test"
     },
     {
-      "ref": "unigame.staticecs.network/Runtime/INetworkTransport.cs",
-      "purpose": "Owning implementation or focused regression"
+      "ref": "unigame.staticecs.network/Runtime/MemoryNetworkTransport.cs",
+      "purpose": "Owning source or focused test"
     }
   ],
   "models": {
@@ -89,7 +91,8 @@
   },
   "execution": {
     "interfaces": [
-      "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen"
+      "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen",
+      "Leaf ownership is limited to unigame.staticecs.network/README.md, unigame.staticecs.network.utp/README.md, unigame.staticecs.network/Runtime/MemoryNetworkTransport.cs, unigame.staticecs.network.utp/Runtime/UnityTransportHost.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review."
     ],
     "tests": [
       "Protocol v7 and public signatures unchanged.",

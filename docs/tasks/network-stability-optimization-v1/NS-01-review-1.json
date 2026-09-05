@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 3,
+  "revision": 0,
+  "reviewId": "NS-01-review-1",
+  "subject": {
+    "kind": "candidate",
+    "taskId": "NS-01",
+    "baseSha": "5ce199efe1c7f29c8b7f139658faf2d751426169",
+    "headSha": "eb36239f70889450f3dc0c5b6864bf1975119ce2"
+  },
+  "status": "ChangesRequested",
+  "hostId": "codex",
+  "reviewerModel": "openai/gpt-5.6-sol:high",
+  "cycle": 1,
+  "findings": [
+    {
+      "priority": "P1",
+      "origin": "validation",
+      "summary": "Private IsolationCommand is referenced by generated NetworkManifest.g.cs, causing CS0122. Make generator-visible test type accessible.",
+      "file": "unigame.staticecs.network/Tests/Editor/NetworkCommandIsolationTests.cs",
+      "line": 159
+    }
+  ],
+  "validation": [
+    "Reviewer verified immutable aggregate/leaf heads, all four context hashes and source contracts; diff checks passed.",
+    "Manager compiled exact c96b24f; CS0122 prevents focused tests. Runtime fix otherwise passed source review."
+  ]
+}

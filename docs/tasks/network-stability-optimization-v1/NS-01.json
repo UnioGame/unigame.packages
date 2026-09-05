@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 0,
+  "revision": 9,
   "taskId": "NS-01",
   "goal": "Isolate malformed wire command reads and release/remove processed envelopes even when gameplay policy throws.",
   "acceptance": [
@@ -26,8 +26,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Draft",
-  "previousState": null,
+  "state": "Accepted",
+  "previousState": "Candidate",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -35,6 +35,7 @@
   "telemetryCohort": null,
   "ownership": {
     "owned": [
+      "unigame.staticecs.network",
       "unigame.staticecs.network/Runtime/NetworkSchema.cs",
       "unigame.staticecs.network/Runtime/NetworkServerCoordinator.cs",
       "unigame.staticecs.network/Tests/Editor/NetworkCommandIsolationTests.cs",
@@ -68,7 +69,7 @@
     "hostId": "codex",
     "requested": null,
     "assigned": "openai/gpt-5.6-luna:max",
-    "actual": null,
+    "actual": "openai/gpt-5.6-luna:max",
     "fallbackReason": null
   },
   "routingRecovery": null,
@@ -84,7 +85,8 @@
   },
   "execution": {
     "interfaces": [
-      "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen"
+      "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen",
+      "Nested repository unigame.staticecs.network baseline ecfcfa1af1ae8683a3e81b5519661b58c9cc3daa; nested changed files must be limited to unigame.staticecs.network/Runtime/NetworkSchema.cs, unigame.staticecs.network/Runtime/NetworkServerCoordinator.cs, unigame.staticecs.network/Tests/Editor/NetworkCommandIsolationTests.cs, unigame.staticecs.network/Tests/Editor/NetworkCommandIsolationTests.cs.meta. Aggregate commit changes only this gitlink; review both immutable ranges."
     ],
     "tests": [
       "Malformed peer A must not prevent valid peer B or next tick.",
@@ -92,13 +94,25 @@
     ],
     "dependencyHandoffs": [],
     "handoff": null,
-    "validationEvidence": [],
+    "validationEvidence": [
+      "Nested and aggregate git diff --check passed.",
+      "Nested and aggregate ranges contain only owned paths.",
+      "Worktrees clean.",
+      "Nested candidate c96b24f7aae45c661a1eaa379327bdac807a2e06; manager verified both actual path sets.",
+      "Leaf repair changes only test command accessibility; aggregate changes only gitlink.",
+      "Nested and aggregate diff --check pass, worktrees clean.",
+      "All refreshed context hashes and immutable aggregate/leaf heads matched.",
+      "Repair only changes test command accessibility; full paths owned; public/wire contracts preserved.",
+      "Exact repaired leaf compiled with 0 errors; focused NetworkCommandIsolationTests 2/2 passed in 0.59s."
+    ],
     "attempts": []
   },
-  "baseSha": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
+  "baseSha": "5ce199efe1c7f29c8b7f139658faf2d751426169",
   "commits": {
-    "candidate": null,
-    "fix": []
+    "candidate": "eb36239f70889450f3dc0c5b6864bf1975119ce2",
+    "fix": [
+      "335493e804724aa2ebdb0d4e7aa25822c10875cf"
+    ]
   },
   "validation": {
     "riskToTest": [
@@ -108,14 +122,22 @@
       }
     ],
     "commands": [
-      "git diff --check"
+      "git diff --check",
+      "git -C unigame.staticecs.network diff --check",
+      "git -C unigame.staticecs.network add -- Runtime/NetworkSchema.cs Runtime/NetworkServerCoordinator.cs Tests/Editor/NetworkCommandIsolationTests.cs Tests/Editor/NetworkCommandIsolationTests.cs.meta",
+      "git -C unigame.staticecs.network commit -m \"fix: NS-01 network stability\"",
+      "git add -- unigame.staticecs.network",
+      "git commit -m \"fix: NS-01 network stability\""
     ],
     "allowedOutputs": [],
     "debt": []
   },
-  "reviewRef": null,
+  "reviewRef": "docs/tasks/network-stability-optimization-v1/NS-01-review-2.json",
   "crossReviewRefs": [],
-  "reviewHistory": [],
+  "reviewHistory": [
+    "docs/tasks/network-stability-optimization-v1/NS-01-review-1.json",
+    "docs/tasks/network-stability-optimization-v1/NS-01-review-2.json"
+  ],
   "close": {
     "mergeCommit": null,
     "integrationValidationPassed": false,

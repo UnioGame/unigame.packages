@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 0,
+  "revision": 1,
   "taskId": "NS-07",
   "goal": "Reuse an encoded delta for identical scope/baseline/target within CompleteTick.",
   "acceptance": [
@@ -38,6 +38,7 @@
   "telemetryCohort": null,
   "ownership": {
     "owned": [
+      "unigame.staticecs.network",
       "unigame.staticecs.network/Runtime/NetworkServer.cs",
       "unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs",
       "unigame.staticecs.network/Tests/Editor/NetworkBufferOwnershipTests.cs"
@@ -55,15 +56,15 @@
   "workingSet": [
     {
       "ref": "unigame.staticecs.network/Runtime/NetworkServer.cs",
-      "purpose": "Owning implementation or focused regression"
+      "purpose": "Owning source or focused test"
     },
     {
       "ref": "unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs",
-      "purpose": "Owning implementation or focused regression"
+      "purpose": "Owning source or focused test"
     },
     {
       "ref": "unigame.staticecs.network/Tests/Editor/NetworkBufferOwnershipTests.cs",
-      "purpose": "Owning implementation or focused regression"
+      "purpose": "Owning source or focused test"
     }
   ],
   "models": {
@@ -86,7 +87,8 @@
   },
   "execution": {
     "interfaces": [
-      "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen"
+      "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen",
+      "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs, unigame.staticecs.network/Tests/Editor/NetworkBufferOwnershipTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review."
     ],
     "tests": [
       "Same baseline reuses encoding; different baselines stay isolated.",

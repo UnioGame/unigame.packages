@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 0,
+  "revision": 1,
   "taskId": "NS-06",
   "goal": "Maintain peer counters at lifecycle transitions instead of per packet scans.",
   "acceptance": [
@@ -38,6 +38,7 @@
   "telemetryCohort": null,
   "ownership": {
     "owned": [
+      "unigame.staticecs.network",
       "unigame.staticecs.network/Runtime/NetworkServer.cs",
       "unigame.staticecs.network/Tests/Editor/NetworkV7DiagnosticsTests.cs"
     ],
@@ -54,11 +55,11 @@
   "workingSet": [
     {
       "ref": "unigame.staticecs.network/Runtime/NetworkServer.cs",
-      "purpose": "Owning implementation or focused regression"
+      "purpose": "Owning source or focused test"
     },
     {
       "ref": "unigame.staticecs.network/Tests/Editor/NetworkV7DiagnosticsTests.cs",
-      "purpose": "Owning implementation or focused regression"
+      "purpose": "Owning source or focused test"
     }
   ],
   "models": {
@@ -81,7 +82,8 @@
   },
   "execution": {
     "interfaces": [
-      "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen"
+      "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen",
+      "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7DiagnosticsTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review."
     ],
     "tests": [
       "Counters correct on admission/reject/disconnect/disposal.",

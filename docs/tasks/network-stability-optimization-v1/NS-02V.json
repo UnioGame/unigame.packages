@@ -1,8 +1,8 @@
 {
   "schemaVersion": 3,
-  "revision": 7,
-  "taskId": "NS-02",
-  "goal": "Disconnect only the peer whose reliable receive queue overflows, using deferred removal.",
+  "revision": 4,
+  "taskId": "NS-02V",
+  "goal": "Replan UTP delivery: adopt reviewed overflow/deferred notification implementation and correct test driver pumping; execute focused and complete UTP tests BEFORE immutable review.",
   "acceptance": [
     "One disconnect event and full lease cleanup.",
     "Reconnect with new epoch works.",
@@ -27,7 +27,7 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Replan Required",
+  "state": "Candidate",
   "previousState": "Candidate",
   "role": "worker",
   "risks": [
@@ -63,25 +63,26 @@
   "models": {
     "hostId": "codex",
     "requested": null,
-    "assigned": "openai/gpt-5.6-luna:max",
-    "actual": "openai/gpt-5.6-luna:max",
+    "assigned": "openai/gpt-5.6-terra:max",
+    "actual": "openai/gpt-5.6-terra:max",
     "fallbackReason": null
   },
   "routingRecovery": null,
   "workspace": {
     "policy": "auto",
     "backend": "package-worktree",
-    "workspaceId": "ns-02-20260905",
+    "workspaceId": "ns-02v-20260905",
     "managedBy": "lemmings",
     "lifetime": "task",
     "estimatedGiB": 0.5,
     "approval": "not-required",
-    "reason": "Isolated writer for shared package; NS-00 baseline preflight before dispatch"
+    "reason": "Fresh isolated replacement after original NS-02 exhausted one repair; previous workspace retained for diagnosis."
   },
   "execution": {
     "interfaces": [
       "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen",
-      "Nested repository unigame.staticecs.network.utp baseline ac0e5062bc3f3591701c84077e6eb687c9d0286b; nested changed files must be limited to unigame.staticecs.network.utp/Runtime/UnityTransportHost.cs, unigame.staticecs.network.utp/Tests/Editor/UnityTransportLoopbackTests.cs. Aggregate commit changes only this gitlink; review both immutable ranges."
+      "Nested repository unigame.staticecs.network.utp baseline ac0e5062bc3f3591701c84077e6eb687c9d0286b; nested changed files must be limited to unigame.staticecs.network.utp/Runtime/UnityTransportHost.cs, unigame.staticecs.network.utp/Tests/Editor/UnityTransportLoopbackTests.cs. Aggregate commit changes only this gitlink; review both immutable ranges.",
+      "Adopt leaf commits b8d8ad172eabd555b626f4b6b45c4131e6d16eb0 and 885f6db05c323f827bc0d1240b0f241b33fca31c, then pump server before client in test disconnect wait. Original NS-02 remains Replan Required. Manager selects approved Terra route for fresh task."
     ],
     "tests": [
       "One disconnect event and full lease cleanup.",
@@ -91,20 +92,15 @@
     "dependencyHandoffs": [],
     "handoff": null,
     "validationEvidence": [
-      "Aggregate and nested git diff --check passed; worktrees clean.",
-      "Manager verified both actual ownership sets; nested head b8d8ad172eabd555b626f4b6b45c4131e6d16eb0.",
-      "Aggregate/leaf diff checks pass; clean worktrees.",
-      "Exact repaired candidate compiled. Focused tests1/2; full UTP22/23. Only failing test omits server pumping during disconnect wait.",
-      "Local event, counter, lease assertions passed; reconnect/isolation test passed in complete suite."
+      "Both immutable diff checks pass; both worktrees clean.",
+      "Unity 6000.3.20f1 compilation: 0 errors; ReceiveQueueOverflow 2/2 passed (0.73s); complete UTP 23/23 passed (8.26s), leaf cc54db9."
     ],
     "attempts": []
   },
   "baseSha": "5ce199efe1c7f29c8b7f139658faf2d751426169",
   "commits": {
-    "candidate": "4ce85243702c34ad28eae0177aaa64de0b7be3e9",
-    "fix": [
-      "e6e0fdf8840558103a2b93f6a08a827d6af403ed"
-    ]
+    "candidate": "ad1f65c7212a00ec27bbd155ceaa9ee05263db82",
+    "fix": []
   },
   "validation": {
     "riskToTest": [
@@ -116,27 +112,18 @@
     "commands": [
       "git diff --check",
       "git -C unigame.staticecs.network.utp diff --check",
+      "git -C unigame.staticecs.network.utp cherry-pick b8d8ad172eabd555b626f4b6b45c4131e6d16eb0 885f6db05c323f827bc0d1240b0f241b33fca31c",
       "git -C unigame.staticecs.network.utp add -- Runtime/UnityTransportHost.cs Tests/Editor/UnityTransportLoopbackTests.cs",
-      "git -C unigame.staticecs.network.utp commit -m \"fix: NS-02 network stability\"",
+      "git -C unigame.staticecs.network.utp commit -m \"test: pump server during reliable overflow disconnect\"",
       "git add -- unigame.staticecs.network.utp",
-      "git commit -m \"fix: NS-02 network stability\""
+      "git commit -m \"fix: NS-02V validated reliable overflow\""
     ],
     "allowedOutputs": [],
-    "debt": [
-      {
-        "reason": "Test driver stalls server send progression",
-        "owner": "NS-02V",
-        "futureGate": "Replacement candidate must pass focused and full UTP before review",
-        "blocking": true
-      }
-    ]
+    "debt": []
   },
-  "reviewRef": "docs/tasks/network-stability-optimization-v1/NS-02-review-2.json",
+  "reviewRef": null,
   "crossReviewRefs": [],
-  "reviewHistory": [
-    "docs/tasks/network-stability-optimization-v1/NS-02-review-1.json",
-    "docs/tasks/network-stability-optimization-v1/NS-02-review-2.json"
-  ],
+  "reviewHistory": [],
   "close": {
     "mergeCommit": null,
     "integrationValidationPassed": false,
