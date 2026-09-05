@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 9,
+  "revision": 10,
   "taskId": "NS-04",
   "goal": "Handle each input validation outcome without discarding a fresh batch tail.",
   "acceptance": [
@@ -30,8 +30,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -138,8 +138,11 @@
     "docs/tasks/network-stability-optimization-v1/NS-04-review-2.json"
   ],
   "close": {
-    "mergeCommit": null,
-    "integrationValidationPassed": false,
-    "workspaceDisposition": null
+    "mergeCommit": "4cdab1ff0f221a0dd7b09cb8aa1e4925b4b43d05",
+    "integrationValidationPassed": true,
+    "workspaceDisposition": {
+      "releaseAction": "released-to-pool",
+      "releaseReason": "Exact integrated leaf compiled; focused and full Network passed; accepted immutable review"
+    }
   }
 }
