@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 3,
+  "revision": 1,
+  "reviewId": "NETWORK-STABILITY-OPTIMIZATION-V1-baseline",
+  "subject": {
+    "kind": "baseline",
+    "phaseId": "NETWORK-STABILITY-OPTIMIZATION-V1",
+    "sha": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c"
+  },
+  "status": "Accepted",
+  "hostId": "codex",
+  "reviewerModel": "openai/gpt-6-astra",
+  "cycle": 1,
+  "findings": [
+    {
+      "priority": "P1",
+      "origin": "implementation",
+      "summary": "Command Read exceptions escape dispatch and retain/replay pending envelopes."
+    },
+    {
+      "priority": "P1",
+      "origin": "implementation",
+      "summary": "Reliable receive overflow drops packets without deferred disconnect."
+    },
+    {
+      "priority": "P1",
+      "origin": "implementation",
+      "summary": "Recovery keyframe boundary moves and old ACK triggers resync."
+    },
+    {
+      "priority": "P1",
+      "origin": "implementation",
+      "summary": "TickWindow failure discards valid input tail and requests snapshot resync."
+    }
+  ],
+  "validation": [
+    "Source baseline review; runtime validation pending.",
+    "Accepted baseline assessment identifies required repairs; does not accept baseline runtime correctness."
+  ]
+}

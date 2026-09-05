@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 3,
+  "revision": 0,
+  "taskId": "NS-07",
+  "goal": "Reuse an encoded delta for identical scope/baseline/target within CompleteTick.",
+  "acceptance": [
+    "Same baseline reuses encoding; different baselines stay isolated.",
+    "Peer headers remain separate.",
+    "All temporary delta leases released on success, exception and disposal."
+  ],
+  "dependencies": [
+    "NS-06"
+  ],
+  "requestedMode": "auto",
+  "resolvedMode": "strict",
+  "modeFloor": "strict",
+  "riskClass": "high",
+  "modeReasons": [
+    "sharedContracts",
+    "submodules",
+    "highRisk",
+    "baselineReview"
+  ],
+  "capabilityDegradations": [],
+  "writerCount": 1,
+  "ownershipDomainCount": 1,
+  "workerRequired": true,
+  "parallelReason": null,
+  "reviewRequired": true,
+  "reviewPolicy": "single",
+  "specialization": null,
+  "state": "Draft",
+  "previousState": null,
+  "role": "worker",
+  "risks": [
+    "Network correctness and lease ownership"
+  ],
+  "telemetryCohort": null,
+  "ownership": {
+    "owned": [
+      "unigame.staticecs.network/Runtime/NetworkServer.cs",
+      "unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs",
+      "unigame.staticecs.network/Tests/Editor/NetworkBufferOwnershipTests.cs"
+    ],
+    "shared": [],
+    "forbidden": [
+      "unigame.ai.lemmings/**",
+      "docs/**",
+      "**/Packages/**"
+    ]
+  },
+  "resources": {
+    "exclusive": []
+  },
+  "workingSet": [
+    {
+      "ref": "unigame.staticecs.network/Runtime/NetworkServer.cs",
+      "purpose": "Owning implementation or focused regression"
+    },
+    {
+      "ref": "unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs",
+      "purpose": "Owning implementation or focused regression"
+    },
+    {
+      "ref": "unigame.staticecs.network/Tests/Editor/NetworkBufferOwnershipTests.cs",
+      "purpose": "Owning implementation or focused regression"
+    }
+  ],
+  "models": {
+    "hostId": "codex",
+    "requested": null,
+    "assigned": "openai/gpt-5.6-luna:max",
+    "actual": null,
+    "fallbackReason": null
+  },
+  "routingRecovery": null,
+  "workspace": {
+    "policy": "auto",
+    "backend": "package-worktree",
+    "workspaceId": "ns-07-20260905",
+    "managedBy": "lemmings",
+    "lifetime": "task",
+    "estimatedGiB": 0.5,
+    "approval": "not-required",
+    "reason": "Isolated writer for shared package; NS-00 baseline preflight before dispatch"
+  },
+  "execution": {
+    "interfaces": [
+      "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen"
+    ],
+    "tests": [
+      "Same baseline reuses encoding; different baselines stay isolated.",
+      "Peer headers remain separate.",
+      "All temporary delta leases released on success, exception and disposal."
+    ],
+    "dependencyHandoffs": [],
+    "handoff": null,
+    "validationEvidence": [],
+    "attempts": []
+  },
+  "baseSha": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
+  "commits": {
+    "candidate": null,
+    "fix": []
+  },
+  "validation": {
+    "riskToTest": [
+      {
+        "risk": "Network correctness and lease ownership",
+        "test": "Focused EditMode regressions, complete Network/UTP/Movement/Prediction suites, MPPM and final harness"
+      }
+    ],
+    "commands": [
+      "git diff --check"
+    ],
+    "allowedOutputs": [],
+    "debt": []
+  },
+  "reviewRef": null,
+  "crossReviewRefs": [],
+  "reviewHistory": [],
+  "close": {
+    "mergeCommit": null,
+    "integrationValidationPassed": false,
+    "workspaceDisposition": null
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 3,
+  "revision": 0,
+  "phaseId": "NETWORK-STABILITY-OPTIMIZATION-V1",
+  "baselineSha": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
+  "integrationHead": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
+  "integrationBranch": "task/network-stability-optimization-v1",
+  "contractsFrozen": true,
+  "contracts": [
+    "Protocol v7, wire layout, fingerprints, runtime config v2, public signatures unchanged",
+    "ACK is monotonic applied snapshot cursor; valid newer available baseline suffices",
+    "Recovery boundary fixed once per episode; no full-history ACK requirement",
+    "Reliable overflow disconnects one connection; leases consumed once",
+    "No AOI/auth/economy/session ECS rewrite",
+    "Root NS-00 preflight gates first dispatch; root NS-05 follows NS-02; root NS-09 follows package NS-08-P"
+  ],
+  "baselineReviewRef": "docs/tasks/network-stability-optimization-v1/baseline-review.json",
+  "taskDag": [
+    {
+      "taskId": "NS-01",
+      "dependencies": []
+    },
+    {
+      "taskId": "NS-02",
+      "dependencies": []
+    },
+    {
+      "taskId": "NS-03",
+      "dependencies": [
+        "NS-01",
+        "NS-02"
+      ]
+    },
+    {
+      "taskId": "NS-04",
+      "dependencies": [
+        "NS-01",
+        "NS-03"
+      ]
+    },
+    {
+      "taskId": "NS-06",
+      "dependencies": [
+        "NS-03",
+        "NS-04"
+      ]
+    },
+    {
+      "taskId": "NS-07",
+      "dependencies": [
+        "NS-06"
+      ]
+    },
+    {
+      "taskId": "NS-08-P",
+      "dependencies": [
+        "NS-03",
+        "NS-04",
+        "NS-06",
+        "NS-07"
+      ]
+    }
+  ],
+  "leases": [],
+  "close": {
+    "mergeCommits": [],
+    "phaseValidation": [],
+    "workspaceDispositions": []
+  }
+}
