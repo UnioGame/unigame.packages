@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 3,
+  "revision": 5,
   "taskId": "NS-07",
   "goal": "Reuse an encoded delta for identical scope/baseline/target within CompleteTick.",
   "acceptance": [
@@ -29,8 +29,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Draft",
-  "previousState": null,
+  "state": "Active",
+  "previousState": "Ready",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -71,19 +71,19 @@
     "hostId": "codex",
     "requested": null,
     "assigned": "openai/gpt-5.6-luna:max",
-    "actual": null,
+    "actual": "openai/gpt-5.6-luna:max",
     "fallbackReason": null
   },
   "routingRecovery": null,
   "workspace": {
     "policy": "auto",
     "backend": "package-worktree",
-    "workspaceId": "ns-07-20260905",
+    "workspaceId": "ns-03-20260905",
     "managedBy": "lemmings",
     "lifetime": "task",
     "estimatedGiB": 0.5,
     "approval": "not-required",
-    "reason": "Isolated writer for shared package; NS-00 baseline preflight before dispatch"
+    "reason": "Reused clean Integrated NS06 aggregate/Network linked worktree; fresh task branch and agent."
   },
   "execution": {
     "interfaces": [
@@ -99,12 +99,14 @@
       "Peer headers remain separate.",
       "All temporary delta leases released on success, exception and disposal."
     ],
-    "dependencyHandoffs": [],
+    "dependencyHandoffs": [
+      "NS06 integrated and accepted after sole repair; Network84/84, game Network/Prediction94/94. Network baseline998c7170a48eb443db5eb764127f3c8c3ee12b56."
+    ],
     "handoff": null,
     "validationEvidence": [],
     "attempts": []
   },
-  "baseSha": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
+  "baseSha": "83ae14bf7e8a918d3550ea1db2e4ce510d35d92d",
   "commits": {
     "candidate": null,
     "fix": []
