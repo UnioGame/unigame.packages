@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 14,
+  "revision": 15,
   "phaseId": "NETWORK-STABILITY-OPTIMIZATION-V1",
   "baselineSha": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
   "integrationHead": "27869cbe652976469e2c8488ed4f83d60343267b",
@@ -121,8 +121,48 @@
     }
   ],
   "close": {
-    "mergeCommits": [],
-    "phaseValidation": [],
-    "workspaceDispositions": []
+    "mergeCommits": [
+      "eef0c9f8c0996f4348f2966f4f55469e019dd6f5",
+      "d604bba4989f52a3bbe17fad72b2e61f8ec6444d",
+      "abb627bbcc891573b94206513906411b01797901",
+      "4cdab1ff0f221a0dd7b09cb8aa1e4925b4b43d05",
+      "30f2025dc3ba0cd849ff92ff1569144384981c84",
+      "46c861aa6af2a0beda3acd8c718de7df9c7cf6ab",
+      "27869cbe652976469e2c8488ed4f83d60343267b"
+    ],
+    "phaseValidation": [
+      "Focused wire/ACK/recovery/overflow/batch/projection/cache regressions passed; fullNetwork86/UTP23/gameNetworkPrediction94/Movement15=218tests.",
+      "MPPM2>=336sec andMPPM3>=319sec after reconnect passed; errors/resync0. Final Network5407510/UTP96b12fa differ from tested runtime only README/XML.",
+      "Every delivered runtime/docs candidate accepted by immutable Sol review; historical NS02/NS07 ReplanRequired superseded by NS02V/NS07V.",
+      "Root NS09 records performance gate fail for32;1/16all6pass.64checks/profile explicitly deferred by user until thin client. Correctness integration permitted by approved plan; NS10Draft follow-up.",
+      "All5 package workspaces have no leases;2idle and3quarantined retained. Temporary integration worktrees removed. Root final-report.md owns full evidence."
+    ],
+    "workspaceDispositions": [
+      {
+        "workspaceId": "ns-01-20260905",
+        "releaseAction": "retained",
+        "releaseReason": "No leases; quarantined diagnostic worktree preserved, no forced cleanup."
+      },
+      {
+        "workspaceId": "ns-02-20260905",
+        "releaseAction": "retained",
+        "releaseReason": "No leases; quarantined diagnostic worktree preserved, no forced cleanup."
+      },
+      {
+        "workspaceId": "ns-02v-20260905",
+        "releaseAction": "released-to-pool",
+        "releaseReason": "No leases; clean reusable pool."
+      },
+      {
+        "workspaceId": "ns-03-20260905",
+        "releaseAction": "retained",
+        "releaseReason": "No leases; quarantined diagnostic worktree preserved, no forced cleanup."
+      },
+      {
+        "workspaceId": "ns-07v-20260905",
+        "releaseAction": "released-to-pool",
+        "releaseReason": "No leases; clean reusable pool."
+      }
+    ]
   }
 }
