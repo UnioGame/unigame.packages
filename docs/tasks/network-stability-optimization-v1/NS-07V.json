@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 2,
+  "revision": 4,
   "taskId": "NS-07V",
   "goal": "Validate adopted tick delta cache with correct session epochs and executable success/error/disposal regressions.",
   "acceptance": [
@@ -29,8 +29,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Active",
-  "previousState": "Ready",
+  "state": "Accepted",
+  "previousState": "Candidate",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -104,12 +104,18 @@
       "NS06 integrated and accepted after sole repair; Network84/84, game Network/Prediction94/94. Network baseline998c7170a48eb443db5eb764127f3c8c3ee12b56."
     ],
     "handoff": null,
-    "validationEvidence": [],
+    "validationEvidence": [
+      "Worker fixed ACK epochs and beneficial delta fixture; adopted runtime unchanged.",
+      "Manager compilation0errors; focused2/2, fullNetwork86/86 at exact leaf head.",
+      "All six hashes match; immutable aggregate/leaf HEADs and diff checks pass.",
+      "Positive/negative tick cache isolated by scope/baseline/target; separate peer headers; finally/disposal cleanup.",
+      "Compilation0errors; focused2/2; Network86/86 including warm zero-allocation regression; game94/94 UTP23/23 Movement15/15."
+    ],
     "attempts": []
   },
   "baseSha": "45f716432a46e7401ad3818e137a1f974c8ea41b",
   "commits": {
-    "candidate": null,
+    "candidate": "422fff66074e0b12ce8d78e8bccd29ed2fca2914",
     "fix": []
   },
   "validation": {
@@ -131,9 +137,11 @@
     "allowedOutputs": [],
     "debt": []
   },
-  "reviewRef": null,
+  "reviewRef": "docs/tasks/network-stability-optimization-v1/NS-07V-review-1.json",
   "crossReviewRefs": [],
-  "reviewHistory": [],
+  "reviewHistory": [
+    "docs/tasks/network-stability-optimization-v1/NS-07V-review-1.json"
+  ],
   "close": {
     "mergeCommit": null,
     "integrationValidationPassed": false,
