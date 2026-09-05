@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 3,
+  "revision": 5,
   "taskId": "NS-06",
   "goal": "Maintain peer counters at lifecycle transitions instead of per packet scans.",
   "acceptance": [
@@ -29,8 +29,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Draft",
-  "previousState": null,
+  "state": "Active",
+  "previousState": "Ready",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -66,19 +66,19 @@
     "hostId": "codex",
     "requested": null,
     "assigned": "openai/gpt-5.6-luna:max",
-    "actual": null,
+    "actual": "openai/gpt-5.6-luna:max",
     "fallbackReason": null
   },
   "routingRecovery": null,
   "workspace": {
     "policy": "auto",
     "backend": "package-worktree",
-    "workspaceId": "ns-06-20260905",
+    "workspaceId": "ns-03-20260905",
     "managedBy": "lemmings",
     "lifetime": "task",
     "estimatedGiB": 0.5,
     "approval": "not-required",
-    "reason": "Isolated writer for shared package; NS-00 baseline preflight before dispatch"
+    "reason": "Reused clean Integrated NS04 aggregate/Network linked worktree, new branch and fresh agent."
   },
   "execution": {
     "interfaces": [
@@ -93,12 +93,14 @@
       "Counters correct on admission/reject/disconnect/disposal.",
       "Packet diagnostics do not scan peers."
     ],
-    "dependencyHandoffs": [],
+    "dependencyHandoffs": [
+      "NS03/NS04/NS05 integrated. Nested Network baseline3eedf85e84bcbf93097a64194a114169a5f902a8; all P1 correctness gates accepted; fullNetwork81/81."
+    ],
     "handoff": null,
     "validationEvidence": [],
     "attempts": []
   },
-  "baseSha": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
+  "baseSha": "3a35516e80292138a540e2d44db94e9870dc558b",
   "commits": {
     "candidate": null,
     "fix": []

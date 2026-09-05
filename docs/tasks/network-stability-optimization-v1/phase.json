@@ -1,9 +1,9 @@
 {
   "schemaVersion": 3,
-  "revision": 7,
+  "revision": 8,
   "phaseId": "NETWORK-STABILITY-OPTIMIZATION-V1",
   "baselineSha": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
-  "integrationHead": "4cdab1ff0f221a0dd7b09cb8aa1e4925b4b43d05",
+  "integrationHead": "3a35516e80292138a540e2d44db94e9870dc558b",
   "integrationBranch": "task/network-stability-optimization-v1",
   "contractsFrozen": true,
   "contracts": [
@@ -91,6 +91,11 @@
       "resource": "workspace:ns-04",
       "owner": "NS-04",
       "active": false
+    },
+    {
+      "resource": "workspace:ns-06",
+      "owner": "NS-06",
+      "active": true
     }
   ],
   "close": {
