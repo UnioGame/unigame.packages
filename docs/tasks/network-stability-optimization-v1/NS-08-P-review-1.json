@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 3,
+  "revision": 0,
+  "reviewId": "NS-08-P-review-1",
+  "subject": {
+    "kind": "candidate",
+    "taskId": "NS-08-P",
+    "baseSha": "bcdb9bb8048d9868565f7bf39a78fc603f7cf010",
+    "headSha": "30f1698f5c31e4f9f11a19bde0c9016e9426b4d3"
+  },
+  "status": "Accepted",
+  "hostId": "codex",
+  "reviewerModel": "openai/gpt-5.6-sol:high",
+  "cycle": 1,
+  "findings": [],
+  "validation": [
+    "Exact aggregate/leaf diffs contain two README edits and one XML summary; no executable statements, public signatures, wire layout or protocol changes.",
+    "TrySend consumes lease on all results and true means local acceptance; ACK/recovery/cache/overflow documentation matches owning code.",
+    "Immutable aggregate diff check passed."
+  ]
+}
