@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 1,
+  "revision": 2,
   "taskId": "NS-04",
   "goal": "Handle each input validation outcome without discarding a fresh batch tail.",
   "acceptance": [
@@ -84,7 +84,10 @@
   "execution": {
     "interfaces": [
       "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen",
-      "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7CommandsTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review."
+      "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7CommandsTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review.",
+      "DecodeCommands currently sends resync for all failures. Separate packet/envelope framing violations from coordinator resource capacity: malformed framing/schema/session closes only offending peer; TickWindow skips current envelope; coordinator LimitExceeded disposes remaining batch without snapshot resync.",
+      "Queue transfers envelope ownership only on Queued; dispose rejected/duplicate and all untransferred scratch envelopes exactly once, including early return. Preserve admitted peers and command ordering.",
+      "Existing NetworkSession.Validate allows non-contiguous input sequences; a stale command must not prevent fresh higher-sequence input in the same batch. Test actual dispatch and absence of resync, not only return values."
     ],
     "tests": [
       "TickWindow skips only stale input.",

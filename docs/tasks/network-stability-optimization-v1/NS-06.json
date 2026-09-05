@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 1,
+  "revision": 2,
   "taskId": "NS-06",
   "goal": "Maintain peer counters at lifecycle transitions instead of per packet scans.",
   "acceptance": [
@@ -83,7 +83,10 @@
   "execution": {
     "interfaces": [
       "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen",
-      "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7DiagnosticsTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review."
+      "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7DiagnosticsTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review.",
+      "Replace ActiveConnectionCount/ActivePeerCount scans only after tracing every AddConnection, Admit, direct Session.Close, CleanupPeer and disposal path. Counter updates must be correct before observer callbacks and idempotent across repeated cleanup.",
+      "Admission can transition Handshaking to Rejected before Close when epoch invalid; Ready send or observer failures can occur after Established. Cover those transitions without negative or leaked counts. Session state mutators are internal; public/wire signatures remain frozen.",
+      "Use existing diagnostics observer tests to assert actual emitted counters; no public counter API or per-packet rescan fallback."
     ],
     "tests": [
       "Counters correct on admission/reject/disconnect/disposal.",

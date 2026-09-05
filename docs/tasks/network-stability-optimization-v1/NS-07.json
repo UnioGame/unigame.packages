@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 1,
+  "revision": 2,
   "taskId": "NS-07",
   "goal": "Reuse an encoded delta for identical scope/baseline/target within CompleteTick.",
   "acceptance": [
@@ -88,7 +88,10 @@
   "execution": {
     "interfaces": [
       "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen",
-      "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs, unigame.staticecs.network/Tests/Editor/NetworkBufferOwnershipTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review."
+      "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs, unigame.staticecs.network/Tests/Editor/NetworkBufferOwnershipTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review.",
+      "Cache one delta encoding decision per (scope, baseline tick, target tick) within CompleteTick, including failed/non-beneficial encoding fallback so later peers do not repeat work. Peer packet/chunk headers, sequence and correlation remain separate.",
+      "The dictionary may retain capacity between ticks but no cached leases or decisions may survive CompleteTick. Finally cleanup must handle transport/encoding exceptions; disposal must leave no retained cache leases.",
+      "Use existing buffer ownership tests and actual decoded snapshots for same/different baselines and next-tick invalidation. Do not add a public cache API, configuration knob or test-only production abstraction."
     ],
     "tests": [
       "Same baseline reuses encoding; different baselines stay isolated.",

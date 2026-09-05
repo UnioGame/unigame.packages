@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 6,
+  "revision": 7,
   "taskId": "NS-03",
   "goal": "Keep ACK cursor monotonic and recovery boundary fixed within an episode.",
   "acceptance": [
@@ -71,7 +71,7 @@
     "fallbackReason": null
   },
   "routingRecovery": {
-    "status": "paused",
+    "status": "completed",
     "trigger": {
       "category": "model_unavailable",
       "invocationId": "NS-03-worker-1",
@@ -120,7 +120,9 @@
       "NS-01 and NS-02V integrated; exact candidate Network 77/77, UTP 23/23, game Network 92/92."
     ],
     "handoff": null,
-    "validationEvidence": [],
+    "validationEvidence": [
+      "User explicitly resumed execution after choosing Terra wait; fresh invocation in unchanged clean workspace, original route retained."
+    ],
     "attempts": []
   },
   "baseSha": "d604bba4989f52a3bbe17fad72b2e61f8ec6444d",
