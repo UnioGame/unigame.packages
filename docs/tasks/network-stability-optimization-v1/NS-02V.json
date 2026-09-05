@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 5,
+  "revision": 6,
   "taskId": "NS-02V",
   "goal": "Replan UTP delivery: adopt reviewed overflow/deferred notification implementation and correct test driver pumping; execute focused and complete UTP tests BEFORE immutable review.",
   "acceptance": [
@@ -27,8 +27,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -96,7 +96,8 @@
       "Unity 6000.3.20f1 compilation: 0 errors; ReceiveQueueOverflow 2/2 passed (0.73s); complete UTP 23/23 passed (8.26s), leaf cc54db9.",
       "All 4 hashes and revision match; aggregate and leaf clean, owned, diff checks pass.",
       "Reliable overflow deferred-removes one endpoint, disposes leases and emits one notification; reconnect epoch 2 and unreliable drop covered.",
-      "Compilation 0 errors; focused 2/2; full UTP 23/23; game Network preflight 92/92."
+      "Compilation 0 errors; focused 2/2; full UTP 23/23; game Network preflight 92/92.",
+      "Integrated exact reviewed leaf pair; Network 77/77, UTP 23/23, game Network 92/92; aggregate diff check passed."
     ],
     "attempts": []
   },
@@ -130,8 +131,11 @@
     "docs/tasks/network-stability-optimization-v1/NS-02V-review-1.json"
   ],
   "close": {
-    "mergeCommit": null,
-    "integrationValidationPassed": false,
-    "workspaceDisposition": null
+    "mergeCommit": "d604bba4989f52a3bbe17fad72b2e61f8ec6444d",
+    "integrationValidationPassed": true,
+    "workspaceDisposition": {
+      "releaseAction": "released-to-pool",
+      "releaseReason": "Clean accepted workspace released after integrated gitlink and runtime tests"
+    }
   }
 }

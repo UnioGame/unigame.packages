@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 9,
+  "revision": 10,
   "taskId": "NS-01",
   "goal": "Isolate malformed wire command reads and release/remove processed envelopes even when gameplay policy throws.",
   "acceptance": [
@@ -26,8 +26,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -103,7 +103,8 @@
       "Nested and aggregate diff --check pass, worktrees clean.",
       "All refreshed context hashes and immutable aggregate/leaf heads matched.",
       "Repair only changes test command accessibility; full paths owned; public/wire contracts preserved.",
-      "Exact repaired leaf compiled with 0 errors; focused NetworkCommandIsolationTests 2/2 passed in 0.59s."
+      "Exact repaired leaf compiled with 0 errors; focused NetworkCommandIsolationTests 2/2 passed in 0.59s.",
+      "Integrated exact reviewed leaf pair; Network 77/77, UTP 23/23, game Network 92/92; aggregate diff check passed."
     ],
     "attempts": []
   },
@@ -139,8 +140,11 @@
     "docs/tasks/network-stability-optimization-v1/NS-01-review-2.json"
   ],
   "close": {
-    "mergeCommit": null,
-    "integrationValidationPassed": false,
-    "workspaceDisposition": null
+    "mergeCommit": "eef0c9f8c0996f4348f2966f4f55469e019dd6f5",
+    "integrationValidationPassed": true,
+    "workspaceDisposition": {
+      "releaseAction": "released-to-pool",
+      "releaseReason": "Clean accepted workspace released after integrated gitlink and runtime tests"
+    }
   }
 }
