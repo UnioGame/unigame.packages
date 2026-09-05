@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 3,
+  "revision": 0,
+  "reviewId": "NS-07-review-1",
+  "subject": {
+    "kind": "candidate",
+    "taskId": "NS-07",
+    "baseSha": "83ae14bf7e8a918d3550ea1db2e4ce510d35d92d",
+    "headSha": "f28f3e88c1f5df9fe3aa71e6bccb24749539404b"
+  },
+  "status": "ChangesRequested",
+  "hostId": "codex",
+  "reviewerModel": "openai/gpt-5.6-sol:high",
+  "cycle": 1,
+  "findings": [
+    {
+      "priority": "P1",
+      "origin": "implementation",
+      "file": "unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs",
+      "line": 1227,
+      "summary": "pool is referenced outside its using-variable scope (CS0103). Nest server using inside pool scope; assert zero outstanding leases after server disposal but before pool disposal."
+    }
+  ],
+  "validation": [
+    "All six context hashes match; exact aggregate/Network ranges clean and diff checks pass.",
+    "Positive/negative cache decisions and independent peer headers supported by source; CompleteTick finally and Dispose clear leases. Unity compilation blocks execution."
+  ]
+}

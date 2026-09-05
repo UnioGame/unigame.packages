@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 5,
+  "revision": 7,
   "taskId": "NS-07",
   "goal": "Reuse an encoded delta for identical scope/baseline/target within CompleteTick.",
   "acceptance": [
@@ -29,8 +29,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Active",
-  "previousState": "Ready",
+  "state": "Repair",
+  "previousState": "Candidate",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -103,12 +103,14 @@
       "NS06 integrated and accepted after sole repair; Network84/84, game Network/Prediction94/94. Network baseline998c7170a48eb443db5eb764127f3c8c3ee12b56."
     ],
     "handoff": null,
-    "validationEvidence": [],
+    "validationEvidence": [
+      "Worker reported diff/ownership checks passed; manager verified actual immutable ranges. Unity compile failed CS0103 pool out of scope at NetworkV7SnapshotsTests.cs:1227."
+    ],
     "attempts": []
   },
   "baseSha": "83ae14bf7e8a918d3550ea1db2e4ce510d35d92d",
   "commits": {
-    "candidate": null,
+    "candidate": "f28f3e88c1f5df9fe3aa71e6bccb24749539404b",
     "fix": []
   },
   "validation": {
@@ -129,9 +131,11 @@
     "allowedOutputs": [],
     "debt": []
   },
-  "reviewRef": null,
+  "reviewRef": "docs/tasks/network-stability-optimization-v1/NS-07-review-1.json",
   "crossReviewRefs": [],
-  "reviewHistory": [],
+  "reviewHistory": [
+    "docs/tasks/network-stability-optimization-v1/NS-07-review-1.json"
+  ],
   "close": {
     "mergeCommit": null,
     "integrationValidationPassed": false,
