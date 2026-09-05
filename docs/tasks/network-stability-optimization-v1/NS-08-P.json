@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 8,
+  "revision": 9,
   "taskId": "NS-08-P",
   "goal": "Document ACK/recovery and consuming lease ownership.",
   "acceptance": [
@@ -31,8 +31,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -138,8 +138,11 @@
     "docs/tasks/network-stability-optimization-v1/NS-08-P-review-1.json"
   ],
   "close": {
-    "mergeCommit": null,
-    "integrationValidationPassed": false,
-    "workspaceDisposition": null
+    "mergeCommit": "27869cbe652976469e2c8488ed4f83d60343267b",
+    "integrationValidationPassed": true,
+    "workspaceDisposition": {
+      "releaseAction": "released-to-pool",
+      "releaseReason": "Whole docs wave accepted; exact leaf links integrated; code differs only XML comment."
+    }
   }
 }
