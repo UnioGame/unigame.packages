@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 2,
+  "revision": 3,
   "taskId": "NS-06",
   "goal": "Maintain peer counters at lifecycle transitions instead of per packet scans.",
   "acceptance": [
@@ -86,7 +86,8 @@
       "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7DiagnosticsTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review.",
       "Replace ActiveConnectionCount/ActivePeerCount scans only after tracing every AddConnection, Admit, direct Session.Close, CleanupPeer and disposal path. Counter updates must be correct before observer callbacks and idempotent across repeated cleanup.",
       "Admission can transition Handshaking to Rejected before Close when epoch invalid; Ready send or observer failures can occur after Established. Cover those transitions without negative or leaked counts. Session state mutators are internal; public/wire signatures remain frozen.",
-      "Use existing diagnostics observer tests to assert actual emitted counters; no public counter API or per-packet rescan fallback."
+      "Use existing diagnostics observer tests to assert actual emitted counters; no public counter API or per-packet rescan fallback.",
+      "NS04 adds DisconnectPeer which sends an explicit disconnect before cleanup. Audit counter transitions through it without changing packet diagnostics semantics; cached getters must not enumerate peers."
     ],
     "tests": [
       "Counters correct on admission/reject/disconnect/disposal.",
@@ -110,7 +111,12 @@
       }
     ],
     "commands": [
-      "git diff --check"
+      "git diff --check",
+      "git -C unigame.staticecs.network diff --check",
+      "git -C unigame.staticecs.network add -- Runtime/NetworkServer.cs Tests/Editor/NetworkV7DiagnosticsTests.cs",
+      "git -C unigame.staticecs.network commit -m \"perf: NS-06 lifecycle peer counters\"",
+      "git add -- unigame.staticecs.network",
+      "git commit -m \"perf: NS-06 lifecycle peer counters\""
     ],
     "allowedOutputs": [],
     "debt": []

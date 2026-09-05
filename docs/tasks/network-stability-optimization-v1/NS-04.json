@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 4,
+  "revision": 9,
   "taskId": "NS-04",
   "goal": "Handle each input validation outcome without discarding a fresh batch tail.",
   "acceptance": [
@@ -30,8 +30,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Active",
-  "previousState": "Ready",
+  "state": "Accepted",
+  "previousState": "Candidate",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -98,13 +98,20 @@
       "NS03 and NS05 integrated; Network78/78 and combined game Network/Prediction94/94 passed. Nested Network baseline ca25c6d637d314216dc2db752c9e119e4bc6adab."
     ],
     "handoff": null,
-    "validationEvidence": [],
+    "validationEvidence": [
+      "Actual aggregate and nested immutable path sets match reported ownership; compilation 0 errors.",
+      "Exact leaf d8e8a85: compilation 0 errors, focused CommandBatch 4/4, full Network 80/80.",
+      "Sol requested sole repair: preserve transaction schema/session validation result; invalid peer must disconnect instead of PolicyRejected.",
+      "Repaired exact Network3eedf85: compilation0errors; transaction schema/framing regression1/1; fullNetwork81/81. All actual immutable changed paths match worker report/ownership."
+    ],
     "attempts": []
   },
   "baseSha": "37cfbc44a56d1ea6da4148fb6faf0a24534c9aa2",
   "commits": {
-    "candidate": null,
-    "fix": []
+    "candidate": "c5f486e3e0de52cbe7dd150689d2cc6ff2e868b6",
+    "fix": [
+      "dee6f12be9f9d8c12afd36b30775406982c888c9"
+    ]
   },
   "validation": {
     "riskToTest": [
@@ -124,9 +131,12 @@
     "allowedOutputs": [],
     "debt": []
   },
-  "reviewRef": null,
+  "reviewRef": "docs/tasks/network-stability-optimization-v1/NS-04-review-2.json",
   "crossReviewRefs": [],
-  "reviewHistory": [],
+  "reviewHistory": [
+    "docs/tasks/network-stability-optimization-v1/NS-04-review-1.json",
+    "docs/tasks/network-stability-optimization-v1/NS-04-review-2.json"
+  ],
   "close": {
     "mergeCommit": null,
     "integrationValidationPassed": false,
