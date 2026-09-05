@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 2,
+  "revision": 3,
   "taskId": "NS-07",
   "goal": "Reuse an encoded delta for identical scope/baseline/target within CompleteTick.",
   "acceptance": [
@@ -91,7 +91,8 @@
       "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs, unigame.staticecs.network/Tests/Editor/NetworkBufferOwnershipTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review.",
       "Cache one delta encoding decision per (scope, baseline tick, target tick) within CompleteTick, including failed/non-beneficial encoding fallback so later peers do not repeat work. Peer packet/chunk headers, sequence and correlation remain separate.",
       "The dictionary may retain capacity between ticks but no cached leases or decisions may survive CompleteTick. Finally cleanup must handle transport/encoding exceptions; disposal must leave no retained cache leases.",
-      "Use existing buffer ownership tests and actual decoded snapshots for same/different baselines and next-tick invalidation. Do not add a public cache API, configuration knob or test-only production abstraction."
+      "Use existing buffer ownership tests and actual decoded snapshots for same/different baselines and next-tick invalidation. Do not add a public cache API, configuration knob or test-only production abstraction.",
+      "Existing full Network suite includes WarmCommandAndSnapshotCoreAllocatesNoManagedMemoryPerTick. Reuse dictionary capacity across calls; its entries/leases belong only to the current CompleteTick and clear in finally. No new per-tick dictionary allocation. Preserve useful negative-cache decisions for non-beneficial delta."
     ],
     "tests": [
       "Same baseline reuses encoding; different baselines stay isolated.",
@@ -116,7 +117,12 @@
       }
     ],
     "commands": [
-      "git diff --check"
+      "git diff --check",
+      "git -C unigame.staticecs.network diff --check",
+      "git -C unigame.staticecs.network add -- Runtime/NetworkServer.cs Tests/Editor/NetworkV7SnapshotsTests.cs Tests/Editor/NetworkBufferOwnershipTests.cs",
+      "git -C unigame.staticecs.network commit -m \"perf: NS-07 reuse tick delta encoding\"",
+      "git add -- unigame.staticecs.network",
+      "git commit -m \"perf: NS-07 reuse tick delta encoding\""
     ],
     "allowedOutputs": [],
     "debt": []

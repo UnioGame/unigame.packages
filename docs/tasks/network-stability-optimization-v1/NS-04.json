@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 10,
+  "revision": 11,
   "taskId": "NS-04",
   "goal": "Handle each input validation outcome without discarding a fresh batch tail.",
   "acceptance": [
@@ -102,7 +102,8 @@
       "Actual aggregate and nested immutable path sets match reported ownership; compilation 0 errors.",
       "Exact leaf d8e8a85: compilation 0 errors, focused CommandBatch 4/4, full Network 80/80.",
       "Sol requested sole repair: preserve transaction schema/session validation result; invalid peer must disconnect instead of PolicyRejected.",
-      "Repaired exact Network3eedf85: compilation0errors; transaction schema/framing regression1/1; fullNetwork81/81. All actual immutable changed paths match worker report/ownership."
+      "Repaired exact Network3eedf85: compilation0errors; transaction schema/framing regression1/1; fullNetwork81/81. All actual immutable changed paths match worker report/ownership.",
+      "Post-repair integrated game Network/Prediction94/94,17.97s; remaining reviewer integration validation risk closed."
     ],
     "attempts": []
   },

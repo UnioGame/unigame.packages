@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 3,
+  "revision": 0,
+  "reviewId": "NS-06-review-1",
+  "subject": {
+    "kind": "candidate",
+    "taskId": "NS-06",
+    "baseSha": "3a35516e80292138a540e2d44db94e9870dc558b",
+    "headSha": "2d3407b4fd9e5c82c219b325cfbdfaa81f247cd4"
+  },
+  "status": "ChangesRequested",
+  "hostId": "codex",
+  "reviewerModel": "openai/gpt-5.6-sol:high",
+  "cycle": 1,
+  "findings": [
+    {
+      "priority": "P2",
+      "origin": "implementation",
+      "file": "unigame.staticecs.network/Runtime/NetworkServer.cs",
+      "line": 109,
+      "summary": "RemoveConnection invokes synchronous disconnect callback before RemoveAt(i). Reentrant removal of same peer causes outer RemoveAt to throw or silently remove next peer without cleanup; cached counters diverge. Detach before lifecycle callbacks or otherwise make removal reentrancy-safe; inspect all cleanup callers."
+    }
+  ],
+  "validation": [
+    "Immutable ranges, six hashes, clean worktrees and diff checks pass; no packet hot-path scan/public API changes.",
+    "Compilation0errors, focused2/2 and fullNetwork83/83 pass; current tests miss reentrant removal."
+  ]
+}

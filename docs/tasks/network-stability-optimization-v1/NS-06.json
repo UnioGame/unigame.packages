@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 5,
+  "revision": 9,
   "taskId": "NS-06",
   "goal": "Maintain peer counters at lifecycle transitions instead of per packet scans.",
   "acceptance": [
@@ -29,8 +29,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Active",
-  "previousState": "Ready",
+  "state": "Accepted",
+  "previousState": "Candidate",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -97,13 +97,19 @@
       "NS03/NS04/NS05 integrated. Nested Network baseline3eedf85e84bcbf93097a64194a114169a5f902a8; all P1 correctness gates accepted; fullNetwork81/81."
     ],
     "handoff": null,
-    "validationEvidence": [],
+    "validationEvidence": [
+      "Actual aggregate+nested path sets verified against worker result/ownership; compilation0errors, focused lifecycle2/2, fullNetwork83/83 at exact483764e.",
+      "Sol P2 requires sole repair: disconnect callback reentrancy must not remove healthy peer or corrupt counts.",
+      "Repair998c717 exact ranges verified; compilation0errors, reentrant regression1/1, fullNetwork84/84. Peers detached before callback; disposal and receive removal adjusted."
+    ],
     "attempts": []
   },
   "baseSha": "3a35516e80292138a540e2d44db94e9870dc558b",
   "commits": {
-    "candidate": null,
-    "fix": []
+    "candidate": "2d3407b4fd9e5c82c219b325cfbdfaa81f247cd4",
+    "fix": [
+      "4bad38fd3daf7349c0b01d1ee0544f74c598556a"
+    ]
   },
   "validation": {
     "riskToTest": [
@@ -123,9 +129,12 @@
     "allowedOutputs": [],
     "debt": []
   },
-  "reviewRef": null,
+  "reviewRef": "docs/tasks/network-stability-optimization-v1/NS-06-review-2.json",
   "crossReviewRefs": [],
-  "reviewHistory": [],
+  "reviewHistory": [
+    "docs/tasks/network-stability-optimization-v1/NS-06-review-1.json",
+    "docs/tasks/network-stability-optimization-v1/NS-06-review-2.json"
+  ],
   "close": {
     "mergeCommit": null,
     "integrationValidationPassed": false,
