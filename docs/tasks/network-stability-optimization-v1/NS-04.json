@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 2,
+  "revision": 4,
   "taskId": "NS-04",
   "goal": "Handle each input validation outcome without discarding a fresh batch tail.",
   "acceptance": [
@@ -30,8 +30,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Draft",
-  "previousState": null,
+  "state": "Active",
+  "previousState": "Ready",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -67,19 +67,19 @@
     "hostId": "codex",
     "requested": null,
     "assigned": "openai/gpt-5.6-luna:max",
-    "actual": null,
+    "actual": "openai/gpt-5.6-luna:max",
     "fallbackReason": null
   },
   "routingRecovery": null,
   "workspace": {
     "policy": "auto",
     "backend": "package-worktree",
-    "workspaceId": "ns-04-20260905",
+    "workspaceId": "ns-03-20260905",
     "managedBy": "lemmings",
     "lifetime": "task",
     "estimatedGiB": 0.5,
     "approval": "not-required",
-    "reason": "Isolated writer for shared package; NS-00 baseline preflight before dispatch"
+    "reason": "Reused clean Integrated NS03 aggregate/Network linked worktree; fresh task branch and agent."
   },
   "execution": {
     "interfaces": [
@@ -94,12 +94,14 @@
       "LimitExceeded stops batch without snapshot resync.",
       "Framing/schema/session violations disconnect offending peer."
     ],
-    "dependencyHandoffs": [],
+    "dependencyHandoffs": [
+      "NS03 and NS05 integrated; Network78/78 and combined game Network/Prediction94/94 passed. Nested Network baseline ca25c6d637d314216dc2db752c9e119e4bc6adab."
+    ],
     "handoff": null,
     "validationEvidence": [],
     "attempts": []
   },
-  "baseSha": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
+  "baseSha": "37cfbc44a56d1ea6da4148fb6faf0a24534c9aa2",
   "commits": {
     "candidate": null,
     "fix": []
@@ -112,7 +114,12 @@
       }
     ],
     "commands": [
-      "git diff --check"
+      "git diff --check",
+      "git -C unigame.staticecs.network diff --check",
+      "git -C unigame.staticecs.network add -- Runtime/NetworkServer.cs Tests/Editor/NetworkV7CommandsTests.cs",
+      "git -C unigame.staticecs.network commit -m \"fix: NS-04 input batch validation\"",
+      "git add -- unigame.staticecs.network",
+      "git commit -m \"fix: NS-04 input batch validation\""
     ],
     "allowedOutputs": [],
     "debt": []
