@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 7,
+  "revision": 12,
   "taskId": "NS-03",
   "goal": "Keep ACK cursor monotonic and recovery boundary fixed within an episode.",
   "acceptance": [
@@ -30,8 +30,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Active",
-  "previousState": "Ready",
+  "state": "Accepted",
+  "previousState": "Candidate",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -67,7 +67,7 @@
     "hostId": "codex",
     "requested": null,
     "assigned": "openai/gpt-5.6-terra:max",
-    "actual": null,
+    "actual": "openai/gpt-5.6-terra:max",
     "fallbackReason": null
   },
   "routingRecovery": {
@@ -121,14 +121,19 @@
     ],
     "handoff": null,
     "validationEvidence": [
-      "User explicitly resumed execution after choosing Terra wait; fresh invocation in unchanged clean workspace, original route retained."
+      "Manager mechanical commits of unchanged worker patch; both actual immutable path sets match reported ownership.",
+      "Compilation 0 errors; focused ACK 1/2; full Network 77/78. Sole failure: backpressure test changes entire one-entity snapshot then assumes Delta, so size fallback is conflated with recovery.",
+      "Repair removes only tick-3 fixture mutation, preserving Delta/baseline 2 assertions; immutable repair paths verified.",
+      "Repaired exact Network ca25c6d with accepted NS05 source: compilation 0 errors; focused ACK 2/2; full Network 78/78."
     ],
     "attempts": []
   },
   "baseSha": "d604bba4989f52a3bbe17fad72b2e61f8ec6444d",
   "commits": {
-    "candidate": null,
-    "fix": []
+    "candidate": "0f92325ddd2bcaa9c596cb7a7e71216f436dfa1b",
+    "fix": [
+      "e8054d8b8b1d6109c8b78bc7d230beeffddd3938"
+    ]
   },
   "validation": {
     "riskToTest": [
@@ -148,9 +153,11 @@
     "allowedOutputs": [],
     "debt": []
   },
-  "reviewRef": null,
+  "reviewRef": "docs/tasks/network-stability-optimization-v1/NS-03-review-1.json",
   "crossReviewRefs": [],
-  "reviewHistory": [],
+  "reviewHistory": [
+    "docs/tasks/network-stability-optimization-v1/NS-03-review-1.json"
+  ],
   "close": {
     "mergeCommit": null,
     "integrationValidationPassed": false,
