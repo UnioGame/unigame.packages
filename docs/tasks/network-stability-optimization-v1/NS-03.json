@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 12,
+  "revision": 13,
   "taskId": "NS-03",
   "goal": "Keep ACK cursor monotonic and recovery boundary fixed within an episode.",
   "acceptance": [
@@ -30,8 +30,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -124,7 +124,8 @@
       "Manager mechanical commits of unchanged worker patch; both actual immutable path sets match reported ownership.",
       "Compilation 0 errors; focused ACK 1/2; full Network 77/78. Sole failure: backpressure test changes entire one-entity snapshot then assumes Delta, so size fallback is conflated with recovery.",
       "Repair removes only tick-3 fixture mutation, preserving Delta/baseline 2 assertions; immutable repair paths verified.",
-      "Repaired exact Network ca25c6d with accepted NS05 source: compilation 0 errors; focused ACK 2/2; full Network 78/78."
+      "Repaired exact Network ca25c6d with accepted NS05 source: compilation 0 errors; focused ACK 2/2; full Network 78/78.",
+      "Combined integration source identical to tested candidate: compilation 0 errors, ACK 2/2, Network 78/78, game Network/Prediction 94/94."
     ],
     "attempts": []
   },
@@ -159,8 +160,11 @@
     "docs/tasks/network-stability-optimization-v1/NS-03-review-1.json"
   ],
   "close": {
-    "mergeCommit": null,
-    "integrationValidationPassed": false,
-    "workspaceDisposition": null
+    "mergeCommit": "abb627bbcc891573b94206513906411b01797901",
+    "integrationValidationPassed": true,
+    "workspaceDisposition": {
+      "releaseAction": "released-to-pool",
+      "releaseReason": "Exact integrated source passed combined runtime validation; workspace released"
+    }
   }
 }
