@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 3,
+  "revision": 4,
   "taskId": "NS-08-P",
   "goal": "Document ACK/recovery and consuming lease ownership.",
   "acceptance": [
@@ -11,7 +11,7 @@
     "NS-03",
     "NS-04",
     "NS-06",
-    "NS-07"
+    "NS-07V"
   ],
   "requestedMode": "auto",
   "resolvedMode": "strict",
@@ -94,7 +94,7 @@
       "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen",
       "Leaf ownership is limited to unigame.staticecs.network/README.md, unigame.staticecs.network.utp/README.md, unigame.staticecs.network/Runtime/MemoryNetworkTransport.cs, unigame.staticecs.network.utp/Runtime/UnityTransportHost.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review.",
       "Extend existing short READMEs only: canonical applied ACK/recovery and tick-scoped delta lease lifetime in Network; deferred reliable overflow and transport TrySend consume-on-all-results in UTP. Interface XML is canonical for TrySend ownership; avoid duplicating obvious member docs. Existing links remain canonical; no new guide/README.",
-      "Independent documentation wave with root NS08R after NS07 Integrated: separate owned files and contracts, no shared writes; integrate only after both candidates Accepted."
+      "Independent documentation wave with root NS08R after NS07V Integrated: separate owned files and contracts, no shared writes; integrate only after both candidates Accepted."
     ],
     "tests": [
       "Protocol v7 and public signatures unchanged.",

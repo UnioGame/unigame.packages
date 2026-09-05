@@ -1,9 +1,9 @@
 {
   "schemaVersion": 3,
-  "revision": 10,
+  "revision": 11,
   "phaseId": "NETWORK-STABILITY-OPTIMIZATION-V1",
   "baselineSha": "bb7b4f6cf7a273929da31dc7ab39b3bbe81ad38c",
-  "integrationHead": "83ae14bf7e8a918d3550ea1db2e4ce510d35d92d",
+  "integrationHead": "45f716432a46e7401ad3818e137a1f974c8ea41b",
   "integrationBranch": "task/network-stability-optimization-v1",
   "contractsFrozen": true,
   "contracts": [
@@ -13,7 +13,8 @@
     "Reliable overflow disconnects one connection; leases consumed once",
     "No AOI/auth/economy/session ECS rewrite",
     "Root NS-00 preflight gates first dispatch; root NS-05 follows NS-02; root NS-09 follows package NS-08-P",
-    "Replan: NS-02V replaces exhausted NS-02 delivery gate; frozen runtime contracts unchanged. Runtime tests precede candidate review."
+    "Replan: NS-02V replaces exhausted NS-02 delivery gate; frozen runtime contracts unchanged. Runtime tests precede candidate review.",
+    "NS-07V replaces exhausted NS-07 delivery gate; preserves reviewed runtime and corrects executable test fixtures before review."
   ],
   "baselineReviewRef": "docs/tasks/network-stability-optimization-v1/baseline-review.json",
   "taskDag": [
@@ -57,12 +58,18 @@
       ]
     },
     {
+      "taskId": "NS-07V",
+      "dependencies": [
+        "NS-06"
+      ]
+    },
+    {
       "taskId": "NS-08-P",
       "dependencies": [
         "NS-03",
         "NS-04",
         "NS-06",
-        "NS-07"
+        "NS-07V"
       ]
     }
   ],
@@ -100,6 +107,11 @@
     {
       "resource": "workspace:ns-07",
       "owner": "NS-07",
+      "active": false
+    },
+    {
+      "resource": "workspace:ns-07v",
+      "owner": "NS-07V",
       "active": true
     }
   ],

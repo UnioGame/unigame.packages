@@ -1,8 +1,8 @@
 {
   "schemaVersion": 3,
-  "revision": 9,
-  "taskId": "NS-07",
-  "goal": "Reuse an encoded delta for identical scope/baseline/target within CompleteTick.",
+  "revision": 2,
+  "taskId": "NS-07V",
+  "goal": "Validate adopted tick delta cache with correct session epochs and executable success/error/disposal regressions.",
   "acceptance": [
     "Same baseline reuses encoding; different baselines stay isolated.",
     "Peer headers remain separate.",
@@ -29,8 +29,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Replan Required",
-  "previousState": "Candidate",
+  "state": "Active",
+  "previousState": "Ready",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -70,20 +70,20 @@
   "models": {
     "hostId": "codex",
     "requested": null,
-    "assigned": "openai/gpt-5.6-luna:max",
-    "actual": "openai/gpt-5.6-luna:max",
+    "assigned": "openai/gpt-5.6-terra:max",
+    "actual": "openai/gpt-5.6-terra:max",
     "fallbackReason": null
   },
   "routingRecovery": null,
   "workspace": {
     "policy": "auto",
     "backend": "package-worktree",
-    "workspaceId": "ns-03-20260905",
+    "workspaceId": "ns-07v-20260905",
     "managedBy": "lemmings",
     "lifetime": "task",
     "estimatedGiB": 0.5,
     "approval": "not-required",
-    "reason": "Reused clean Integrated NS06 aggregate/Network linked worktree; fresh task branch and agent."
+    "reason": "Fresh isolated replacement after NS07 exhausted repair; retained failed workspace. Approved Terra route for focused validation repair."
   },
   "execution": {
     "interfaces": [
@@ -92,7 +92,8 @@
       "Cache one delta encoding decision per (scope, baseline tick, target tick) within CompleteTick, including failed/non-beneficial encoding fallback so later peers do not repeat work. Peer packet/chunk headers, sequence and correlation remain separate.",
       "The dictionary may retain capacity between ticks but no cached leases or decisions may survive CompleteTick. Finally cleanup must handle transport/encoding exceptions; disposal must leave no retained cache leases.",
       "Use existing buffer ownership tests and actual decoded snapshots for same/different baselines and next-tick invalidation. Do not add a public cache API, configuration knob or test-only production abstraction.",
-      "Existing full Network suite includes WarmCommandAndSnapshotCoreAllocatesNoManagedMemoryPerTick. Reuse dictionary capacity across calls; its entries/leases belong only to the current CompleteTick and clear in finally. No new per-tick dictionary allocation. Preserve useful negative-cache decisions for non-beneficial delta."
+      "Existing full Network suite includes WarmCommandAndSnapshotCoreAllocatesNoManagedMemoryPerTick. Reuse dictionary capacity across calls; its entries/leases belong only to the current CompleteTick and clear in finally. No new per-tick dictionary allocation. Preserve useful negative-cache decisions for non-beneficial delta.",
+      "Adopt reviewed NS07 leaf commits f43828234d9317874a6e375b1928885b982d2eca and a2a1bfed274856a3982f51961315b1dd7d58c9fe. Fix ACK epochs to match admitted peers11/22/31; ensure meaningful delta fixture (enough unchanged snapshot data so delta is beneficial), exception then retry and disposal. Runtime remains unchanged unless concrete failing evidence proves runtime defect. Tests must pass before Sol review."
     ],
     "tests": [
       "Same baseline reuses encoding; different baselines stay isolated.",
@@ -103,19 +104,13 @@
       "NS06 integrated and accepted after sole repair; Network84/84, game Network/Prediction94/94. Network baseline998c7170a48eb443db5eb764127f3c8c3ee12b56."
     ],
     "handoff": null,
-    "validationEvidence": [
-      "Worker reported diff/ownership checks passed; manager verified actual immutable ranges. Unity compile failed CS0103 pool out of scope at NetworkV7SnapshotsTests.cs:1227.",
-      "Worker fixed compile scope and added send-exception cleanup/retry regression; diff checks passed; manager actual ownership ranges verified.",
-      "Repair compilation passes, but ServerDeltaCache2/2 failed. ACK helper epoch1 conflicts with admitted11/22/31; failed tests never reach cache sends. Sole repair exhausted; replacement NS-07V owns executable validation."
-    ],
+    "validationEvidence": [],
     "attempts": []
   },
-  "baseSha": "83ae14bf7e8a918d3550ea1db2e4ce510d35d92d",
+  "baseSha": "45f716432a46e7401ad3818e137a1f974c8ea41b",
   "commits": {
-    "candidate": "fe260e2ae742db8384280c97b23b2126e059577f",
-    "fix": [
-      "fe260e2ae742db8384280c97b23b2126e059577f"
-    ]
+    "candidate": null,
+    "fix": []
   },
   "validation": {
     "riskToTest": [
@@ -130,16 +125,15 @@
       "git -C unigame.staticecs.network add -- Runtime/NetworkServer.cs Tests/Editor/NetworkV7SnapshotsTests.cs Tests/Editor/NetworkBufferOwnershipTests.cs",
       "git -C unigame.staticecs.network commit -m \"perf: NS-07 reuse tick delta encoding\"",
       "git add -- unigame.staticecs.network",
-      "git commit -m \"perf: NS-07 reuse tick delta encoding\""
+      "git commit -m \"perf: NS-07 reuse tick delta encoding\"",
+      "git -C unigame.staticecs.network cherry-pick f43828234d9317874a6e375b1928885b982d2eca a2a1bfed274856a3982f51961315b1dd7d58c9fe"
     ],
     "allowedOutputs": [],
     "debt": []
   },
   "reviewRef": null,
   "crossReviewRefs": [],
-  "reviewHistory": [
-    "docs/tasks/network-stability-optimization-v1/NS-07-review-1.json"
-  ],
+  "reviewHistory": [],
   "close": {
     "mergeCommit": null,
     "integrationValidationPassed": false,
