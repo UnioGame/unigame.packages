@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 4,
+  "revision": 5,
   "taskId": "NS-02V",
   "goal": "Replan UTP delivery: adopt reviewed overflow/deferred notification implementation and correct test driver pumping; execute focused and complete UTP tests BEFORE immutable review.",
   "acceptance": [
@@ -27,7 +27,7 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Candidate",
+  "state": "Accepted",
   "previousState": "Candidate",
   "role": "worker",
   "risks": [
@@ -93,7 +93,10 @@
     "handoff": null,
     "validationEvidence": [
       "Both immutable diff checks pass; both worktrees clean.",
-      "Unity 6000.3.20f1 compilation: 0 errors; ReceiveQueueOverflow 2/2 passed (0.73s); complete UTP 23/23 passed (8.26s), leaf cc54db9."
+      "Unity 6000.3.20f1 compilation: 0 errors; ReceiveQueueOverflow 2/2 passed (0.73s); complete UTP 23/23 passed (8.26s), leaf cc54db9.",
+      "All 4 hashes and revision match; aggregate and leaf clean, owned, diff checks pass.",
+      "Reliable overflow deferred-removes one endpoint, disposes leases and emits one notification; reconnect epoch 2 and unreliable drop covered.",
+      "Compilation 0 errors; focused 2/2; full UTP 23/23; game Network preflight 92/92."
     ],
     "attempts": []
   },
@@ -121,9 +124,11 @@
     "allowedOutputs": [],
     "debt": []
   },
-  "reviewRef": null,
+  "reviewRef": "docs/tasks/network-stability-optimization-v1/NS-02V-review-1.json",
   "crossReviewRefs": [],
-  "reviewHistory": [],
+  "reviewHistory": [
+    "docs/tasks/network-stability-optimization-v1/NS-02V-review-1.json"
+  ],
   "close": {
     "mergeCommit": null,
     "integrationValidationPassed": false,

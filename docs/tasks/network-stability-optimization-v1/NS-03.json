@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 2,
+  "revision": 3,
   "taskId": "NS-03",
   "goal": "Keep ACK cursor monotonic and recovery boundary fixed within an episode.",
   "acceptance": [
@@ -84,7 +84,10 @@
   "execution": {
     "interfaces": [
       "Protocol v7; wire layout, fingerprints, runtime config v2 and public signatures frozen",
-      "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review."
+      "Leaf ownership is limited to unigame.staticecs.network/Runtime/NetworkServer.cs, unigame.staticecs.network/Tests/Editor/NetworkV7SnapshotsTests.cs. Aggregate candidate updates only listed gitlinks. Manager records and checks each nested immutable range before review.",
+      "ACK 0 or older than cursor cannot roll cursor back or start recovery. Validate session/epoch and scope/schema through existing ingress guards.",
+      "Set the minimum recovery snapshot boundary once per episode; only an available acknowledged baseline at or above it ends recovery. A missing baseline keeps recovery and sends a fresh keyframe.",
+      "Add regressions for old/exact/newer ACK, evicted history, delayed ACK over repeated keyframes and send backpressure. Preserve Protocol 7 and all public signatures."
     ],
     "tests": [
       "Old ACK ignored; exact/newer available valid baseline exits recovery.",
