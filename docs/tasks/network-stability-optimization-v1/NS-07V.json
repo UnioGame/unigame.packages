@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": 4,
+  "revision": 5,
   "taskId": "NS-07V",
   "goal": "Validate adopted tick delta cache with correct session epochs and executable success/error/disposal regressions.",
   "acceptance": [
@@ -29,8 +29,8 @@
   "reviewRequired": true,
   "reviewPolicy": "single",
   "specialization": null,
-  "state": "Accepted",
-  "previousState": "Candidate",
+  "state": "Integrated",
+  "previousState": "Accepted",
   "role": "worker",
   "risks": [
     "Network correctness and lease ownership"
@@ -143,8 +143,11 @@
     "docs/tasks/network-stability-optimization-v1/NS-07V-review-1.json"
   ],
   "close": {
-    "mergeCommit": null,
-    "integrationValidationPassed": false,
-    "workspaceDisposition": null
+    "mergeCommit": "46c861aa6af2a0beda3acd8c718de7df9c7cf6ab",
+    "integrationValidationPassed": true,
+    "workspaceDisposition": {
+      "releaseAction": "released-to-pool",
+      "releaseReason": "Exact accepted runtime and218 passing suite tests; clean workspace released after integration."
+    }
   }
 }
