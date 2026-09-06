@@ -108,7 +108,7 @@
 	url = https://github.com/UnioGame/unigame.unitycli.mcp.git
 [submodule "unigame.ai.lemmings"]
 	path = unigame.ai.lemmings
-	url = https://github.com/UnioGame/unigame.ai.lemmings.git
+	url = https://github.com/UnioGame/lemmings.ai.git
 [submodule "unigame.staticecs.network"]
 	path = unigame.staticecs.network
 	url = https://github.com/UnioGame/unigame.staticecs.network.git
