@@ -118,3 +118,6 @@
 [submodule "unigame.staticecs.network.utp"]
 	path = unigame.staticecs.network.utp
 	url = https://github.com/UnioGame/unigame.staticecs.network.utp.git
+[submodule "unigame.staticecs.network.litenetlib"]
+	path = unigame.staticecs.network.litenetlib
+	url = https://github.com/UnioGame/unigame.staticecs.network.litenetlib.git
